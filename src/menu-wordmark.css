@@ -34,7 +34,7 @@
   padding: 0;
 }
 
-.menu-surface {
+.header-navigation-surface {
   position: relative;
   display: flex;
   min-width: 0;
@@ -44,20 +44,19 @@
   margin-left: auto;
   overflow: hidden;
   border-inline: 1px solid rgba(244, 244, 244, 0.075);
-  padding-inline: clamp(1rem, 2.1vw, 2rem);
 }
 
-.menu-surface::after {
+.header-navigation-surface::after {
   position: absolute;
   inset: 0;
   z-index: -1;
   background: linear-gradient(
     90deg,
-    rgba(9, 9, 9, 0.98),
+    rgba(9, 9, 9, 0.97) 0%,
     rgba(9, 9, 9, 0.82) 18%,
-    rgba(9, 9, 9, 0.69) 50%,
-    rgba(9, 9, 9, 0.82) 82%,
-    rgba(9, 9, 9, 0.98)
+    rgba(9, 9, 9, 0.7) 52%,
+    rgba(9, 9, 9, 0.84) 84%,
+    rgba(9, 9, 9, 0.97) 100%
   );
   content: '';
   pointer-events: none;
@@ -68,16 +67,39 @@
   inset: 0;
   z-index: -2;
   background-image: url('/brand/menu-wordmark-pattern.svg');
-  background-position: center 52%;
+  background-position: left center;
   background-repeat: no-repeat;
-  background-size: auto 148%;
-  opacity: 0.24;
+  background-size: 100% 165%;
+  opacity: 0.17;
   pointer-events: none;
+  transform: scaleX(1.42);
+  transform-origin: left center;
+}
+
+.menu-surface {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-self: stretch;
+  align-items: center;
+  margin-left: 0;
+  overflow: visible;
+  border: 0;
+  padding-inline: clamp(1rem, 2vw, 1.8rem);
+}
+
+.menu-surface::after {
+  display: none;
+  content: none;
+}
+
+.menu-surface .desktop-nav,
+.header-navigation-surface .header-actions {
+  position: relative;
+  z-index: 1;
 }
 
 .menu-surface .desktop-nav {
-  position: relative;
-  z-index: 1;
   margin-left: 0;
 }
 
@@ -96,18 +118,22 @@
   background: rgba(174, 180, 187, 0.1);
 }
 
-.booking-menu > summary,
+.header-navigation-surface .header-actions-direct {
+  align-self: stretch;
+  padding-right: clamp(0.75rem, 1.25vw, 1.15rem);
+  background: linear-gradient(90deg, transparent, rgba(8, 8, 8, 0.42) 18%, rgba(8, 8, 8, 0.72));
+}
+
 .mobile-nav-branded > summary {
   border-color: rgba(244, 244, 244, 0.55);
 }
 
-.booking-menu-panel,
 .mobile-nav-branded nav {
   background-color: rgba(7, 7, 7, 0.985);
   background-image: none;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1360px) {
   .menu-surface {
     padding-inline: 0.8rem;
   }
@@ -117,13 +143,12 @@
   }
 
   .menu-signature {
-    background-size: auto 132%;
-    opacity: 0.2;
+    opacity: 0.14;
   }
 }
 
 @media (max-width: 1040px) {
-  .menu-surface {
+  .header-navigation-surface {
     display: none;
   }
 }
@@ -146,6 +171,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .menu-signature {
-    background-position: center 52%;
+    transform: scaleX(1.42);
   }
 }
