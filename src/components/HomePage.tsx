@@ -277,7 +277,7 @@ export function HomePage() {
           </a>
           <a href="/visit">
             <span>Hours</span>
-            <strong>Open Monday through Saturday</strong>
+            <strong>{shopHoursSummary}</strong>
             <small>{shopClosedSummary}</small>
           </a>
           <a href={business.phoneHref}>
