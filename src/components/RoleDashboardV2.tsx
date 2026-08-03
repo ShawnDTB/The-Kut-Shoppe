@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   endPlatformSession,
   getPlatformSessionAccount,
@@ -28,16 +28,22 @@ function logout() {
 }
 
 function CustomerSummary({ account }: { account: PlatformAccount }) {
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    const refresh = () => setVersion((value) => value + 1);
-    const unsubscribeAppointments = subscribeToAppointmentChanges(refresh);
-    const unsubscribeOrders = subscribeToStorefrontChanges(refresh);
-    return () => { unsubscribeAppointments(); unsubscribeOrders(); };
-  }, []);
+  const [appointments, setAppointments] = useState(() => readAppointments().filter((appointment) => appointment.customerEmail === account.email));
+  const [orders, setOrders] = useState(() => readOrders().filter((order) => order.customer.email === account.email));
 
-  const appointments = useMemo(() => readAppointments().filter((appointment) => appointment.customerEmail === account.email), [account.email, version]);
-  const orders = useMemo(() => readOrders().filter((order) => order.customer.email === account.email), [account.email, version]);
+  useEffect(() => {
+    const refreshAppointments = () => setAppointments(readAppointments().filter((appointment) => appointment.customerEmail === account.email));
+    const refreshOrders = () => setOrders(readOrders().filter((order) => order.customer.email === account.email));
+    const unsubscribeAppointments = subscribeToAppointmentChanges(refreshAppointments);
+    const unsubscribeOrders = subscribeToStorefrontChanges(refreshOrders);
+    refreshAppointments();
+    refreshOrders();
+    return () => {
+      unsubscribeAppointments();
+      unsubscribeOrders();
+    };
+  }, [account.email]);
+
   const active = appointments.filter((appointment) => ['requested', 'confirmed', 'reschedule-proposed', 'waitlisted'].includes(appointment.status));
 
   return (
@@ -62,9 +68,62 @@ function StaffSummary({ account }: { account: PlatformAccount }) {
 
   return (
     <div className="v2-dashboard-grid">
-      {!setupComplete ? <section className="v2-panel v2-panel-priority v2-setup-callout"><p className="eyebrow">Professional setup required</p><h2>Finish connecting this account to the shop.</h2><p>The role is approved. Add the professional display name, business phone, location, services, hours and booking rules without another SMS verification step.</p><a className="button" href="/staff/setup">Complete professional setup</a></section> : <section className="v2-panel v2-panel-priority"><p className="eyebrow">Operations</p><h2>{isBarber ? 'Manage your chair.' : 'Manage the shop.'}</h2><p>{isBarber ? 'Open your schedule, appointment requests, waitlist entries and availability settings.' : 'Review shop-wide appointments, staff access, inventory and customer orders.'}</p><div className="v2-action-grid"><a href="/staff">Staff overview</a><a href="/staff/calendar">Calendar</a><a href="/staff/requests">Appointment requests</a><a href="/staff/waitlist">Waitlist</a><a href="/staff/settings">Availability and services</a><a href="/staff/earnings">Earnings</a></div></section>}
-      {canManageStore ? <section className="v2-panel"><p className="eyebrow">Storefront</p><h2>Products and orders</h2><div className="v2-action-grid"><a href="/admin/products">Product catalog</a><a href="/admin/orders">Order management</a><a href="/shop">Customer storefront</a></div></section> : null}
-      {canManageShop ? <section className="v2-panel"><p className="eyebrow">Team</p><h2>Staff and access</h2><p>Approve professional accounts and keep elevated access limited to the people who need it.</p><a className="button button-secondary" href="#access">Manage account roles</a></section> : null}
+      {!setupComplete ? (
+        <section className="v2-panel v2-panel-priority v2-setup-callout">
+          <p className="eyebrow">Professional setup required</p>
+          <h2>Finish connecting this account to the shop.</h2>
+          <p>The role is approved. Add the professional display name, business phone, location, services, hours, and booking rules before opening staff operations.</p>
+          <a className="button" href="/staff/setup">Complete professional setup</a>
+        </section>
+      ) : isBarber ? (
+        <section className="v2-panel v2-panel-priority v2-chair-panel">
+          <p className="eyebrow">My chair</p>
+          <h2>Calendar, services, and availability</h2>
+          <p>These controls affect only this Barber profile. Update working hours, accepted services, booking rules, requests, and same-day waitlist participation without changing another chair.</p>
+          <div className="v2-action-grid v2-action-grid-chair">
+            <a href="/staff/calendar">My calendar</a>
+            <a href="/staff/requests">My requests</a>
+            <a href="/staff/waitlist">Same-day waitlist</a>
+            <a href="/staff/settings">Services and pricing</a>
+            <a href="/staff/settings">Working hours</a>
+            <a href="/staff/settings">Booking rules</a>
+          </div>
+        </section>
+      ) : (
+        <section className="v2-panel v2-panel-priority">
+          <p className="eyebrow">Shop operations</p>
+          <h2>Appointments, staff, and daily activity</h2>
+          <p>Review shop-wide schedules and appointment activity. Individual Barber hours and services remain attached to each professional profile.</p>
+          <div className="v2-action-grid">
+            <a href="/staff">Operations overview</a>
+            <a href="/staff/calendar">Shop calendar</a>
+            <a href="/staff/requests">Appointment requests</a>
+            <a href="/staff/waitlist">Waitlist</a>
+            <a href="#access">Staff access</a>
+            <a href="/staff/earnings">Earnings</a>
+          </div>
+        </section>
+      )}
+
+      {canManageStore ? (
+        <section className="v2-panel v2-management-card">
+          <div><p className="eyebrow">Products and orders</p><h2>Store management</h2><p>Add products, edit inventory and variants, publish the catalog, and process submitted orders.</p></div>
+          <div className="v2-management-actions">
+            <a className="button" href="/admin/products">Manage products</a>
+            <a className="button button-secondary" href="/admin/orders">Manage orders</a>
+            <a className="text-link" href="/shop">Preview customer Shop →</a>
+          </div>
+        </section>
+      ) : null}
+
+      {canManageShop ? (
+        <section className="v2-panel">
+          <p className="eyebrow">Team permissions</p>
+          <h2>Accounts and roles</h2>
+          <p>Approve professional accounts and keep elevated access limited to the people who need it.</p>
+          <a className="button button-secondary" href="#access">Manage account roles</a>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -89,7 +148,7 @@ function AccessManager({ actor }: { actor: PlatformAccount }) {
   return (
     <section className="v2-panel v2-panel-wide" id="access">
       <div className="v2-panel-heading"><div><p className="eyebrow">Role-based access</p><h2>Accounts and permissions</h2></div></div>
-      <p>Customers register normally. Owner, Developer and Manager accounts can approve professional access. Barbers receive only the tools needed to operate their own chair.</p>
+      <p>Customers register normally. Owner, Developer, and Manager accounts can approve professional access. Barbers receive the tools needed to operate their own chair.</p>
       {message ? <p className="success-message" role="status">{message}</p> : null}
       <div className="v2-account-table">
         {accounts.map((account) => (
@@ -108,14 +167,14 @@ export function RoleDashboardV2() {
   useEffect(() => subscribeToPlatformAuth(() => setAccount(getPlatformSessionAccount())), []);
 
   if (!account) {
-    return <section className="section v2-auth-page platform-pattern platform-pattern-poles"><div className="container narrow-container"><div className="v2-auth-card"><p className="eyebrow">Account required</p><h1>Sign in to continue.</h1><a className="button" href="/account">Account / Login</a></div></div></section>;
+    return <section className="section v2-auth-page platform-pattern platform-pattern-account"><div className="container narrow-container"><div className="v2-auth-card"><p className="eyebrow">Account required</p><h1>Sign in to continue.</h1><a className="button" href="/account">Account / Login</a></div></div></section>;
   }
 
   const elevated = account.role !== 'customer';
   return (
-    <section className="section v2-dashboard-page platform-pattern platform-pattern-tools">
+    <section className="section v2-dashboard-page platform-pattern platform-pattern-staff">
       <div className="container route-wide">
-        <header className="v2-dashboard-header"><div><p className="eyebrow">{roleLabels[account.role]} account</p><h1>Welcome, {account.name}.</h1><p>{elevated ? 'Your dashboard adapts to the responsibilities assigned to this account.' : 'Manage appointments first, then review purchases and account details.'}</p></div><div className="v2-profile-summary"><strong>{roleLabels[account.role]}</strong><span>{account.email}</span><small>{elevated ? account.staffProfileId ? 'Professional profile connected' : 'Professional setup pending' : 'Customer account'}</small><button className="text-button" type="button" onClick={logout}>Log out</button></div></header>
+        <header className="v2-dashboard-header"><div><p className="eyebrow">{roleLabels[account.role]} account</p><h1>Welcome, {account.name}.</h1><p>{elevated ? 'Open the tools assigned to this role.' : 'Manage appointments first, then review purchases and account details.'}</p></div><div className="v2-profile-summary"><strong>{roleLabels[account.role]}</strong><span>{account.email}</span><small>{elevated ? account.staffProfileId ? 'Professional profile connected' : 'Professional setup pending' : 'Customer account'}</small><button className="text-button" type="button" onClick={logout}>Log out</button></div></header>
         {elevated ? <StaffSummary account={account} /> : <CustomerSummary account={account} />}
         {hasPlatformCapability(account, 'manage-staff') ? <AccessManager actor={account} /> : null}
       </div>

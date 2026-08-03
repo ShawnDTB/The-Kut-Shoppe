@@ -27,6 +27,7 @@ import './booking-v2.css';
 import './storefront-v2.css';
 import './staff-onboarding-v2.css';
 import './visual-accessibility-v2.css';
+import './polish-round-2.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
@@ -110,8 +111,18 @@ function useHomepageHashNavigation(url: string) {
   }, [url]);
 }
 
+function useDevelopmentStorefrontSeed() {
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    void import('./data/development-storefront-seed').then(({ ensureDevelopmentStorefrontSeed }) => {
+      ensureDevelopmentStorefrontSeed();
+    });
+  }, []);
+}
+
 export function App({ url }: AppProps) {
   useHomepageHashNavigation(url);
+  useDevelopmentStorefrontSeed();
 
   const normalizedUrl = url !== '/' ? url.replace(/\/$/, '') : url;
   const route = findRoute(normalizedUrl);

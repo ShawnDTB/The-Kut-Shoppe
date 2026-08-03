@@ -18,14 +18,31 @@ function HeroBackdrop() {
   return <div className="hero-static-media hero-shop-floor" aria-hidden="true"><img src={originalAssets.hero[0]} alt="" width="1600" height="900" loading="eager" fetchPriority="high" decoding="async" /></div>;
 }
 
-function BookingChoice({ compact = false }: { compact?: boolean }) {
+type BookingRailProps = {
+  context: string;
+  title: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
+  compact?: boolean;
+};
+
+function BookingRail({
+  context,
+  title,
+  secondaryHref,
+  secondaryLabel,
+  compact = false,
+}: BookingRailProps) {
   return (
-    <div className={compact ? 'booking-choice-row booking-choice-row-compact booking-choice-row-single' : 'booking-choice-row booking-choice-row-single'}>
-      <a className="booking-choice" href="/book">
-        <span className="booking-choice-kicker">Barber appointments · walk-ins · Loctician direction</span>
-        <strong>Book now</strong>
-        <Arrow />
-      </a>
+    <div className={compact ? 'home-booking-rail home-booking-rail-compact' : 'home-booking-rail'}>
+      <div className="home-booking-rail-copy">
+        <span>{context}</span>
+        <strong>{title}</strong>
+      </div>
+      <div className="home-booking-rail-actions">
+        {secondaryHref && secondaryLabel ? <a className="home-booking-secondary" href={secondaryHref}>{secondaryLabel}</a> : null}
+        <a className="button home-booking-primary" href="/book">Book now <Arrow /></a>
+      </div>
     </div>
   );
 }
@@ -43,7 +60,15 @@ function ServicesOverview() {
         <figure className="services-chair-photo"><img src={originalAssets.introPhoto} alt="A barber at The Kut Shoppe actively cutting a client’s hair" width="1000" height="760" loading="lazy" decoding="async" /><figcaption>A cut in progress at The Kut Shoppe</figcaption></figure>
       </div>
       <div className="container service-icon-strip">{serviceHighlights.map((service) => <a className="service-icon-link" href={service.route} key={service.title}><img src={service.icon} alt="" width="88" height="88" loading="lazy" decoding="async" /><span>{service.title}</span></a>)}</div>
-      <div className="container compact-section-actions"><a className="text-link" href="/services">Services and pricing <Arrow /></a><BookingChoice compact /></div>
+      <div className="container services-booking-rail-wrap">
+        <BookingRail
+          compact
+          context="Haircuts, beard work, kids cuts, locs and styling"
+          title="Review the menu or start with the chair you need."
+          secondaryHref="/services"
+          secondaryLabel="Services and pricing"
+        />
+      </div>
     </section>
   );
 }
@@ -99,8 +124,13 @@ export function HomePage() {
             <h1 className="hero-accessible-title">The Kut Shoppe barbershop and loc care in downtown Stroudsburg</h1>
             <p className="hero-lead">Fresh cuts. Great conversations. Right here on Main Street.</p>
             <div className="hero-hours-panel hero-hours-daily" aria-label="Shop hours"><div className="hero-hours-heading"><span>Shop hours</span><small>Walk-in reference</small></div><dl>{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl><p>{shopHoursNote}</p></div>
-            <BookingChoice compact />
-            <a className="hero-call" href={business.phoneHref}>Questions? Call {business.phone}</a>
+            <BookingRail
+              compact
+              context="Barber appointments · same-day waitlist · Loctician direction"
+              title="Choose the service. We will guide you to the right chair."
+              secondaryHref={business.phoneHref}
+              secondaryLabel={`Call ${business.phone}`}
+            />
           </div>
         </div>
         <a className="scroll-cue" href="#services" aria-label="Continue to services"><span /></a>
@@ -114,7 +144,7 @@ export function HomePage() {
       <ShopTeaser />
 
       <section id="visit" className="section location-conversion">
-        <div className="container location-conversion-grid"><div className="conversion-copy location-conversion-copy"><p className="eyebrow">Ready for the next one?</p><h2>Your chair is ready when you are.</h2><p>Start from one booking page for barber appointments, the walk-in waiting list, or Crowned by Steph’s Loctician services.</p><BookingChoice compact /></div><LocationMap /></div>
+        <div className="container location-conversion-grid"><div className="conversion-copy location-conversion-copy"><p className="eyebrow">Ready for the next one?</p><h2>Your chair is ready when you are.</h2><p>Choose Barber or Loctician from one booking page. When today’s matching barber openings are full, the same flow offers the waitlist.</p><BookingRail compact context="One booking page for every service path" title="Choose Barber or Loctician and continue." secondaryHref={business.phoneHref} secondaryLabel="Call the shop" /></div><LocationMap /></div>
       </section>
     </>
   );
