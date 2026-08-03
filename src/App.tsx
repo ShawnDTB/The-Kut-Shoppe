@@ -13,6 +13,7 @@ import './location-map.css';
 import './usability-cleanup.css';
 import './owner-refinement.css';
 import './menu-final.css';
+import './final-owner-cleanup.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
@@ -23,7 +24,7 @@ interface AppProps {
 }
 
 const legacyRedirects: Record<string, string> = {
-  '/about': '/#about',
+  '/about': '/team',
   '/products': '/shop',
 };
 
