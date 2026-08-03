@@ -18,11 +18,19 @@ import './customer-final-pass.css';
 import './final-detail-pass.css';
 import './final-mobile-performance-pass.css';
 import './customer-platform.css';
+import './commerce-prototype.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { AccountPage, BookingPage, ShopPage } from './components/CustomerPlatformPages';
+import { BookingPage } from './components/CustomerPlatformPages';
+import {
+  CartPage,
+  CatalogAdminPage,
+  CheckoutPage,
+  CommerceAccountPage,
+  CommerceStorefrontPage,
+} from './components/CommercePrototypePages';
 
 interface AppProps {
   url: string;
@@ -74,22 +82,30 @@ function useHomepageHashNavigation(url: string) {
 export function App({ url }: AppProps) {
   useHomepageHashNavigation(url);
 
-  const route = findRoute(url);
   const normalizedUrl = url !== '/' ? url.replace(/\/$/, '') : url;
+  const route = findRoute(normalizedUrl);
   const redirect = legacyRedirects[normalizedUrl];
+  const isAdminRoute = normalizedUrl === '/admin/products';
+  const layoutPath = isAdminRoute ? '/shop' : route.path;
 
   return (
-    <SiteLayout currentPath={route.path}>
+    <SiteLayout currentPath={layoutPath}>
       {redirect ? (
         <ClientRedirect to={redirect} />
-      ) : route.path === '/' ? (
+      ) : normalizedUrl === '/' ? (
         <HomePage />
-      ) : route.path === '/book' ? (
+      ) : normalizedUrl === '/book' ? (
         <BookingPage />
-      ) : route.path === '/shop' ? (
-        <ShopPage />
-      ) : route.path === '/account' ? (
-        <AccountPage />
+      ) : normalizedUrl === '/shop' ? (
+        <CommerceStorefrontPage />
+      ) : normalizedUrl === '/cart' ? (
+        <CartPage />
+      ) : normalizedUrl === '/checkout' ? (
+        <CheckoutPage />
+      ) : normalizedUrl === '/account' ? (
+        <CommerceAccountPage />
+      ) : isAdminRoute ? (
+        <CatalogAdminPage />
       ) : (
         <RoutePage url={url} />
       )}
