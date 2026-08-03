@@ -153,9 +153,24 @@ export function readCart() {
   return readJson<CartItem[]>(storefrontStorageKeys.cart, []);
 }
 
+function clampCartToInventory(cart: CartItem[]) {
+  const products = new Map(readProducts().map((product) => [product.id, product]));
+
+  return cart.flatMap((item) => {
+    const product = products.get(item.productId);
+    if (!product || product.status !== 'published' || product.stockOnHand <= 0) return [];
+
+    return [{
+      productId: item.productId,
+      quantity: Math.min(Math.max(1, Math.floor(item.quantity)), product.stockOnHand),
+    }];
+  });
+}
+
 export function saveCart(cart: CartItem[]) {
-  writeJson(storefrontStorageKeys.cart, cart);
-  return cart;
+  const next = clampCartToInventory(cart);
+  writeJson(storefrontStorageKeys.cart, next);
+  return next;
 }
 
 export function addToCart(productId: string, quantity = 1) {
