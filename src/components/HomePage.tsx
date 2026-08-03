@@ -61,7 +61,7 @@ function ServicesOverview() {
     <section id="services" className="section compact-services ornament-section ornament-bg-3">
       <div className="container services-chair-intro">
         <div className="services-chair-copy">
-          <p className="eyebrow">Services for the whole neighborhood</p>
+          <p className="eyebrow">Proudly serving the Poconos</p>
           <h2>You know the look. We will take care of the rest.</h2>
           <p className="lede">
             Fresh fade, clean line-up, beard work, a first cut for the little one, or loc and braid work. Tell us what you are going for and we will get you in the right chair.
@@ -238,7 +238,7 @@ export function HomePage() {
             <h1 className="hero-accessible-title">
               The Kut Shoppe barbershop and loc care in downtown Stroudsburg
             </h1>
-            <p className="hero-lead">Fresh cuts. Clean work. Right on Main Street.</p>
+            <p className="hero-lead">Fresh cuts. Great conversations. Right here on Main Street.</p>
 
             <div className="hero-hours-panel hero-hours-daily" aria-label="Shop hours">
               <div className="hero-hours-heading">
