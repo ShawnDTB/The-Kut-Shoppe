@@ -17,7 +17,6 @@ import './final-owner-cleanup.css';
 import './customer-final-pass.css';
 import './final-detail-pass.css';
 import './final-mobile-performance-pass.css';
-import './customer-platform.css';
 import './booking-platform.css';
 import './account-prototype.css';
 import './commerce-platform.css';
