@@ -1,0 +1,360 @@
+/* Final detail pass. Loaded after every earlier refinement. */
+
+/* Keep the script behind the navigation and phone, not behind the booking buttons. */
+.menu-signature::before {
+  top: 52%;
+  right: 17.5rem;
+  left: -3.5rem;
+  width: auto;
+  max-width: none;
+  font-size: clamp(3.2rem, 3.8vw, 4.45rem);
+  opacity: 0.095;
+  text-align: center;
+  transform: translateY(-50%);
+}
+
+.menu-surface,
+.desktop-nav,
+.nav-list-branded,
+.nav-list-branded li,
+.nav-list-branded a {
+  overflow: visible;
+}
+
+/* A crisp barber-scissors marker that remains inside the shorter header. */
+.nav-list-branded a[aria-current='page']::before {
+  top: 0.18rem;
+  left: 50%;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 0;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dedede' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='7' r='2.6'/%3E%3Ccircle cx='6' cy='17' r='2.6'/%3E%3Cpath d='M8.2 8.4 20 3M8.2 15.6 20 21M9 12h4'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: '';
+  filter: none;
+  opacity: 0.9;
+  transform: translateX(-50%);
+}
+
+/* Use the live slideshow's wide shop interior image without over-blurring it. */
+.hero-shop-floor img {
+  object-position: center 54%;
+  transform: scale(1.015);
+  filter: saturate(0.68) contrast(1.08) brightness(0.56);
+}
+
+.hero-focused .hero-shade {
+  background:
+    linear-gradient(90deg, rgba(4, 4, 4, 0.72), rgba(4, 4, 4, 0.34) 48%, rgba(4, 4, 4, 0.68)),
+    linear-gradient(180deg, rgba(4, 4, 4, 0.18), rgba(4, 4, 4, 0.62));
+}
+
+.hero-glass-panel-hours {
+  width: min(42rem, 100%);
+  padding: clamp(1.5rem, 2.7vw, 2.35rem);
+}
+
+.hero-accessible-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hero-lead {
+  max-width: 27ch;
+  margin: 1rem 0 0;
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: clamp(1.55rem, 2.2vw, 2.35rem);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.hero-hours-daily {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.85rem 1.25rem;
+  margin: 1.35rem 0;
+  border-top: 1px solid rgba(244, 244, 244, 0.22);
+  border-bottom: 1px solid rgba(244, 244, 244, 0.22);
+  padding: 1rem 0;
+}
+
+.hero-hours-heading {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.15rem;
+}
+
+.hero-hours-daily .hero-hours-heading span {
+  grid-row: auto;
+  align-self: auto;
+  color: var(--paper);
+  font-family: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.hero-hours-daily .hero-hours-heading small {
+  color: rgba(244, 244, 244, 0.58);
+  font-size: 0.65rem;
+  line-height: 1.35;
+}
+
+.hero-hours-daily dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 1.4rem;
+  margin: 0;
+}
+
+.hero-hours-daily dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(244, 244, 244, 0.1);
+  padding-bottom: 0.32rem;
+}
+
+.hero-hours-daily dt,
+.hero-hours-daily dd {
+  margin: 0;
+  font-family: var(--heading-sans);
+  font-size: 0.75rem;
+}
+
+.hero-hours-daily dt {
+  color: rgba(244, 244, 244, 0.68);
+}
+
+.hero-hours-daily dd {
+  color: var(--paper);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hero-hours-daily > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgba(244, 244, 244, 0.56);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+/* Explicit service groups replace the previous nth-child reordering. */
+.service-price-section {
+  margin-top: 1.15rem;
+}
+
+.service-price-section + .service-price-section {
+  margin-top: 1.35rem;
+}
+
+.service-price-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: #0b0b0b;
+  padding: 0.72rem 0.95rem;
+}
+
+.service-price-section-heading h3 {
+  margin: 0;
+  color: rgba(244, 244, 244, 0.88);
+  font-family: var(--accent);
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.service-price-section-heading span {
+  color: rgba(244, 244, 244, 0.48);
+  font-family: var(--accent);
+  font-size: 0.59rem;
+  letter-spacing: 0.09em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.services-menu-list-explicit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  background: #101010;
+}
+
+.services-menu-list-explicit::before,
+.services-menu-list-explicit::after {
+  display: none;
+  content: none;
+}
+
+.services-menu-list-explicit li:nth-child(n) {
+  grid-column: auto;
+  order: initial;
+}
+
+.services-menu-list-explicit li {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.services-menu-list-explicit li:nth-child(2n) {
+  border-right: 0;
+}
+
+.services-menu-list-explicit li:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.services-menu-list-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.services-menu-list-three li:nth-child(n) {
+  border-right: 1px solid var(--line);
+}
+
+.services-menu-list-three li:nth-child(3n) {
+  border-right: 0;
+}
+
+.services-menu-list-three li:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.service-price-source-note {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-top: 0;
+  color: rgba(244, 244, 244, 0.5);
+  padding: 0.75rem 0.95rem;
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.visit-hours-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1.25rem 0;
+}
+
+.visit-hours-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.4rem;
+}
+
+.visit-hours-list dt,
+.visit-hours-list dd {
+  margin: 0;
+}
+
+.visit-hours-list dd {
+  color: var(--paper);
+  font-weight: 600;
+  text-align: right;
+}
+
+.visit-hours-summary {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1360px) {
+  .menu-signature::before {
+    right: 15.5rem;
+    left: -2.5rem;
+    font-size: clamp(2.8rem, 3.5vw, 3.9rem);
+  }
+}
+
+@media (max-width: 1040px) {
+  .menu-signature::before {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-focused {
+    min-height: auto;
+    padding-block: 2rem 4.75rem;
+  }
+
+  .hero-content-minimal {
+    align-items: flex-start;
+  }
+
+  .hero-glass-panel-hours {
+    padding: 1.25rem;
+  }
+
+  .hero-lead {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+  }
+
+  .hero-hours-daily {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-hours-daily dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-hours-daily > p {
+    grid-column: 1;
+  }
+
+  .services-menu-list-explicit,
+  .services-menu-list-three {
+    grid-template-columns: 1fr;
+  }
+
+  .services-menu-list-explicit li:nth-child(n),
+  .services-menu-list-three li:nth-child(n) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .services-menu-list-explicit li:last-child,
+  .services-menu-list-three li:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero-hours-daily dl {
+    grid-template-columns: 1fr;
+  }
+
+  .service-price-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .service-price-section-heading span {
+    text-align: left;
+  }
+}
