@@ -12,10 +12,10 @@ function HeroBackdrop() {
   return (
     <div className="hero-static-media" aria-hidden="true">
       <img
-        src={originalAssets.introPhoto}
+        src={originalAssets.hero[1]}
         alt=""
-        width="1600"
-        height="1200"
+        width="1920"
+        height="1080"
         loading="eager"
         decoding="async"
       />
@@ -47,29 +47,27 @@ function BookingChoices({ compact = false }: { compact?: boolean }) {
 }
 
 function ServicesOverview() {
-  const featuredCut = galleryItems[0];
-
   return (
     <section id="services" className="section compact-services ornament-section ornament-bg-3">
       <div className="container services-chair-intro">
         <div className="services-chair-copy">
           <p className="eyebrow">Services for the whole neighborhood</p>
-          <h2>You look great. Now let us make it perfect.</h2>
+          <h2>You know the look. We will take care of the rest.</h2>
           <p className="lede">
-            Fades, clean line-ups, beard work, kids cuts, locs, braids, and styling—whatever brings you in, the crew takes the time to get it right.
+            Fresh fade, clean line-up, beard work, a first cut for the little one, or locs and styling. Tell us what you are going for and we will get you in the right chair.
           </p>
-          <p className="services-owner-note">Top-rated barbering and styling in downtown Stroudsburg.</p>
+          <p className="services-owner-note">Barbering and styling on Main Street in downtown Stroudsburg.</p>
         </div>
-        <figure className="services-chair-photo services-finished-cut">
+        <figure className="services-chair-photo">
           <img
-            src={featuredCut.src}
-            alt={featuredCut.alt}
-            width="900"
-            height="900"
+            src={originalAssets.introPhoto}
+            alt="A barber at The Kut Shoppe actively cutting a client’s hair"
+            width="1000"
+            height="760"
             loading="lazy"
             decoding="async"
           />
-          <figcaption>The Kut Shoppe · 518 Main Street · steps from the Sherman Theater</figcaption>
+          <figcaption>A cut in progress at The Kut Shoppe</figcaption>
         </figure>
       </div>
 
@@ -84,7 +82,7 @@ function ServicesOverview() {
 
       <div className="container compact-section-actions">
         <a className="text-link" href="/services">
-          Current services and pricing <Arrow />
+          Services and pricing <Arrow />
         </a>
         <BookingChoices compact />
       </div>
@@ -124,7 +122,10 @@ function WorkAndTrust() {
           {previewItems.map((item) => (
             <figure key={item.src}>
               <img src={item.src} alt={item.alt} width="640" height="640" loading="lazy" decoding="async" />
-              <figcaption>{item.category}</figcaption>
+              <figcaption>
+                <strong>{item.title}</strong>
+                <span>{item.category}</span>
+              </figcaption>
             </figure>
           ))}
         </div>
@@ -151,7 +152,7 @@ function AboutAndCrew() {
           <p className="eyebrow">A modern twist on classic cuts</p>
           <h2>A Main Street shop built around the person in the chair.</h2>
           <p className="lede">
-            The Kut Shoppe brings barbering and styling professionals together in downtown Stroudsburg, just steps from the Sherman Theater.
+            The Kut Shoppe brings barbering and styling professionals together in downtown Stroudsburg, a few steps away from the Sherman Theater.
           </p>
           <div className="compact-crew-grid" aria-label="The Kut Shoppe crew">
             {team.map((member) => (
@@ -192,7 +193,7 @@ function AboutAndCrew() {
 
 function ShopTeaser() {
   return (
-    <section className="shop-teaser ornament-section ornament-bg-8" aria-labelledby="shop-teaser-heading">
+    <section className="shop-teaser shop-teaser-solid" aria-labelledby="shop-teaser-heading">
       <div className="container shop-teaser-grid">
         <img
           src={originalAssets.productsPhoto}
@@ -244,7 +245,7 @@ export function HomePage() {
           <a href="/visit">
             <span>Visit</span>
             <strong>518 Main Street</strong>
-            <small>Steps from the Sherman Theater</small>
+            <small>A few steps away from the Sherman Theater</small>
           </a>
           <a href="/book">
             <span>Appointments</span>
