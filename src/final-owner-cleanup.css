@@ -48,7 +48,7 @@
 
 .menu-signature::before {
   top: 57%;
-  left: 50%;
+  left: 43%;
   width: 100%;
   max-width: 100%;
   content: 'The Kut Shoppe';
@@ -66,6 +66,10 @@
 .header-actions-direct {
   gap: 0.45rem;
   padding-right: 0.75rem;
+}
+
+.header-navigation-surface .header-actions-direct {
+  background: transparent;
 }
 
 .provider-booking-link {
