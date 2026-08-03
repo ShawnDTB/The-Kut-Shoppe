@@ -29,6 +29,7 @@ import { RoutePage } from './components/Pages';
 import { InternalBookingPage, WalkInRequestPage } from './components/InternalBookingPage';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
 import { CustomerAccountPrototype } from './components/CustomerAccountPrototype';
+import { AdminAccessPage, AdminGuard } from './components/AdminAccess';
 import {
   CartPage,
   CatalogAdminPage,
@@ -82,7 +83,7 @@ export function App({ url }: AppProps) {
   const route = findRoute(normalizedUrl);
   const redirect = legacyRedirects[normalizedUrl];
   const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
-  const isAdminRoute = normalizedUrl === '/admin/products' || normalizedUrl === '/admin/orders';
+  const isAdminRoute = normalizedUrl.startsWith('/admin/');
   const productMatch = normalizedUrl.match(/^\/shop\/([^/]+)$/);
   const layoutPath = isStaffRoute
     ? '/staff'
@@ -110,10 +111,12 @@ export function App({ url }: AppProps) {
         <CheckoutPage />
       ) : normalizedUrl === '/account' ? (
         <CustomerAccountPrototype />
+      ) : normalizedUrl === '/admin/access' ? (
+        <AdminAccessPage />
       ) : normalizedUrl === '/admin/products' ? (
-        <CatalogAdminPage />
+        <AdminGuard><CatalogAdminPage /></AdminGuard>
       ) : normalizedUrl === '/admin/orders' ? (
-        <OrderAdminPage />
+        <AdminGuard><OrderAdminPage /></AdminGuard>
       ) : isStaffRoute ? (
         <StaffPlatformPage path={normalizedUrl} />
       ) : (
