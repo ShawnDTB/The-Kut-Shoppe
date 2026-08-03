@@ -20,14 +20,23 @@ import './final-mobile-performance-pass.css';
 import './customer-platform.css';
 import './booking-platform.css';
 import './account-prototype.css';
+import './commerce-platform.css';
+import './platform-theme.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { ShopPage } from './components/CustomerPlatformPages';
-import { InternalBookingPage } from './components/InternalBookingPage';
+import { InternalBookingPage, WalkInRequestPage } from './components/InternalBookingPage';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
 import { CustomerAccountPrototype } from './components/CustomerAccountPrototype';
+import {
+  CartPage,
+  CatalogAdminPage,
+  CheckoutPage,
+  CommerceStorefrontPage,
+  OrderAdminPage,
+  ProductDetailPage,
+} from './components/CommercePlatformPages';
 
 interface AppProps {
   url: string;
@@ -36,6 +45,8 @@ interface AppProps {
 const legacyRedirects: Record<string, string> = {
   '/about': '/team',
   '/products': '/shop',
+  '/login': '/account',
+  '/booking': '/book',
 };
 
 function ClientRedirect({ to }: { to: string }) {
@@ -45,11 +56,7 @@ function ClientRedirect({ to }: { to: string }) {
 
   return (
     <section className="section page-hero ornament-section ornament-bg-3">
-      <div className="container narrow-container">
-        <p className="eyebrow">Redirecting</p>
-        <h1>This content has moved.</h1>
-        <a className="button" href={to}>Continue</a>
-      </div>
+      <div className="container narrow-container"><p className="eyebrow">Redirecting</p><h1>This content has moved.</h1><a className="button" href={to}>Continue</a></div>
     </section>
   );
 }
@@ -57,19 +64,11 @@ function ClientRedirect({ to }: { to: string }) {
 function useHomepageHashNavigation(url: string) {
   useEffect(() => {
     if (url !== '/') return;
-
     const scrollToHash = () => {
       const id = window.location.hash.slice(1);
       if (!id) return;
-
-      window.requestAnimationFrame(() => {
-        document.getElementById(id)?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      });
+      window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     };
-
     scrollToHash();
     window.addEventListener('hashchange', scrollToHash);
     return () => window.removeEventListener('hashchange', scrollToHash);
@@ -83,7 +82,13 @@ export function App({ url }: AppProps) {
   const route = findRoute(normalizedUrl);
   const redirect = legacyRedirects[normalizedUrl];
   const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
-  const layoutPath = isStaffRoute ? '/staff' : route.path;
+  const isAdminRoute = normalizedUrl === '/admin/products' || normalizedUrl === '/admin/orders';
+  const productMatch = normalizedUrl.match(/^\/shop\/([^/]+)$/);
+  const layoutPath = isStaffRoute
+    ? '/staff'
+    : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
+      ? '/shop'
+      : route.path;
 
   return (
     <SiteLayout currentPath={layoutPath}>
@@ -93,10 +98,22 @@ export function App({ url }: AppProps) {
         <HomePage />
       ) : normalizedUrl === '/book' ? (
         <InternalBookingPage />
+      ) : normalizedUrl === '/book/walk-in' ? (
+        <WalkInRequestPage />
       ) : normalizedUrl === '/shop' ? (
-        <ShopPage />
+        <CommerceStorefrontPage />
+      ) : productMatch ? (
+        <ProductDetailPage slug={decodeURIComponent(productMatch[1] ?? '')} />
+      ) : normalizedUrl === '/cart' ? (
+        <CartPage />
+      ) : normalizedUrl === '/checkout' ? (
+        <CheckoutPage />
       ) : normalizedUrl === '/account' ? (
         <CustomerAccountPrototype />
+      ) : normalizedUrl === '/admin/products' ? (
+        <CatalogAdminPage />
+      ) : normalizedUrl === '/admin/orders' ? (
+        <OrderAdminPage />
       ) : isStaffRoute ? (
         <StaffPlatformPage path={normalizedUrl} />
       ) : (
