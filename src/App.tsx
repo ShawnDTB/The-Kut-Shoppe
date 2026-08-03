@@ -23,11 +23,12 @@ import './commerce-platform.css';
 import './platform-theme.css';
 import './auth-v2.css';
 import './navigation-v2-fixes.css';
+import './booking-v2.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { InternalBookingPage, WalkInRequestPage } from './components/InternalBookingPage';
+import { BookingV2 } from './components/BookingV2';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
 import { AccountAccessV2 } from './components/AccountAccessV2';
 import { RoleDashboardV2 } from './components/RoleDashboardV2';
@@ -50,6 +51,7 @@ const legacyRedirects: Record<string, string> = {
   '/products': '/shop',
   '/login': '/account',
   '/booking': '/book',
+  '/book/walk-in': '/book',
   '/staff/login': '/account',
   '/admin/access': '/account',
 };
@@ -128,9 +130,7 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/' ? (
         <HomePage />
       ) : normalizedUrl === '/book' ? (
-        <InternalBookingPage />
-      ) : normalizedUrl === '/book/walk-in' ? (
-        <WalkInRequestPage />
+        <ClientPlatform label="booking"><BookingV2 /></ClientPlatform>
       ) : normalizedUrl === '/shop' ? (
         <ClientPlatform label="the current Shop"><CommerceStorefrontPage /></ClientPlatform>
       ) : productMatch ? (
