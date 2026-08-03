@@ -9,6 +9,45 @@ import {
 import { galleryItems, originalAssets, teamPortraits } from '../data/visuals';
 import { Arrow } from './Layout';
 
+const routePresentation: Partial<Record<string, { heading: string; intro: string }>> = {
+  '/services': {
+    heading: 'Barbering, grooming, and styling services.',
+    intro: 'Explore haircut, beard, loc, braid, color, scalp-care, and styling options before choosing the right booking path.',
+  },
+  '/team': {
+    heading: 'Meet the professionals behind the shop.',
+    intro: 'The Kut Shoppe brings barbering and styling professionals together for clients across Stroudsburg and the Pocono area.',
+  },
+  '/gallery': {
+    heading: 'Real work from the shop.',
+    intro: 'Browse fades, tapers, scissor cuts, beard work, locs, braids, kids cuts, designs, and first-haircut moments.',
+  },
+  '/products': {
+    heading: 'Grooming and hair care between visits.',
+    intro: 'Ask about products available through the shop to help maintain your cut, style, hair, and scalp between appointments.',
+  },
+  '/about': {
+    heading: 'More than a chair and a haircut.',
+    intro: 'A welcoming neighborhood shop centered on personal service, carefully finished work, and long-term client relationships.',
+  },
+  '/reviews': {
+    heading: 'A reputation built one appointment at a time.',
+    intro: 'See verified client feedback from appointments booked through The Kut Shoppe’s public booking profile.',
+  },
+  '/contact': {
+    heading: 'Call the shop when you need guidance.',
+    intro: 'Get help choosing a service, confirming walk-in availability, or finding the correct appointment path.',
+  },
+  '/privacy': {
+    heading: 'Privacy information.',
+    intro: 'This page explains how the finished website will handle contact details, analytics, and service-provider data.',
+  },
+  '/terms': {
+    heading: 'Website terms.',
+    intro: 'General website terms and any approved appointment-policy references will be published here.',
+  },
+};
+
 export function BookPage() {
   return (
     <section className="section page-hero ornament-section ornament-bg-2">
@@ -16,7 +55,7 @@ export function BookPage() {
         <p className="eyebrow">Appointments</p>
         <h1>Start with the service you need.</h1>
         <p className="lede">
-          Choose barbering or loc and styling services, then continue to the current booking profile to select a professional and available time.
+          Choose barbering or loc and styling services, then continue to the booking profile to select a professional and available time.
         </p>
         <div className="booking-grid">
           {bookingPaths.map((path) => (
@@ -66,7 +105,7 @@ function ServiceRoute({ path }: { path: string }) {
 
   return (
     <div className="content-panel route-content">
-      <h2>Current service information</h2>
+      <h2>Services and pricing</h2>
       {service.prices.length ? (
         <ul className="price-list">
           {service.prices.map(([name, price]) => (
@@ -77,10 +116,10 @@ function ServiceRoute({ path }: { path: string }) {
           ))}
         </ul>
       ) : (
-        <p>Individual pricing and appointment details are available through the current booking profile.</p>
+        <p>Individual pricing and appointment details are available through the booking profile.</p>
       )}
       <p className="fine-print">
-        Website prices are carried over from the current public service page. Booksy remains the source for appointment availability and final booking details.
+        Booksy remains the source for current appointment availability and final booking details.
       </p>
       <a className="button" href={booksyUrl} target="_blank" rel="noopener noreferrer">
         View booking availability
@@ -92,21 +131,21 @@ function ServiceRoute({ path }: { path: string }) {
 function TeamRoute() {
   return (
     <div className="route-content team-route-layout">
-      <div className="team-collage" aria-label="Team photography from the current Kut Shoppe website">
+      <div className="team-collage" aria-hidden="true">
         {teamPortraits.map((portrait, index) => (
           <figure className={`team-collage-item team-collage-item-${index + 1}`} key={portrait}>
-            <img src={portrait} alt="Kut Shoppe team portrait" width="700" height="700" loading="lazy" />
+            <img src={portrait} alt="" width="700" height="700" loading="lazy" />
           </figure>
         ))}
       </div>
       <div className="crew-panel">
-        <h2>The current public roster</h2>
+        <h2>The Kut Shoppe crew</h2>
         <ul className="crew-list">
           {team.map((member) => (
             <li key={member.name}>{member.name}</li>
           ))}
         </ul>
-        <p>Use the booking page to choose a service and review current professional availability.</p>
+        <p>Choose a service, then review the professionals and appointment times currently available through booking.</p>
         <a className="button" href="/book">Choose a booking path</a>
       </div>
     </div>
@@ -119,10 +158,10 @@ function AboutRoute() {
       <div className="about-route-copy">
         <h2>A welcoming shop where clients are more than the next appointment.</h2>
         <p>
-          The Kut Shoppe’s current About page emphasizes the charm of its neighborhood atmosphere, a carefully selected team, and the importance of treating every client as an individual rather than a face in the crowd.
+          The Kut Shoppe combines the charm of a neighborhood barbershop with a carefully selected team and a broad mix of barbering and styling services.
         </p>
         <p>
-          The shop takes time to learn what clients want and aims to build long-lasting relationships through classic barbering, modern styling, and consistent personal service in the Poconos.
+          Every visit is approached personally: understand the look, provide a comfortable experience, and build long-lasting relationships through consistent service in the Poconos.
         </p>
         <a className="button" href="/book">Choose an appointment</a>
       </div>
@@ -155,9 +194,9 @@ function VisitRoute() {
 function ReviewsRoute() {
   return (
     <div className="content-panel route-content">
-      <h2>Verified feedback is available on the current booking profile.</h2>
-      <p>The review page will present selected public feedback with accurate source attribution rather than an unverified hardcoded count.</p>
-      <a className="button" href={booksyUrl} target="_blank" rel="noopener noreferrer">View current Booksy reviews</a>
+      <h2>Read feedback from booked appointments.</h2>
+      <p>Visit the public booking profile to see current ratings and verified feedback from Kut Shoppe clients.</p>
+      <a className="button" href={booksyUrl} target="_blank" rel="noopener noreferrer">View Booksy reviews</a>
     </div>
   );
 }
@@ -179,8 +218,8 @@ function DefaultRoute({ path }: { path: string }) {
   if (path === '/products') {
     return (
       <div className="content-panel route-content">
-        <h2>Products are promoted in the shop.</h2>
-        <p>Ask about available grooming and hair-care products during your next appointment. The online catalog will link only to approved Kut Shoppe merchandise and inventory.</p>
+        <h2>Ask about products during your next visit.</h2>
+        <p>Grooming and hair-care products are available through the shop to help maintain your finished look between appointments.</p>
         <a className="button button-secondary" href="/book">Book an appointment</a>
       </div>
     );
@@ -190,16 +229,36 @@ function DefaultRoute({ path }: { path: string }) {
     return (
       <div className="content-panel route-content">
         <h2>Call for the fastest answer.</h2>
-        <p>For appointment questions, service guidance, or walk-in availability, call the shop directly. Appointment reservations should continue through the booking page.</p>
+        <p>For service guidance, appointment questions, or walk-in availability, call the shop directly. Reservations should continue through the booking page.</p>
         <a className="button" href={business.phoneHref}>Call {business.phone}</a>
+      </div>
+    );
+  }
+
+  if (path === '/privacy') {
+    return (
+      <div className="content-panel route-content">
+        <h2>Privacy details are being finalized.</h2>
+        <p>The policy will describe any contact-form processing, analytics, cookies, and third-party service providers before those features are enabled on the production website.</p>
+        <a className="button button-secondary" href="/contact">Contact the shop</a>
+      </div>
+    );
+  }
+
+  if (path === '/terms') {
+    return (
+      <div className="content-panel route-content">
+        <h2>Website terms are being finalized.</h2>
+        <p>Final terms will cover website use and link to any approved appointment, cancellation, or booking-provider policies.</p>
+        <a className="button button-secondary" href="/book">View booking options</a>
       </div>
     );
   }
 
   return (
     <div className="content-panel route-content">
-      <h2>Website information</h2>
-      <p>This page will be completed before the code-based website replaces the current WordPress site.</p>
+      <h2>That page is no longer available.</h2>
+      <p>Return to the homepage or use the navigation to continue browsing The Kut Shoppe.</p>
       <a className="button button-secondary" href="/">Return home</a>
     </div>
   );
@@ -207,6 +266,7 @@ function DefaultRoute({ path }: { path: string }) {
 
 export function RoutePage({ url }: { url: string }) {
   const route = findRoute(url);
+  const presentation = routePresentation[route.path];
   const hasServiceRoute = services.some((item) => item.route === route.path);
   const isWideRoute = ['/team', '/gallery', '/about'].includes(route.path);
 
@@ -214,8 +274,8 @@ export function RoutePage({ url }: { url: string }) {
     <section className="section page-hero ornament-section ornament-bg-3">
       <div className={`container ${isWideRoute ? 'route-wide' : 'narrow-container'}`}>
         <p className="eyebrow">{route.eyebrow}</p>
-        <h1>{route.heading}</h1>
-        <p className="lede">{route.intro}</p>
+        <h1>{presentation?.heading ?? route.heading}</h1>
+        <p className="lede">{presentation?.intro ?? route.intro}</p>
 
         {route.path === '/services' ? <ServicesRoute /> : null}
         {hasServiceRoute ? <ServiceRoute path={route.path} /> : null}
