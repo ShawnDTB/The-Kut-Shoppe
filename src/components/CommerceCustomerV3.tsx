@@ -183,12 +183,9 @@ export function CheckoutPageV3() {
   const subtotal = lines.reduce((total, line) => total + line.variant.priceCents * line.item.quantity, 0);
   const supportsShipping = lines.length > 0 && lines.every((line) => line.product.shippingEnabled);
   const supportsPickup = lines.length > 0 && lines.every((line) => line.product.pickupEnabled);
+  const effectiveFulfillment: FulfillmentType = fulfillment === 'pickup' && !supportsPickup && supportsShipping ? 'shipping' : fulfillment;
   const contactReady = customer.name.trim().length >= 2 && isValidEmail(customer.email) && isValidPhone(customer.phone);
-  const addressReady = fulfillment === 'pickup' || Boolean(address.line1.trim() && address.city.trim() && address.state.trim() && address.postalCode.trim());
-
-  useEffect(() => {
-    if (!supportsPickup && supportsShipping) setFulfillment('shipping');
-  }, [supportsPickup, supportsShipping]);
+  const addressReady = effectiveFulfillment === 'pickup' || Boolean(address.line1.trim() && address.city.trim() && address.state.trim() && address.postalCode.trim());
 
   const submit = () => {
     if (!contactReady || !addressReady || !lines.length) return;
@@ -198,9 +195,9 @@ export function CheckoutPageV3() {
       shippingCents: 0,
       taxCents: 0,
       totalCents: subtotal,
-      fulfillment,
+      fulfillment: effectiveFulfillment,
       customer,
-      shippingAddress: fulfillment === 'shipping' ? address : null,
+      shippingAddress: effectiveFulfillment === 'shipping' ? address : null,
       trackingNumber: '',
       internalNote: '',
     });
@@ -217,13 +214,13 @@ export function CheckoutPageV3() {
         <header className="commerce-page-heading commerce-page-heading-compact"><div><p className="eyebrow">Checkout</p><h1>Complete your order.</h1></div><a className="text-link" href="/cart">Back to cart</a></header>
         {lines.length ? <div className="commerce-checkout-layout commerce-checkout-layout-v3">
           <main className="commerce-checkout-form commerce-checkout-form-v3">
-            <section><h2>Delivery method</h2><div className="checkout-method-grid"><label className={!supportsPickup ? 'is-disabled' : ''}><input type="radio" name="fulfillment" value="pickup" checked={fulfillment === 'pickup'} disabled={!supportsPickup} onChange={() => setFulfillment('pickup')} /><span><strong>Pick up in store</strong><small>518 Main Street after the shop marks it ready.</small></span></label><label className={!supportsShipping ? 'is-disabled' : ''}><input type="radio" name="fulfillment" value="shipping" checked={fulfillment === 'shipping'} disabled={!supportsShipping} onChange={() => setFulfillment('shipping')} /><span><strong>Ship my order</strong><small>Shipping cost and tax are confirmed before payment.</small></span></label></div></section>
+            <section><h2>Delivery method</h2><div className="checkout-method-grid"><label className={!supportsPickup ? 'is-disabled' : ''}><input type="radio" name="fulfillment" value="pickup" checked={effectiveFulfillment === 'pickup'} disabled={!supportsPickup} onChange={() => setFulfillment('pickup')} /><span><strong>Pick up in store</strong><small>518 Main Street after the shop marks it ready.</small></span></label><label className={!supportsShipping ? 'is-disabled' : ''}><input type="radio" name="fulfillment" value="shipping" checked={effectiveFulfillment === 'shipping'} disabled={!supportsShipping} onChange={() => setFulfillment('shipping')} /><span><strong>Ship my order</strong><small>Shipping cost and tax are confirmed before payment.</small></span></label></div></section>
             <section><h2>Contact</h2><div className="catalog-form-grid"><label>Full name<input required autoComplete="name" value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} /></label><label>Email<input required type="email" autoComplete="email" value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} /></label><label>Mobile phone<input required type="tel" autoComplete="tel" value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} /></label></div></section>
-            {fulfillment === 'shipping' ? <section><h2>Shipping address</h2><div className="catalog-form-grid"><label className="catalog-form-wide">Address<input required autoComplete="street-address" value={address.line1} onChange={(event) => setAddress({ ...address, line1: event.target.value })} /></label><label className="catalog-form-wide">Apartment or suite <span>Optional</span><input value={address.line2} onChange={(event) => setAddress({ ...address, line2: event.target.value })} /></label><label>City<input required value={address.city} onChange={(event) => setAddress({ ...address, city: event.target.value })} /></label><label>State<input required value={address.state} onChange={(event) => setAddress({ ...address, state: event.target.value })} /></label><label>ZIP code<input required inputMode="numeric" value={address.postalCode} onChange={(event) => setAddress({ ...address, postalCode: event.target.value })} /></label></div></section> : null}
+            {effectiveFulfillment === 'shipping' ? <section><h2>Shipping address</h2><div className="catalog-form-grid"><label className="catalog-form-wide">Address<input required autoComplete="street-address" value={address.line1} onChange={(event) => setAddress({ ...address, line1: event.target.value })} /></label><label className="catalog-form-wide">Apartment or suite <span>Optional</span><input value={address.line2} onChange={(event) => setAddress({ ...address, line2: event.target.value })} /></label><label>City<input required value={address.city} onChange={(event) => setAddress({ ...address, city: event.target.value })} /></label><label>State<input required value={address.state} onChange={(event) => setAddress({ ...address, state: event.target.value })} /></label><label>ZIP code<input required inputMode="numeric" value={address.postalCode} onChange={(event) => setAddress({ ...address, postalCode: event.target.value })} /></label></div></section> : null}
             <p className="checkout-prototype-note">This preview records an order request. Live card payment will be added through a regulated processor before production checkout is enabled.</p>
-            <button className="button" type="button" disabled={!contactReady || !addressReady} onClick={submit}>{fulfillment === 'pickup' ? 'Submit pickup request' : 'Submit shipping request'}</button>
+            <button className="button" type="button" disabled={!contactReady || !addressReady} onClick={submit}>{effectiveFulfillment === 'pickup' ? 'Submit pickup request' : 'Submit shipping request'}</button>
           </main>
-          <aside className="commerce-order-summary commerce-order-summary-v3"><p className="eyebrow">Order summary</p>{lines.map((line) => <div className="commerce-checkout-line" key={`${line.product.id}-${line.variant.id}`}><span>{line.item.quantity} × {line.product.name}<small>{line.variant.name}</small></span><strong>{formatMoney(line.variant.priceCents * line.item.quantity)}</strong></div>)}<dl><div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Shipping and tax</dt><dd>{fulfillment === 'pickup' ? 'Not included' : 'Confirmed before payment'}</dd></div></dl></aside>
+          <aside className="commerce-order-summary commerce-order-summary-v3"><p className="eyebrow">Order summary</p>{lines.map((line) => <div className="commerce-checkout-line" key={`${line.product.id}-${line.variant.id}`}><span>{line.item.quantity} × {line.product.name}<small>{line.variant.name}</small></span><strong>{formatMoney(line.variant.priceCents * line.item.quantity)}</strong></div>)}<dl><div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Shipping and tax</dt><dd>{effectiveFulfillment === 'pickup' ? 'Not included' : 'Confirmed before payment'}</dd></div></dl></aside>
         </div> : <div className="commerce-empty-catalog"><h2>Your cart is empty.</h2><a className="button" href="/shop">Browse products</a></div>}
       </div>
     </section>
