@@ -1,18 +1,18 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { bookingPaths, business } from '../data/site';
+import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
 import { originalAssets } from '../data/visuals';
 
 const primaryNavigation = [
   ['Services', '/services'],
   ['Gallery', '/gallery'],
-  ['About', '/team'],
+  ['Crew', '/team'],
   ['Shop', '/shop'],
 ] as const;
 
 const secondaryNavigation = [
-  ['Meet the team', '/team'],
-  ['Visit the shop', '/visit'],
-  ['Client reviews', '/reviews'],
+  ['Visit', '/visit'],
+  ['Reviews', '/reviews'],
 ] as const;
 
 const socialLinks = [
@@ -21,20 +21,11 @@ const socialLinks = [
 ] as const;
 
 function isCurrentRoute(currentPath: string, href: string) {
-  if (href.includes('#')) return false;
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
-function handleSectionLink(event: MouseEvent<HTMLAnchorElement>, href: string) {
-  if (!href.startsWith('/#') || window.location.pathname !== '/') return;
-
-  const section = document.getElementById(href.slice(2));
-  if (!section) return;
-
-  event.preventDefault();
+function closeMobileMenu(event: MouseEvent<HTMLAnchorElement>) {
   event.currentTarget.closest('details')?.removeAttribute('open');
-  window.history.replaceState(null, '', href.slice(1));
-  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export function Arrow() {
@@ -42,7 +33,7 @@ export function Arrow() {
 }
 
 function getBookingLabel(type: 'barber' | 'styling') {
-  return type === 'barber' ? 'Book with Barber' : 'Book with Stylist';
+  return type === 'barber' ? 'Book with Barber' : 'Book with Loctician';
 }
 
 function ProviderBookingActions({ mobile = false }: { mobile?: boolean }) {
@@ -73,13 +64,14 @@ function Header({ currentPath }: { currentPath: string }) {
             518 Main Street · Downtown Stroudsburg
           </a>
           <span className="utility-hours">
-            Appointment based · Walk-ins when availability allows
+            {shopHoursSummary} · {shopClosedSummary}
           </span>
           <a className="utility-phone" href={business.phoneHref}>
             Call {business.phone}
           </a>
         </div>
       </div>
+
       <header className="site-header">
         <div className="container header-inner header-inner-branded">
           <a className="brand brand-lockup" href="/" aria-label="The Kut Shoppe home">
@@ -101,11 +93,7 @@ function Header({ currentPath }: { currentPath: string }) {
                     const current = isCurrentRoute(currentPath, href);
                     return (
                       <li key={href}>
-                        <a
-                          href={href}
-                          aria-current={current ? 'page' : undefined}
-                          onClick={(event) => handleSectionLink(event, href)}
-                        >
+                        <a href={href} aria-current={current ? 'page' : undefined}>
                           {label}
                         </a>
                       </li>
@@ -138,33 +126,49 @@ function Header({ currentPath }: { currentPath: string }) {
             </summary>
             <nav aria-label="Mobile navigation">
               <div className="mobile-nav-heading">
-                <span>Explore</span>
+                <span>Menu</span>
                 <strong>The Kut Shoppe</strong>
               </div>
-              {primaryNavigation.map(([label, href]) => {
-                const current = isCurrentRoute(currentPath, href);
-                return (
-                  <a
-                    key={href}
-                    href={href}
-                    aria-current={current ? 'page' : undefined}
-                    onClick={(event) => handleSectionLink(event, href)}
-                  >
+
+              <div className="mobile-primary-links">
+                {primaryNavigation.map(([label, href]) => {
+                  const current = isCurrentRoute(currentPath, href);
+                  return (
+                    <a
+                      key={href}
+                      href={href}
+                      aria-current={current ? 'page' : undefined}
+                      onClick={closeMobileMenu}
+                    >
+                      {label}
+                      <Arrow />
+                    </a>
+                  );
+                })}
+              </div>
+
+              <div className="mobile-secondary-links">
+                {secondaryNavigation.map(([label, href]) => (
+                  <a key={href} href={href} onClick={closeMobileMenu}>
                     {label}
                     <Arrow />
                   </a>
-                );
-              })}
-              <div className="mobile-secondary-links">
-                {secondaryNavigation.map(([label, href]) => (
-                  <a key={href} href={href}>{label}</a>
                 ))}
               </div>
+
+              <div className="mobile-hours-card">
+                <span>Shop hours</span>
+                <strong>{shopHoursSummary}</strong>
+                <strong>{shopClosedSummary}</strong>
+                <small>{shopHoursNote}</small>
+              </div>
+
               <div className="mobile-booking-group">
-                <span>Book directly</span>
+                <span>Appointments</span>
                 <ProviderBookingActions mobile />
               </div>
-              <a className="mobile-call-link" href={business.phoneHref}>
+
+              <a className="mobile-call-link" href={business.phoneHref} onClick={closeMobileMenu}>
                 Call {business.phone}
               </a>
             </nav>
@@ -211,12 +215,18 @@ function Footer() {
           <a href="/visit">Directions and visit details <Arrow /></a>
         </div>
 
+        <div className="footer-hours-block">
+          <p className="footer-heading">Hours</p>
+          <strong>{shopHoursSummary}</strong>
+          <strong>{shopClosedSummary}</strong>
+          <small>{shopHoursNote}</small>
+        </div>
+
         <nav className="footer-link-group" aria-label="Explore The Kut Shoppe">
           <p className="footer-heading">Explore</p>
           <a href="/services">Services and pricing</a>
           <a href="/gallery">Full gallery</a>
           <a href="/team">Meet the crew</a>
-          <a href="/team">About the shop</a>
           <a href="/shop">Shop</a>
         </nav>
 
