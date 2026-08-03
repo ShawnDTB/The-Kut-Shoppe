@@ -2,10 +2,17 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { business } from '../data/site';
 import {
   shopClosedSummary,
+  shopHours,
   shopHoursNote,
   shopHoursSummary,
 } from '../data/hours';
 import { originalAssets } from '../data/visuals';
+import {
+  getPlatformSessionAccount,
+  subscribeToPlatformAuth,
+  type PlatformAccount,
+} from '../data/auth-v2';
+import { readCart, subscribeToStorefrontChanges } from '../data/storefront';
 
 const primaryNavigation = [
   ['Services', '/services'],
@@ -28,20 +35,46 @@ function isCurrentRoute(currentPath: string, href: string) {
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
+function accountLabel(account: PlatformAccount | null) {
+  if (!account) return 'Account / Login';
+  if (account.role === 'customer') return account.name.trim().split(/\s+/)[0] || 'Account';
+  return `${account.role.charAt(0).toUpperCase()}${account.role.slice(1)} dashboard`;
+}
+
 export function Arrow() {
   return <span aria-hidden="true">→</span>;
 }
 
-function CustomerActions({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
+function CustomerActions({
+  account,
+  cartCount,
+  mobile = false,
+  onNavigate,
+}: {
+  account: PlatformAccount | null;
+  cartCount: number;
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
+  const accountHref = account && account.role !== 'customer' ? '/dashboard' : '/account';
   return (
     <div className={mobile ? 'customer-header-actions customer-header-actions-mobile' : 'customer-header-actions'}>
       <a className="customer-action customer-action-book" href="/book" onClick={onNavigate}>Book now</a>
-      <a className="customer-action customer-action-account" href="/account" onClick={onNavigate}>Account / Login</a>
+      <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a>
+      <a className="customer-action customer-action-account" href={accountHref} onClick={onNavigate}>{accountLabel(account)}</a>
     </div>
   );
 }
 
-function MobileNavigation({ currentPath }: { currentPath: string }) {
+function MobileNavigation({
+  currentPath,
+  account,
+  cartCount,
+}: {
+  currentPath: string;
+  account: PlatformAccount | null;
+  cartCount: number;
+}) {
   const [open, setOpen] = useState(false);
   const drawerId = useId();
   const drawerRef = useRef<HTMLElement>(null);
@@ -99,13 +132,12 @@ function MobileNavigation({ currentPath }: { currentPath: string }) {
                 })}
               </div>
               <div className="mobile-secondary-links">{secondaryNavigation.map(([label, href]) => <a key={href} href={href} onClick={close}>{label}<Arrow /></a>)}</div>
-              <div className="mobile-booking-group"><span>Book and manage</span><CustomerActions mobile onNavigate={close} /></div>
-              <div className="mobile-hours-card mobile-hours-card-compact">
+              <div className="mobile-booking-group"><span>Book, shop, and manage</span><CustomerActions account={account} cartCount={cartCount} mobile onNavigate={close} /></div>
+              <div className="mobile-hours-card mobile-hours-card-detailed">
                 <div className="mobile-hours-heading"><span>Shop hours</span><small>Walk-in reference</small></div>
-                <strong>{shopHoursSummary}</strong>
-                <span>{shopClosedSummary}</span>
+                <dl>{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl>
                 <small>{shopHoursNote}</small>
-                <a href="/visit" onClick={close}>View full hours and directions <Arrow /></a>
+                <a href="/visit" onClick={close}>Directions and visit details <Arrow /></a>
               </div>
               <a className="mobile-call-link" href={business.phoneHref} onClick={close}>Call {business.phone}</a>
             </nav>
@@ -117,6 +149,20 @@ function MobileNavigation({ currentPath }: { currentPath: string }) {
 }
 
 function Header({ currentPath }: { currentPath: string }) {
+  const [account, setAccount] = useState<PlatformAccount | null>(() => getPlatformSessionAccount());
+  const [cartCount, setCartCount] = useState(() => readCart().reduce((total, item) => total + item.quantity, 0));
+
+  useEffect(() => {
+    const refreshAccount = () => setAccount(getPlatformSessionAccount());
+    const refreshCart = () => setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));
+    const unsubscribeAuth = subscribeToPlatformAuth(refreshAccount);
+    const unsubscribeStore = subscribeToStorefrontChanges(refreshCart);
+    return () => {
+      unsubscribeAuth();
+      unsubscribeStore();
+    };
+  }, []);
+
   return (
     <>
       <div className="utility-bar">
@@ -142,11 +188,11 @@ function Header({ currentPath }: { currentPath: string }) {
             </div>
             <div className="header-actions header-actions-direct">
               <a className="header-call" href={business.phoneHref} aria-label={`Call The Kut Shoppe at ${business.phone}`}><span className="header-call-label">Call the shop</span><strong>{business.phone}</strong></a>
-              <CustomerActions />
+              <CustomerActions account={account} cartCount={cartCount} />
             </div>
           </div>
 
-          <MobileNavigation currentPath={currentPath} />
+          <MobileNavigation currentPath={currentPath} account={account} cartCount={cartCount} />
         </div>
       </header>
     </>
