@@ -19,13 +19,15 @@ import './final-detail-pass.css';
 import './final-mobile-performance-pass.css';
 import './customer-platform.css';
 import './booking-platform.css';
+import './account-prototype.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { AccountPage, ShopPage } from './components/CustomerPlatformPages';
+import { ShopPage } from './components/CustomerPlatformPages';
 import { InternalBookingPage } from './components/InternalBookingPage';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
+import { CustomerAccountPrototype } from './components/CustomerAccountPrototype';
 
 interface AppProps {
   url: string;
@@ -94,7 +96,7 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/shop' ? (
         <ShopPage />
       ) : normalizedUrl === '/account' ? (
-        <AccountPage />
+        <CustomerAccountPrototype />
       ) : isStaffRoute ? (
         <StaffPlatformPage path={normalizedUrl} />
       ) : (
