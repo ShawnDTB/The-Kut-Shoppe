@@ -75,7 +75,6 @@ function Header({ currentPath }: { currentPath: string }) {
         </div>
       </div>
       <header className="site-header">
-        <div className="header-ornament" aria-hidden="true" />
         <div className="container header-inner header-inner-branded">
           <a className="brand brand-lockup" href="/" aria-label="The Kut Shoppe home">
             <span className="brand-emblem">
@@ -87,20 +86,23 @@ function Header({ currentPath }: { currentPath: string }) {
             </span>
           </a>
 
-          <nav className="desktop-nav" aria-label="Primary navigation">
-            <ul className="nav-list nav-list-branded">
-              {primaryNavigation.map(([label, href]) => {
-                const current = isCurrentRoute(currentPath, href);
-                return (
-                  <li key={href}>
-                    <a href={href} aria-current={current ? 'page' : undefined}>
-                      {label}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          <div className="menu-surface">
+            <span className="menu-wordmark-pattern" aria-hidden="true" />
+            <nav className="desktop-nav" aria-label="Primary navigation">
+              <ul className="nav-list nav-list-branded">
+                {primaryNavigation.map(([label, href]) => {
+                  const current = isCurrentRoute(currentPath, href);
+                  return (
+                    <li key={href}>
+                      <a href={href} aria-current={current ? 'page' : undefined}>
+                        {label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          </div>
 
           <div className="header-actions">
             <a
