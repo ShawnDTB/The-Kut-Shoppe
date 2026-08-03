@@ -59,6 +59,10 @@ const serviceBookingCopy: Record<string, string> = {
   '/services/color-scalp-care': 'Ask about color, washing, detangling, drying, scalp care, and related hair-care services.',
 };
 
+const bookingHoursLabel = shopHours
+  .map((entry) => `${entry.days}: ${entry.hours}`)
+  .join(' · ');
+
 export function BookingPage() {
   return (
     <section className="section customer-platform-page booking-platform-page">
@@ -204,6 +208,7 @@ export function BookingPage() {
             <p className="eyebrow">Need help choosing?</p>
             <h2>Call and we will point you to the right chair.</h2>
             <p>{shopHoursSummary} · {shopClosedSummary}</p>
+            <small>{bookingHoursLabel}</small>
           </div>
           <a className="button" href={business.phoneHref}>Call {business.phone}</a>
         </section>
