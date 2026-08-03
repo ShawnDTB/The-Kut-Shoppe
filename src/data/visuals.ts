@@ -5,7 +5,7 @@ export const originalAssets = {
   logo: `${mediaRoot}/a2e8fdecb672406ba74a28a19b4063-the-kut-shoppe-llc-logo-5175fdd512c54b42b4da939b84353a-booksy.png`,
   hero: [
     `${mediaRoot}/Screenshot_20221226_011226.png`,
-    `${mediaRoot}/at-the-barbershop-K5M6JXZ.jpg`,
+    `${mediaRoot}/Screenshot_20221226_010224.png`,
     `${mediaRoot}/116349555_2729516800613989_1244638744107863079_n.jpg`,
     `${mediaRoot}/248722629_609910650359815_1940157589140309591_n.jpg`,
   ],
