@@ -7,4 +7,4 @@ export const seniorServicePrices = [
   { name: 'HAIRLINE AND FACE SHAPE-UP', price: '$25' },
 ] as const;
 
-export const seniorPricingNote = '';
+export const seniorPricingNote = 'Senior services are for clients ages 65 and up.';
