@@ -1,6 +1,14 @@
 import type { ReactNode } from 'react';
-import { business, navigation } from '../data/site';
+import { business } from '../data/site';
 import { originalAssets } from '../data/visuals';
+
+const primaryNavigation = [
+  ['Services', '/services'],
+  ['Gallery', '/gallery'],
+  ['Team', '/team'],
+  ['About', '/about'],
+  ['Visit', '/visit'],
+] as const;
 
 export function Arrow() {
   return <span aria-hidden="true">→</span>;
@@ -24,7 +32,7 @@ function Header() {
           </a>
           <nav className="desktop-nav" aria-label="Primary navigation">
             <ul className="nav-list">
-              {navigation.map(([label, href]) => (
+              {primaryNavigation.map(([label, href]) => (
                 <li key={href}>
                   <a href={href}>{label}</a>
                 </li>
@@ -40,7 +48,7 @@ function Header() {
           <details className="mobile-nav">
             <summary aria-label="Open navigation">Menu</summary>
             <nav aria-label="Mobile navigation">
-              {navigation.map(([label, href]) => (
+              {primaryNavigation.map(([label, href]) => (
                 <a key={href} href={href}>
                   {label}
                 </a>
