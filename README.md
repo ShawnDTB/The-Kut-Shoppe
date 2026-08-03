@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./public/favicon.svg" alt="The Kut Shoppe mark" width="88" height="88" />
+  <img src="https://www.thekutshoppe.com/wp-content/uploads/2023/11/a2e8fdecb672406ba74a28a19b4063-the-kut-shoppe-llc-logo-5175fdd512c54b42b4da939b84353a-booksy.png" alt="The Kut Shoppe logo" width="112" height="112" />
   <h1>The Kut Shoppe</h1>
   <p><strong>Fresh cuts. Great conversations. Right here on Main Street.</strong></p>
   <p>A modern, GitHub-managed website for The Kut Shoppe in downtown Stroudsburg, Pennsylvania.</p>
