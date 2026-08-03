@@ -1,6 +1,11 @@
-import type { MouseEvent, ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { bookingPaths, business } from '../data/site';
-import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
+import {
+  shopClosedSummary,
+  shopHours,
+  shopHoursNote,
+  shopHoursSummary,
+} from '../data/hours';
 import { originalAssets } from '../data/visuals';
 
 const primaryNavigation = [
@@ -24,10 +29,6 @@ function isCurrentRoute(currentPath: string, href: string) {
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
-function closeMobileMenu(event: MouseEvent<HTMLAnchorElement>) {
-  event.currentTarget.closest('details')?.removeAttribute('open');
-}
-
 export function Arrow() {
   return <span aria-hidden="true">→</span>;
 }
@@ -36,7 +37,13 @@ function getBookingLabel(type: 'barber' | 'styling') {
   return type === 'barber' ? 'Book with Barber' : 'Book with Loctician';
 }
 
-function ProviderBookingActions({ mobile = false }: { mobile?: boolean }) {
+function ProviderBookingActions({
+  mobile = false,
+  onNavigate,
+}: {
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
   return (
     <div className={mobile ? 'provider-booking-actions provider-booking-actions-mobile' : 'provider-booking-actions'}>
       {bookingPaths.map((path) => (
@@ -46,10 +53,121 @@ function ProviderBookingActions({ mobile = false }: { mobile?: boolean }) {
           key={path.id}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={onNavigate}
         >
           <span>{getBookingLabel(path.type)}</span>
         </a>
       ))}
+    </div>
+  );
+}
+
+function MobileNavigation({ currentPath }: { currentPath: string }) {
+  const [open, setOpen] = useState(false);
+  const drawerId = useId();
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  const close = () => setOpen(false);
+
+  return (
+    <div className={`mobile-navigation${open ? ' is-open' : ''}`}>
+      <button
+        className="mobile-nav-trigger"
+        type="button"
+        aria-expanded={open}
+        aria-controls={drawerId}
+        onClick={() => setOpen(true)}
+      >
+        <span className="mobile-menu-icon" aria-hidden="true">
+          <i />
+          <i />
+        </span>
+        <span>Menu</span>
+      </button>
+
+      {open ? (
+        <div className="mobile-nav-overlay">
+          <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" onClick={close} />
+          <aside className="mobile-nav-drawer" id={drawerId} aria-modal="true" aria-label="Site navigation">
+            <div className="mobile-drawer-header">
+              <a className="mobile-drawer-brand" href="/" onClick={close}>
+                <img src={originalAssets.logo} alt="" width="58" height="58" />
+                <span>
+                  <strong>The Kut Shoppe</strong>
+                  <small>Downtown Stroudsburg</small>
+                </span>
+              </a>
+              <button className="mobile-nav-close" type="button" aria-label="Close navigation" onClick={close}>
+                <span aria-hidden="true" />
+              </button>
+            </div>
+
+            <nav className="mobile-drawer-content" aria-label="Mobile navigation">
+              <div className="mobile-primary-links">
+                {primaryNavigation.map(([label, href]) => {
+                  const current = isCurrentRoute(currentPath, href);
+                  return (
+                    <a key={href} href={href} aria-current={current ? 'page' : undefined} onClick={close}>
+                      {label}
+                      <Arrow />
+                    </a>
+                  );
+                })}
+              </div>
+
+              <div className="mobile-secondary-links">
+                {secondaryNavigation.map(([label, href]) => (
+                  <a key={href} href={href} onClick={close}>
+                    {label}
+                    <Arrow />
+                  </a>
+                ))}
+              </div>
+
+              <div className="mobile-hours-card">
+                <div className="mobile-hours-heading">
+                  <span>Shop hours</span>
+                  <small>Walk-in reference</small>
+                </div>
+                <dl>
+                  {shopHours.map((entry) => (
+                    <div key={entry.days}>
+                      <dt>{entry.days}</dt>
+                      <dd>{entry.hours}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <small>{shopHoursNote}</small>
+              </div>
+
+              <div className="mobile-booking-group">
+                <span>Appointments</span>
+                <ProviderBookingActions mobile onNavigate={close} />
+              </div>
+
+              <a className="mobile-call-link" href={business.phoneHref} onClick={close}>
+                Call {business.phone}
+              </a>
+            </nav>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -85,7 +203,6 @@ function Header({ currentPath }: { currentPath: string }) {
           </a>
 
           <div className="header-navigation-surface">
-            <span className="menu-signature" aria-hidden="true" />
             <div className="menu-surface">
               <nav className="desktop-nav" aria-label="Primary navigation">
                 <ul className="nav-list nav-list-branded">
@@ -116,63 +233,7 @@ function Header({ currentPath }: { currentPath: string }) {
             </div>
           </div>
 
-          <details className="mobile-nav mobile-nav-branded">
-            <summary aria-label="Open navigation">
-              <span className="mobile-menu-icon" aria-hidden="true">
-                <i />
-                <i />
-              </span>
-              <span>Menu</span>
-            </summary>
-            <nav aria-label="Mobile navigation">
-              <div className="mobile-nav-heading">
-                <span>Menu</span>
-                <strong>The Kut Shoppe</strong>
-              </div>
-
-              <div className="mobile-primary-links">
-                {primaryNavigation.map(([label, href]) => {
-                  const current = isCurrentRoute(currentPath, href);
-                  return (
-                    <a
-                      key={href}
-                      href={href}
-                      aria-current={current ? 'page' : undefined}
-                      onClick={closeMobileMenu}
-                    >
-                      {label}
-                      <Arrow />
-                    </a>
-                  );
-                })}
-              </div>
-
-              <div className="mobile-secondary-links">
-                {secondaryNavigation.map(([label, href]) => (
-                  <a key={href} href={href} onClick={closeMobileMenu}>
-                    {label}
-                    <Arrow />
-                  </a>
-                ))}
-              </div>
-
-              <div className="mobile-hours-card">
-                <span>Shop hours</span>
-                <strong>{shopHoursSummary}</strong>
-                <strong>{shopClosedSummary}</strong>
-                <small>{shopHoursNote}</small>
-              </div>
-
-              <div className="mobile-booking-group">
-                <span>Appointments</span>
-                <ProviderBookingActions mobile />
-              </div>
-
-              <a className="mobile-call-link" href={business.phoneHref} onClick={closeMobileMenu}>
-                Call {business.phone}
-              </a>
-            </nav>
-          </details>
+          <MobileNavigation currentPath={currentPath} />
         </div>
       </header>
     </>
