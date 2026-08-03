@@ -32,6 +32,7 @@ function handleSectionLink(event: MouseEvent<HTMLAnchorElement>, href: string) {
   if (!section) return;
 
   event.preventDefault();
+  event.currentTarget.closest('details')?.removeAttribute('open');
   window.history.replaceState(null, '', href.slice(1));
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
