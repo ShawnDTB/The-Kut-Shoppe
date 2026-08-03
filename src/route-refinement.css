@@ -1,0 +1,38 @@
+.route-wide {
+  width: min(calc(100% - 2.5rem), var(--container));
+}
+
+.about-route-layout {
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(3rem, 8vw, 8rem);
+}
+
+.about-route-copy h2 {
+  max-width: 14ch;
+}
+
+.about-route-copy p {
+  color: var(--muted);
+}
+
+.about-route-copy .button {
+  margin-top: 1rem;
+}
+
+.about-route-image img {
+  aspect-ratio: 1 / 1;
+}
+
+@media (max-width: 800px) {
+  .about-route-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .route-wide {
+    width: min(calc(100% - 1.5rem), var(--container));
+  }
+}
