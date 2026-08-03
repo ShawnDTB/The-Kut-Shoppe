@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
+  getPlatformSessionAccount,
+  hasPlatformCapability,
+  subscribeToPlatformAuth,
+  type PlatformAccount,
+} from '../data/auth-v2';
+import {
+  ensureDevelopmentStorefrontSeed,
+  isDevelopmentPreviewProduct,
+} from '../data/development-storefront-seed';
+import {
   addToCart,
   formatMoney,
   getAvailableStock,
@@ -33,15 +43,44 @@ function cartQuantity(cart: CartItem[], productId: string) {
 export function StorefrontV2() {
   const [products, setProducts] = useState(() => readProducts().filter((product) => product.status === 'published'));
   const [cart, setCart] = useState(() => readCart());
+  const [account, setAccount] = useState<PlatformAccount | null>(() => getPlatformSessionAccount());
   const [category, setCategory] = useState<CategoryFilter>('All');
   const [message, setMessage] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
 
-  useEffect(() => subscribeToStorefrontChanges(() => {
-    setProducts(readProducts().filter((product) => product.status === 'published'));
-    setCart(readCart());
-  }), []);
+  useEffect(() => {
+    const seeded = ensureDevelopmentStorefrontSeed();
+    if (seeded) {
+      setProducts(readProducts().filter((product) => product.status === 'published'));
+      setCart(readCart());
+    }
+    const unsubscribeStore = subscribeToStorefrontChanges(() => {
+      setProducts(readProducts().filter((product) => product.status === 'published'));
+      setCart(readCart());
+    });
+    const unsubscribeAuth = subscribeToPlatformAuth(() => setAccount(getPlatformSessionAccount()));
+    return () => {
+      unsubscribeStore();
+      unsubscribeAuth();
+    };
+  }, []);
 
+  useEffect(() => {
+    if (!cartOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setCartOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [cartOpen]);
+
+  const canManageProducts = hasPlatformCapability(account, 'manage-products');
+  const canManageOrders = hasPlatformCapability(account, 'manage-orders');
   const filtered = category === 'All' ? products : products.filter((product) => product.category === category);
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const resolvedCart = cart.flatMap((item) => {
@@ -68,21 +107,27 @@ export function StorefrontV2() {
   return (
     <section className="section storefront-v2-page platform-pattern platform-pattern-products">
       <div className="container route-wide">
-        <header className="storefront-v2-header">
-          <div><p className="eyebrow">The Kut Shoppe Shop</p><h1>Products from the shop.</h1><p>Grooming, hair care, accessories, books and approved Kut Shoppe merchandise.</p></div>
-          <button className="storefront-v2-cart-button" type="button" onClick={() => setCartOpen(true)}><span>Cart</span><strong>{cartCount}</strong></button>
+        <header className="storefront-v2-header storefront-v2-header-compact">
+          <div className="storefront-v2-title"><p className="eyebrow">The Kut Shoppe Shop</p><h1>Products</h1><p>Published grooming, hair-care, accessory, book, tool, and Kut Shoppe merchandise inventory.</p></div>
+          <div className="storefront-v2-utility">
+            {canManageProducts || canManageOrders ? <nav className="storefront-v2-management" aria-label="Store management">{canManageProducts ? <a href="/admin/products">Manage products</a> : null}{canManageOrders ? <a href="/admin/orders">Manage orders</a> : null}</nav> : null}
+            <button className="storefront-v2-cart-button" type="button" onClick={() => setCartOpen(true)}><span>Cart</span><strong>{cartCount}</strong></button>
+          </div>
         </header>
 
-        <nav className="storefront-v2-filters" aria-label="Product categories">
-          <button className={category === 'All' ? 'is-active' : ''} type="button" onClick={() => setCategory('All')}>All <span>{products.length}</span></button>
-          {productCategories.map((item) => {
-            const count = products.filter((product) => product.category === item).length;
-            if (!count) return null;
-            return <button className={category === item ? 'is-active' : ''} type="button" key={item} onClick={() => setCategory(item)}>{item} <span>{count}</span></button>;
-          })}
-        </nav>
+        <div className="storefront-v2-catalog-bar">
+          <nav className="storefront-v2-filters" aria-label="Product categories">
+            <button className={category === 'All' ? 'is-active' : ''} type="button" onClick={() => setCategory('All')}>All <span>{products.length}</span></button>
+            {productCategories.map((item) => {
+              const count = products.filter((product) => product.category === item).length;
+              if (!count) return null;
+              return <button className={category === item ? 'is-active' : ''} type="button" key={item} onClick={() => setCategory(item)}>{item} <span>{count}</span></button>;
+            })}
+          </nav>
+          {import.meta.env.DEV && products.some(isDevelopmentPreviewProduct) ? <p className="storefront-v2-preview-note">Preview products are local test records and can be edited or deleted from Manage Products.</p> : null}
+        </div>
 
-        {message ? <div className="storefront-v2-toast" role="status"><span>{message}</span><button type="button" onClick={() => setMessage('')} aria-label="Dismiss cart message">×</button></div> : null}
+        {message ? <div className="storefront-v2-toast" role="status" aria-live="polite"><span>{message}</span><button type="button" onClick={() => setMessage('')} aria-label="Dismiss cart message">×</button></div> : null}
 
         {filtered.length ? (
           <div className="storefront-v2-grid">
@@ -91,10 +136,12 @@ export function StorefrontV2() {
               const activeVariants = product.variants.filter((variant) => variant.active);
               const available = activeVariants.reduce((total, variant) => total + getAvailableStock(product, variant), 0);
               const inCart = cartQuantity(cart, product.id);
+              const preview = isDevelopmentPreviewProduct(product);
               return (
-                <article className="storefront-v2-card" key={product.id}>
+                <article className={preview ? 'storefront-v2-card is-preview' : 'storefront-v2-card'} key={product.id}>
                   <a className="storefront-v2-media" href={`/shop/${product.slug}`} aria-label={`View ${product.name}`}>
                     {image ? <img src={image.src} alt={image.alt || product.name} loading="lazy" decoding="async" /> : <span aria-hidden="true">{product.category.slice(0, 1)}</span>}
+                    {preview ? <em>Preview</em> : null}
                     {inCart ? <strong>{inCart} in cart</strong> : null}
                   </a>
                   <div className="storefront-v2-card-copy">
@@ -102,14 +149,14 @@ export function StorefrontV2() {
                     <p>{product.description}</p>
                     <div className="storefront-v2-product-meta"><strong>{productPrice(product)}</strong><span>{activeVariants.length > 1 ? `${activeVariants.length} options` : activeVariants[0]?.name !== 'Default' ? activeVariants[0]?.name : 'One option'}</span></div>
                     <div className="storefront-v2-badges">{product.pickupEnabled ? <span>Pickup</span> : null}{product.shippingEnabled ? <span>Shipping</span> : null}{available <= 0 ? <span>Out of stock</span> : null}</div>
-                    <div className="storefront-v2-card-actions"><a className="button button-secondary" href={`/shop/${product.slug}`}>{activeVariants.length > 1 ? 'Choose options' : 'View product'}</a><button className="button" type="button" disabled={available <= 0} onClick={() => quickAdd(product)}>{activeVariants.length > 1 ? 'Select option' : inCart ? 'Add another' : 'Add to cart'}</button></div>
+                    <div className="storefront-v2-card-actions"><a className="button button-secondary" href={`/shop/${product.slug}`}>{activeVariants.length > 1 ? 'Choose options' : 'View details'}</a><button className="button" type="button" disabled={available <= 0} onClick={() => quickAdd(product)}>{activeVariants.length > 1 ? 'Select option' : inCart ? 'Add another' : 'Add to cart'}</button></div>
                   </div>
                 </article>
               );
             })}
           </div>
         ) : (
-          <div className="storefront-v2-empty"><p className="eyebrow">Current catalog</p><h2>{products.length ? 'No products match this category.' : 'Products are being prepared.'}</h2><p>{products.length ? 'Choose another category to continue browsing.' : 'The shop will publish verified products, prices and inventory here as they become available.'}</p>{products.length ? <button className="button button-secondary" type="button" onClick={() => setCategory('All')}>View all products</button> : null}</div>
+          <div className="storefront-v2-empty"><p className="eyebrow">Current catalog</p><h2>{products.length ? 'No products match this category.' : 'No products are published yet.'}</h2><p>{products.length ? 'Choose another category to continue browsing.' : 'Authorized shop accounts can add and publish the first product from Manage Products.'}</p>{products.length ? <button className="button button-secondary" type="button" onClick={() => setCategory('All')}>View all products</button> : canManageProducts ? <a className="button" href="/admin/products">Manage products</a> : null}</div>
         )}
       </div>
 
