@@ -116,7 +116,7 @@ export interface StoreOrder {
   updatedAt: string;
 }
 
-export const productIdeaTemplates: ProductPreset[] = [
+const baseProductIdeaTemplates: ProductPreset[] = [
   {
     id: 'template-accessory',
     name: 'Durag or wearable accessory',
@@ -167,7 +167,10 @@ export const productIdeaTemplates: ProductPreset[] = [
     variantNames: ['Default'],
     createdAt: '',
   },
-].sort((a, b) => a.name.localeCompare(b.name));
+];
+
+export const productIdeaTemplates: ProductPreset[] = baseProductIdeaTemplates
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 export const storefrontStorageKeys = {
   products: 'kut-shoppe.products.v2',
