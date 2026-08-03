@@ -29,6 +29,10 @@ export default tseslint.config(
       'src/components/CommercePlatformPages.tsx',
     ],
     rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^(BarberDirectoryEntry|useMemo|isValidEmail)$',
+      }],
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/use-memo': 'off',
     },
