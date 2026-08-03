@@ -1,6 +1,7 @@
 import './styles.css';
 import './refinement.css';
 import './route-refinement.css';
+import './navigation.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
@@ -14,7 +15,7 @@ export function App({ url }: AppProps) {
   const route = findRoute(url);
 
   return (
-    <SiteLayout>
+    <SiteLayout currentPath={route.path}>
       {route.path === '/' ? (
         <HomePage />
       ) : route.path === '/book' ? (
