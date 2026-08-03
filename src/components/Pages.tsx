@@ -15,16 +15,16 @@ const instagramUrl = 'https://www.instagram.com/thekutshoppe/';
 
 const routePresentation: Partial<Record<string, { heading: string; intro: string }>> = {
   '/services': {
-    heading: 'Current barber pricing and clear styling links.',
-    intro: 'Booksy is the current source for barber service names, prices, durations, staff, and availability. Crowned by Steph maintains styling through GlossGenius.',
+    heading: 'Services and pricing.',
+    intro: 'See the current barber menu below, or book locs, braids, twists, and styling directly with Crowned by Steph.',
   },
   '/team': {
     heading: 'Meet the professionals behind the shop.',
-    intro: 'Choose a professional, then continue directly to the provider that maintains their current schedule.',
+    intro: 'Choose a professional, then continue directly to the provider that maintains their schedule.',
   },
   '/gallery': {
-    heading: 'Real work from the shop.',
-    intro: 'Browse featured fades, tapers, scissor cuts, beard work, locs, braids, kids cuts, and designs.',
+    heading: 'Cuts and styles from the shop.',
+    intro: 'Browse fades, tapers, scissor cuts, beard work, locs, braids, kids cuts, and designs in one clear gallery.',
   },
   '/shop': {
     heading: 'Products for the look between appointments.',
@@ -81,24 +81,63 @@ export function BookPage() {
 }
 
 function ServicesRoute() {
+  const barberBooking = getBookingPath('barber');
+  const stylingBooking = getBookingPath('styling');
+  const barberPrices = services
+    .filter((category) => category.bookingType === 'barber')
+    .flatMap((category) => category.prices)
+    .filter(
+      (item, index, list) => list.findIndex((candidate) => candidate.name === item.name) === index,
+    );
+  const stylingCategories = services.filter((category) => category.bookingType === 'styling');
+
   return (
-    <div className="route-service-list route-content">
-      {services.map((item, index) => {
-        const booking = getBookingPath(item.bookingType);
-        return (
-          <article className="route-service-row" key={item.route}>
-            <span>0{index + 1}</span>
-            <div>
-              <h2>{item.title}</h2>
-              <p>{item.summary}</p>
-              <small className="service-source-label">Current source: {booking.provider}</small>
-            </div>
-            <a className="text-link" href={item.route}>
-              View category <Arrow />
-            </a>
-          </article>
-        );
-      })}
+    <div className="services-directory route-content">
+      <section className="services-menu-block services-menu-barber" aria-labelledby="barber-menu-heading">
+        <div className="services-menu-heading">
+          <div>
+            <p className="eyebrow">Haircuts, fades, line-ups, and beard work</p>
+            <h2 id="barber-menu-heading">Barber services</h2>
+            <p>Prices and appointment times are shown before you continue to Booksy.</p>
+          </div>
+          <a className="button" href={barberBooking.href} target="_blank" rel="noopener noreferrer">
+            Book barber <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <ul className="services-menu-list">
+          {barberPrices.map((item) => (
+            <li key={item.name}>
+              <span>{item.name}</span>
+              <small>{item.duration}</small>
+              <strong>{item.price}</strong>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="services-menu-block services-menu-styling" aria-labelledby="styling-menu-heading">
+        <div className="services-menu-heading">
+          <div>
+            <p className="eyebrow">Locs, braids, twists, and hair care</p>
+            <h2 id="styling-menu-heading">Styling with Crowned by Steph</h2>
+            <p>Open GlossGenius to see the current service menu, policies, prices, and available times.</p>
+          </div>
+          <a className="button button-secondary" href={stylingBooking.href} target="_blank" rel="noopener noreferrer">
+            Book styling <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <div className="styling-category-grid">
+          {stylingCategories.map((category) => (
+            <article key={category.route}>
+              <h3>{category.title}</h3>
+              <p>{category.summary}</p>
+              <a className="text-link" href={category.route}>
+                Service details <Arrow />
+              </a>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -113,8 +152,8 @@ function ServiceRoute({ path }: { path: string }) {
     <div className="content-panel route-content">
       <div className="service-heading-row">
         <div>
-          <p className="eyebrow">Current source: {booking.provider}</p>
-          <h2>{service.prices.length ? 'Services and pricing' : 'Current services and availability'}</h2>
+          <p className="eyebrow">{booking.provider} booking</p>
+          <h2>{service.prices.length ? 'Services and pricing' : 'Services and availability'}</h2>
         </div>
         <a className="button button-secondary" href={booking.href} target="_blank" rel="noopener noreferrer">
           Open {booking.provider} <span aria-hidden="true">↗</span>
@@ -132,12 +171,10 @@ function ServiceRoute({ path }: { path: string }) {
         </ul>
       ) : (
         <p>
-          {booking.provider} maintains the current service menu, prices, policies, and available appointment times for this category.
+          {booking.provider} maintains the service menu, prices, policies, and available appointment times for this category.
         </p>
       )}
-      <p className="fine-print">
-        Provider information can change independently. The external booking page is the final source at checkout.
-      </p>
+      <p className="fine-print">Confirm final pricing and availability when booking.</p>
     </div>
   );
 }
@@ -204,22 +241,33 @@ function ReviewsRoute() {
 }
 
 function GalleryRoute() {
+  const categories = Array.from(new Set(galleryItems.map((item) => item.category)));
+
   return (
-    <>
-      <div className="gallery-grid gallery-grid-expanded route-content">
-        {galleryItems.map((item, index) => (
-          <figure className={`gallery-item gallery-item-${index + 1}`} key={item.src}>
-            <img src={item.src} alt={item.alt} width="800" height="800" loading="lazy" decoding="async" />
-            <figcaption>{item.category}</figcaption>
+    <div className="route-content gallery-directory">
+      <div className="gallery-category-key" aria-label="Gallery categories">
+        {categories.map((category) => <span key={category}>{category}</span>)}
+      </div>
+      <div className="gallery-catalog">
+        {galleryItems.map((item) => (
+          <figure className="gallery-catalog-card" key={item.src}>
+            <div className="gallery-catalog-image">
+              <img src={item.src} alt={item.alt} width="800" height="800" loading="lazy" decoding="async" />
+            </div>
+            <figcaption>
+              <span>{item.category}</span>
+              <strong>{item.title}</strong>
+            </figcaption>
           </figure>
         ))}
       </div>
-      <div className="centered-action">
+      <div className="gallery-followup">
+        <p>See recent work, shop updates, and new styles on Instagram.</p>
         <a className="button button-secondary" href={instagramUrl} target="_blank" rel="noopener noreferrer">
-          View current Instagram <span aria-hidden="true">↗</span>
+          View Instagram <span aria-hidden="true">↗</span>
         </a>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -292,14 +340,21 @@ export function RoutePage({ url }: { url: string }) {
   const route = findRoute(url);
   const presentation = routePresentation[route.path];
   const hasServiceRoute = services.some((item) => item.route === route.path);
-  const isWideRoute = ['/team', '/gallery', '/shop'].includes(route.path);
+  const isWideRoute = ['/team', '/gallery', '/shop', '/services'].includes(route.path);
+  const pageClass = route.path === '/services'
+    ? 'route-services-page'
+    : route.path === '/gallery'
+      ? 'route-gallery-page'
+      : '';
 
   return (
-    <section className="section page-hero ornament-section ornament-bg-3">
+    <section className={`section page-hero ornament-section ornament-bg-3 ${pageClass}`}>
       <div className={`container ${isWideRoute ? 'route-wide' : 'narrow-container'}`}>
-        <p className="eyebrow">{route.eyebrow}</p>
-        <h1>{presentation?.heading ?? route.heading}</h1>
-        <p className="lede">{presentation?.intro ?? route.intro}</p>
+        <header className="route-page-intro">
+          <p className="eyebrow">{route.eyebrow}</p>
+          <h1>{presentation?.heading ?? route.heading}</h1>
+          <p className="lede">{presentation?.intro ?? route.intro}</p>
+        </header>
 
         {route.path === '/services' ? <ServicesRoute /> : null}
         {hasServiceRoute ? <ServiceRoute path={route.path} /> : null}
