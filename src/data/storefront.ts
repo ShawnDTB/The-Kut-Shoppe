@@ -14,6 +14,10 @@ export interface StoreProduct {
   amazonUrl: string;
   pickupEnabled: boolean;
   shippingEnabled: boolean;
+  weightOunces: number;
+  packageLengthInches: number;
+  packageWidthInches: number;
+  packageHeightInches: number;
   status: ProductStatus;
   updatedAt: string;
 }
@@ -136,6 +140,10 @@ export function createProductDraft(): StoreProduct {
     amazonUrl: '',
     pickupEnabled: true,
     shippingEnabled: false,
+    weightOunces: 0,
+    packageLengthInches: 0,
+    packageWidthInches: 0,
+    packageHeightInches: 0,
     status: 'draft',
     updatedAt: new Date().toISOString(),
   };
