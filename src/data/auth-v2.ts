@@ -237,3 +237,16 @@ export function updatePlatformRole(actor: PlatformAccount, accountId: string, ro
     updatedAt: new Date().toISOString(),
   });
 }
+
+export function linkPlatformStaffProfile(accountId: string, staffProfileId: string, displayName?: string) {
+  const target = readPlatformAccounts().find((account) => account.id === accountId);
+  if (!target) throw new Error('Account not found.');
+  if (target.role === 'customer') throw new Error('This account must be approved for staff access first.');
+
+  return savePlatformAccount({
+    ...target,
+    name: displayName?.trim() || target.name,
+    staffProfileId,
+    updatedAt: new Date().toISOString(),
+  });
+}
