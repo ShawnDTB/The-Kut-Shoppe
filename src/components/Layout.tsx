@@ -87,9 +87,7 @@ function Header({ currentPath }: { currentPath: string }) {
           </a>
 
           <div className="menu-surface">
-            <span className="menu-signature" aria-hidden="true">
-              The Kut Shoppe
-            </span>
+            <span className="menu-signature" aria-hidden="true" />
             <nav className="desktop-nav" aria-label="Primary navigation">
               <ul className="nav-list nav-list-branded">
                 {primaryNavigation.map(([label, href]) => {
