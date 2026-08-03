@@ -3,6 +3,7 @@ import './refinement.css';
 import './route-refinement.css';
 import './navigation.css';
 import './menu-wordmark.css';
+import './compact-home.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
