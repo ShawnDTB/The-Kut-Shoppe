@@ -24,6 +24,7 @@ import './platform-theme.css';
 import './auth-v2.css';
 import './navigation-v2-fixes.css';
 import './booking-v2.css';
+import './storefront-v2.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
@@ -32,12 +33,12 @@ import { BookingV2 } from './components/BookingV2';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
 import { AccountAccessV2 } from './components/AccountAccessV2';
 import { RoleDashboardV2 } from './components/RoleDashboardV2';
+import { StorefrontV2 } from './components/StorefrontV2';
 import { AdminGuard } from './components/AdminAccess';
 import {
   CartPage,
   CatalogAdminPage,
   CheckoutPage,
-  CommerceStorefrontPage,
   OrderAdminPage,
   ProductDetailPage,
 } from './components/CommercePlatformPages';
@@ -132,7 +133,7 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/book' ? (
         <ClientPlatform label="booking"><BookingV2 /></ClientPlatform>
       ) : normalizedUrl === '/shop' ? (
-        <ClientPlatform label="the current Shop"><CommerceStorefrontPage /></ClientPlatform>
+        <ClientPlatform label="the Shop"><StorefrontV2 /></ClientPlatform>
       ) : productMatch ? (
         <ClientPlatform label="this product"><ProductDetailPage slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
       ) : normalizedUrl === '/cart' ? (
