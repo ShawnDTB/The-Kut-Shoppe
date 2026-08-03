@@ -1,6 +1,7 @@
 import { queueNotification, subscribeToPlatformChanges } from './notifications';
 
 export type AccountRole = 'customer' | 'staff' | 'manager' | 'owner';
+export type StaffProfileRole = Exclude<AccountRole, 'customer'> | 'barber';
 
 export interface CustomerAccount {
   id: string;
@@ -155,18 +156,19 @@ export function createOrUpdateStaffAccount(input: {
   name: string;
   email: string;
   phone: string;
-  role: Exclude<AccountRole, 'customer'>;
+  role: StaffProfileRole;
   staffProfileId: string;
   phoneVerified: boolean;
 }) {
   const existing = findAccount(input.email, input.phone);
   const now = new Date().toISOString();
+  const accountRole: Exclude<AccountRole, 'customer'> = input.role === 'barber' ? 'staff' : input.role;
   const account: CustomerAccount = existing
     ? {
         ...existing,
         name: input.name.trim(),
         phone: normalizePhone(input.phone),
-        role: input.role,
+        role: accountRole,
         staffProfileId: input.staffProfileId,
         phoneVerified: existing.phoneVerified || input.phoneVerified,
         updatedAt: now,
@@ -177,7 +179,7 @@ export function createOrUpdateStaffAccount(input: {
         email: normalizeEmail(input.email),
         phone: normalizePhone(input.phone),
         phoneVerified: input.phoneVerified,
-        role: input.role,
+        role: accountRole,
         staffProfileId: input.staffProfileId,
         createdAt: now,
         updatedAt: now,
