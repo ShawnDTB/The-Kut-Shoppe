@@ -1,6 +1,6 @@
 /* Final mobile and performance pass. Loaded last. */
 
-/* The script experiment is retired. Keep the header fully solid and quiet. */
+/* Retire the script experiment and keep the entire header solid black. */
 .menu-signature,
 .header-navigation-surface::before,
 .header-navigation-surface::after,
@@ -22,11 +22,7 @@
   backdrop-filter: none;
 }
 
-.header-navigation-surface {
-  overflow: visible;
-}
-
-/* Keep the selected-page scissors fully inside the shortened desktop header. */
+.header-navigation-surface,
 .nav-list-branded li,
 .nav-list-branded a {
   position: relative;
@@ -39,7 +35,7 @@
   height: 0.82rem;
 }
 
-/* The original live slideshow interior receives the visual focus. */
+/* Homepage hero and hours. */
 .hero-shop-floor img {
   object-position: center center;
   transform: scale(1.005);
@@ -85,20 +81,17 @@
   padding-bottom: 0.4rem;
 }
 
-/* The Visit route alone uses the normal Google Maps color treatment. */
-.location-map-color .location-map-frame iframe,
-@media (prefers-reduced-motion: reduce) {
-  .location-map-color .location-map-frame iframe {
-    filter: none !important;
-    opacity: 1;
-  }
+/* The dedicated Visit page uses a normal full-color Google map. */
+.location-map-color .location-map-frame iframe {
+  filter: none !important;
+  opacity: 1;
 }
 
 .location-map-color .location-map-frame::after {
   box-shadow: none;
 }
 
-/* Senior pricing is presented directly without internal source language. */
+/* Customer-facing senior group. */
 .service-price-section-senior .service-price-section-heading span {
   font-size: 0;
 }
@@ -308,12 +301,8 @@
   color: var(--ink);
 }
 
-.mobile-primary-links a > span,
-.mobile-secondary-links a > span {
-  font-size: 1.1rem;
-}
-
-.mobile-hours-card {
+.mobile-hours-card,
+.mobile-booking-group {
   display: grid;
   gap: 0.8rem;
   border: 1px solid var(--line);
@@ -376,53 +365,36 @@
   white-space: nowrap;
 }
 
-.mobile-booking-group {
-  display: grid;
-  gap: 0.7rem;
-  border: 1px solid var(--line);
-  padding: 1rem;
-}
-
 .mobile-booking-group .provider-booking-actions-mobile {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.65rem;
 }
 
-.mobile-booking-group .provider-booking-link {
+.mobile-booking-group .provider-booking-link,
+.mobile-call-link {
   display: flex;
   width: 100%;
   min-width: 0;
   min-height: 3.65rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(244, 244, 244, 0.34);
+  border: 1px solid rgba(244, 244, 244, 0.38);
   background: transparent;
   color: var(--paper);
   padding: 0.85rem 1rem;
+  font-family: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-align: center;
   text-decoration: none;
+  text-transform: uppercase;
 }
 
 .mobile-booking-group .provider-booking-barber {
   background: var(--paper);
   color: var(--ink);
-}
-
-.mobile-call-link {
-  display: flex;
-  min-height: 3.65rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(244, 244, 244, 0.42);
-  color: var(--paper);
-  padding: 0.85rem 1rem;
-  font-family: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  text-transform: uppercase;
 }
 
 @keyframes mobile-drawer-in {
@@ -478,14 +450,9 @@
     font-size: clamp(1.65rem, 8vw, 2.2rem);
   }
 
-  .hero-hours-daily {
-    grid-template-columns: 1fr;
-    gap: 0.8rem;
-  }
-
+  .hero-hours-daily,
   .hero-hours-daily dl {
     grid-template-columns: 1fr;
-    gap: 0.4rem;
   }
 
   .hero-hours-daily > p {
@@ -516,5 +483,9 @@
 
   .hero-shop-floor img {
     transform: none;
+  }
+
+  .location-map-color .location-map-frame iframe {
+    filter: none !important;
   }
 }
