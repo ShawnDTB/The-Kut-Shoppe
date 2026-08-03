@@ -1,4 +1,4 @@
-import { booksyUrl, business, team } from '../data/site';
+import { business, team } from '../data/site';
 import {
   shopClosedSummary,
   shopHours,
@@ -40,8 +40,8 @@ function BookingRail({
         <strong>{title}</strong>
       </div>
       <div className="home-booking-rail-actions">
-        {secondaryHref && secondaryLabel ? <a className="home-booking-secondary" href={secondaryHref}>{secondaryLabel}</a> : null}
         <a className="button home-booking-primary" href="/book">Book now <Arrow /></a>
+        {secondaryHref && secondaryLabel ? <a className="home-booking-secondary" href={secondaryHref}>{secondaryLabel}</a> : null}
       </div>
     </div>
   );
@@ -63,8 +63,8 @@ function ServicesOverview() {
       <div className="container services-booking-rail-wrap">
         <BookingRail
           compact
-          context="Haircuts, beard work, kids cuts, locs and styling"
-          title="Review the menu or start with the chair you need."
+          context="Haircuts · beard work · kids cuts · locs and styling"
+          title="View services or book your chair."
           secondaryHref="/services"
           secondaryLabel="Services and pricing"
         />
@@ -82,7 +82,7 @@ function WorkAndTrust() {
         <div className="proof-copy">
           <p className="eyebrow">Real work. Real appointments.</p><h2>Check the work out. Then choose your chair.</h2><p>Fades, tapers, scissor cuts, beard details, locs, braids, designs, and kids cuts from the shop gallery.</p>
           <ul className="trust-shortlist">{standards.map((standard) => <li key={standard}>{standard}</li>)}</ul>
-          <div className="proof-actions"><a className="button button-secondary" href="/gallery">View the full gallery <Arrow /></a><a className="text-link" href={booksyUrl} target="_blank" rel="noopener noreferrer">Read prior client feedback <span aria-hidden="true">↗</span></a></div>
+          <div className="proof-actions"><a className="button button-secondary" href="/gallery">View the full gallery <Arrow /></a><a className="text-link" href="/reviews">Read client reviews <Arrow /></a></div>
         </div>
         <div className="compact-gallery" aria-label="Featured work from The Kut Shoppe">{previewItems.map((item) => <figure key={item.src}><img src={item.src} alt={item.alt} width="640" height="640" loading="lazy" decoding="async" /><figcaption><strong>{item.title}</strong><span>{item.category}</span></figcaption></figure>)}</div>
       </div>
@@ -127,7 +127,7 @@ export function HomePage() {
             <BookingRail
               compact
               context="Barber appointments · same-day waitlist · Loctician direction"
-              title="Choose the service. We will guide you to the right chair."
+              title="Choose Barber or Loctician."
               secondaryHref={business.phoneHref}
               secondaryLabel={`Call ${business.phone}`}
             />
@@ -144,7 +144,15 @@ export function HomePage() {
       <ShopTeaser />
 
       <section id="visit" className="section location-conversion">
-        <div className="container location-conversion-grid"><div className="conversion-copy location-conversion-copy"><p className="eyebrow">Ready for the next one?</p><h2>Your chair is ready when you are.</h2><p>Choose Barber or Loctician from one booking page. When today’s matching barber openings are full, the same flow offers the waitlist.</p><BookingRail compact context="One booking page for every service path" title="Choose Barber or Loctician and continue." secondaryHref={business.phoneHref} secondaryLabel="Call the shop" /></div><LocationMap /></div>
+        <div className="container location-conversion-grid">
+          <div className="conversion-copy location-conversion-copy">
+            <p className="eyebrow">Ready for the next one?</p>
+            <h2>Your chair is ready.</h2>
+            <p>Choose a Barber or Loctician. When today’s barber schedule is full, the waitlist appears automatically.</p>
+            <div className="location-booking-actions"><a className="button" href="/book">Book now <Arrow /></a><a className="text-link" href={business.phoneHref}>Call {business.phone}</a></div>
+          </div>
+          <LocationMap />
+        </div>
       </section>
     </>
   );

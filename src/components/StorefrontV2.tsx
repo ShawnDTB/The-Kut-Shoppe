@@ -13,6 +13,7 @@ import {
   readCart,
   readProducts,
   subscribeToStorefrontChanges,
+  updateCartQuantity,
   type CartItem,
   type ProductCategory,
   type StoreProduct,
@@ -103,11 +104,8 @@ export function StorefrontV2() {
     <section className="section storefront-v2-page platform-pattern platform-pattern-products">
       <div className="container route-wide">
         <header className="storefront-v2-header storefront-v2-header-compact">
-          <div className="storefront-v2-title"><p className="eyebrow">The Kut Shoppe Shop</p><h1>Products</h1><p>Published grooming, hair-care, accessory, book, tool, and Kut Shoppe merchandise inventory.</p></div>
-          <div className="storefront-v2-utility">
-            {canManageProducts || canManageOrders ? <nav className="storefront-v2-management" aria-label="Store management">{canManageProducts ? <a href="/admin/products">Manage products</a> : null}{canManageOrders ? <a href="/admin/orders">Manage orders</a> : null}</nav> : null}
-            <button className="storefront-v2-cart-button" type="button" onClick={() => setCartOpen(true)}><span>Cart</span><strong>{cartCount}</strong></button>
-          </div>
+          <div className="storefront-v2-title"><p className="eyebrow">The Kut Shoppe Shop</p><h1>Products</h1><p>Grooming, hair care, accessories, books, tools, and Kut Shoppe merchandise.</p></div>
+          {canManageProducts || canManageOrders ? <nav className="storefront-v2-management" aria-label="Store management">{canManageProducts ? <a href="/admin/products">Manage products</a> : null}{canManageOrders ? <a href="/admin/orders">Manage orders</a> : null}</nav> : null}
         </header>
 
         <div className="storefront-v2-catalog-bar">
@@ -155,7 +153,7 @@ export function StorefrontV2() {
         )}
       </div>
 
-      {cartOpen ? <div className="storefront-v2-cart" role="dialog" aria-modal="true" aria-labelledby="storefront-cart-heading"><button className="storefront-v2-cart-backdrop" type="button" aria-label="Close cart preview" onClick={() => setCartOpen(false)} /><aside><header><div><p className="eyebrow">Your cart</p><h2 id="storefront-cart-heading">{cartCount ? `${cartCount} item${cartCount === 1 ? '' : 's'}` : 'Your cart is empty'}</h2></div><button type="button" onClick={() => setCartOpen(false)} aria-label="Close cart preview">×</button></header>{resolvedCart.length ? <div className="storefront-v2-cart-items">{resolvedCart.map((item) => <article key={`${item.productId}-${item.variantId}`}><div><strong>{item.product.name}</strong><span>{item.variant.name}</span><small>Quantity {item.quantity}</small></div><strong>{formatMoney(item.variant.priceCents * item.quantity)}</strong></article>)}</div> : <p>Add a published product to see it here.</p>}<footer><div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div><a className="button" href="/cart">View cart</a><button className="button button-secondary" type="button" onClick={() => setCartOpen(false)}>Continue shopping</button></footer></aside></div> : null}
+      {cartOpen ? <div className="storefront-v2-cart" role="dialog" aria-modal="true" aria-labelledby="storefront-cart-heading"><button className="storefront-v2-cart-backdrop" type="button" aria-label="Close cart preview" onClick={() => setCartOpen(false)} /><aside><header><div><p className="eyebrow">Your cart</p><h2 id="storefront-cart-heading">{cartCount ? `${cartCount} item${cartCount === 1 ? '' : 's'}` : 'Your cart is empty'}</h2></div><button type="button" onClick={() => setCartOpen(false)} aria-label="Close cart preview">×</button></header>{resolvedCart.length ? <div className="storefront-v2-cart-items">{resolvedCart.map((item) => <article key={`${item.productId}-${item.variantId}`}><div><strong>{item.product.name}</strong><span>{item.variant.name}</span><div className="storefront-v2-cart-controls"><button type="button" onClick={() => setCart(updateCartQuantity(item.productId, item.variantId, item.quantity - 1))}>−</button><span>{item.quantity}</span><button type="button" disabled={item.quantity >= getAvailableStock(item.product, item.variant)} onClick={() => setCart(updateCartQuantity(item.productId, item.variantId, item.quantity + 1))}>+</button><button className="text-button" type="button" onClick={() => setCart(updateCartQuantity(item.productId, item.variantId, 0))}>Remove</button></div></div><strong>{formatMoney(item.variant.priceCents * item.quantity)}</strong></article>)}</div> : <p>Add a published product to see it here.</p>}<footer><div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div>{resolvedCart.length ? <><a className="button" href="/cart">View cart</a><a className="button button-secondary" href="/checkout">Checkout</a></> : <button className="button button-secondary" type="button" onClick={() => setCartOpen(false)}>Continue shopping</button>}</footer></aside></div> : null}
     </section>
   );
 }

@@ -28,11 +28,13 @@ import './storefront-v2.css';
 import './staff-onboarding-v2.css';
 import './visual-accessibility-v2.css';
 import './polish-round-2.css';
+import './polish-round-3.css';
+import './polish-round-3-fixes.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { BookingV2 } from './components/BookingV2';
+import { BookingGatewayV3 } from './components/BookingGatewayV3';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
 import { StaffOnboardingV2 } from './components/StaffOnboardingV2';
 import { AccountAccessV2 } from './components/AccountAccessV2';
@@ -40,12 +42,14 @@ import { RoleDashboardV2 } from './components/RoleDashboardV2';
 import { StorefrontV2 } from './components/StorefrontV2';
 import { AdminGuard } from './components/AdminAccess';
 import {
-  CartPage,
   CatalogAdminPage,
-  CheckoutPage,
   OrderAdminPage,
-  ProductDetailPage,
 } from './components/CommercePlatformPages';
+import {
+  CartPageV3,
+  CheckoutPageV3,
+  ProductDetailPageV3,
+} from './components/CommerceCustomerV3';
 
 interface AppProps {
   url: string;
@@ -145,15 +149,15 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/' ? (
         <HomePage />
       ) : normalizedUrl === '/book' ? (
-        <ClientPlatform label="booking"><BookingV2 /></ClientPlatform>
+        <ClientPlatform label="booking"><BookingGatewayV3 /></ClientPlatform>
       ) : normalizedUrl === '/shop' ? (
         <ClientPlatform label="the Shop"><StorefrontV2 /></ClientPlatform>
       ) : productMatch ? (
-        <ClientPlatform label="this product"><ProductDetailPage slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
+        <ClientPlatform label="this product"><ProductDetailPageV3 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
       ) : normalizedUrl === '/cart' ? (
-        <ClientPlatform label="your cart"><CartPage /></ClientPlatform>
+        <ClientPlatform label="your cart"><CartPageV3 /></ClientPlatform>
       ) : normalizedUrl === '/checkout' ? (
-        <ClientPlatform label="checkout"><CheckoutPage /></ClientPlatform>
+        <ClientPlatform label="checkout"><CheckoutPageV3 /></ClientPlatform>
       ) : normalizedUrl === '/account' ? (
         <ClientPlatform label="your Account"><AccountAccessV2 /></ClientPlatform>
       ) : normalizedUrl === '/dashboard' ? (
