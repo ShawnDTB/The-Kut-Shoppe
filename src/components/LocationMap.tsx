@@ -9,8 +9,12 @@ const directionsUrl =
   'https://www.google.com/maps/search/?api=1&query=The%20Kut%20Shoppe%2C%20518%20Main%20Street%2C%20Stroudsburg%2C%20PA%2018360';
 
 export function LocationMap({ compact = false }: { compact?: boolean }) {
+  const className = compact
+    ? 'location-map location-map-compact location-map-color'
+    : 'location-map';
+
   return (
-    <div className={compact ? 'location-map location-map-compact' : 'location-map'}>
+    <div className={className}>
       <div className="location-map-frame">
         <iframe
           title="Google map showing The Kut Shoppe at 518 Main Street in Stroudsburg"
