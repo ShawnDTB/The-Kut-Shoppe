@@ -7,16 +7,17 @@ import {
 } from '../data/visuals';
 import { Arrow } from './Layout';
 
-function HeroSlideshow() {
+function HeroBackdrop() {
   return (
-    <div className="hero-slides" aria-hidden="true">
-      {originalAssets.hero.map((image, index) => (
-        <span
-          className={`hero-slide hero-slide-${index + 1}`}
-          key={image}
-          style={{ backgroundImage: `url(${image})` }}
-        />
-      ))}
+    <div className="hero-static-media" aria-hidden="true">
+      <img
+        src={originalAssets.hero[0]}
+        alt=""
+        width="1920"
+        height="1080"
+        loading="eager"
+        decoding="async"
+      />
     </div>
   );
 }
@@ -214,19 +215,21 @@ function ShopTeaser() {
 export function HomePage() {
   return (
     <>
-      <section className="hero compact-hero">
-        <HeroSlideshow />
+      <section className="hero compact-hero hero-focused">
+        <HeroBackdrop />
         <div className="hero-shade" />
-        <div className="container hero-content hero-content-refined">
-          <p className="eyebrow">Barbering and styling in downtown Stroudsburg</p>
-          <h1>Classic cuts. Modern styles. Your chair is waiting.</h1>
-          <p className="lede">
-            Haircuts, fades, beard work, locs, braids, twists, color, and hair care from one neighborhood crew.
-          </p>
-          <BookingChoices />
-          <a className="hero-call" href={business.phoneHref}>
-            Questions? Call {business.phone}
-          </a>
+        <div className="container hero-content hero-content-minimal">
+          <div className="hero-glass-panel">
+            <p className="eyebrow">The Kut Shoppe · Downtown Stroudsburg</p>
+            <h1>Your look. Done right.</h1>
+            <p className="lede">
+              Fresh cuts, beard work, locs, braids, and styling from a neighborhood crew that knows its clients.
+            </p>
+            <BookingChoices compact />
+            <a className="hero-call" href={business.phoneHref}>
+              Questions? Call {business.phone}
+            </a>
+          </div>
         </div>
         <a className="scroll-cue" href="#services" aria-label="Continue to services">
           <span />
