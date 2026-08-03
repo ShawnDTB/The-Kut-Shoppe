@@ -21,14 +21,17 @@ import './booking-platform.css';
 import './account-prototype.css';
 import './commerce-platform.css';
 import './platform-theme.css';
+import './auth-v2.css';
+import './navigation-v2-fixes.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
 import { InternalBookingPage, WalkInRequestPage } from './components/InternalBookingPage';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
-import { CustomerAccountPrototype } from './components/CustomerAccountPrototype';
-import { AdminAccessPage, AdminGuard } from './components/AdminAccess';
+import { AccountAccessV2 } from './components/AccountAccessV2';
+import { RoleDashboardV2 } from './components/RoleDashboardV2';
+import { AdminGuard } from './components/AdminAccess';
 import {
   CartPage,
   CatalogAdminPage,
@@ -47,6 +50,8 @@ const legacyRedirects: Record<string, string> = {
   '/products': '/shop',
   '/login': '/account',
   '/booking': '/book',
+  '/staff/login': '/account',
+  '/admin/access': '/account',
 };
 
 const subscribeToHydration = () => () => undefined;
@@ -108,11 +113,13 @@ export function App({ url }: AppProps) {
   const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
   const isAdminRoute = normalizedUrl.startsWith('/admin/');
   const productMatch = normalizedUrl.match(/^\/shop\/([^/]+)$/);
-  const layoutPath = isStaffRoute
-    ? '/staff'
-    : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
-      ? '/shop'
-      : route.path;
+  const layoutPath = normalizedUrl === '/dashboard' || normalizedUrl === '/account'
+    ? '/account'
+    : isStaffRoute
+      ? '/account'
+      : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
+        ? '/shop'
+        : route.path;
 
   return (
     <SiteLayout currentPath={layoutPath}>
@@ -133,9 +140,9 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/checkout' ? (
         <ClientPlatform label="checkout"><CheckoutPage /></ClientPlatform>
       ) : normalizedUrl === '/account' ? (
-        <ClientPlatform label="your Account"><CustomerAccountPrototype /></ClientPlatform>
-      ) : normalizedUrl === '/admin/access' ? (
-        <ClientPlatform label="development owner access"><AdminAccessPage /></ClientPlatform>
+        <ClientPlatform label="your Account"><AccountAccessV2 /></ClientPlatform>
+      ) : normalizedUrl === '/dashboard' ? (
+        <ClientPlatform label="your dashboard"><RoleDashboardV2 /></ClientPlatform>
       ) : normalizedUrl === '/admin/products' ? (
         <ClientPlatform label="product administration"><AdminGuard><CatalogAdminPage /></AdminGuard></ClientPlatform>
       ) : normalizedUrl === '/admin/orders' ? (

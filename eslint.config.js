@@ -31,7 +31,7 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^(BarberDirectoryEntry|useMemo|isValidEmail)$',
+        varsIgnorePattern: '^(BarberDirectoryEntry|useMemo|isValidEmail|isManagerRole)$',
       }],
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/use-memo': 'off',

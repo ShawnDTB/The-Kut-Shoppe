@@ -1,0 +1,67 @@
+.customer-header-actions-mobile .customer-action {
+  min-height: 3.5rem;
+  border: 1px solid var(--line-strong);
+  padding: 0.85rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.customer-header-actions-mobile .customer-action-book {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: #111;
+  -webkit-text-fill-color: #111;
+}
+
+.customer-header-actions-mobile .customer-action-account {
+  background: transparent;
+  color: var(--paper);
+  -webkit-text-fill-color: var(--paper);
+}
+
+.mobile-nav-drawer {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.mobile-hours-card-compact {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mobile-hours-card-compact > strong {
+  color: var(--paper);
+  font-size: 1rem;
+}
+
+.mobile-hours-card-compact > span,
+.mobile-hours-card-compact > small {
+  color: var(--muted);
+}
+
+.mobile-hours-card-compact > a {
+  display: flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.mobile-primary-links a,
+.mobile-secondary-links a,
+.mobile-call-link,
+.customer-header-actions-mobile a {
+  min-height: 3.25rem;
+}
+
+@media (max-width: 1040px) {
+  .mobile-nav-drawer {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
