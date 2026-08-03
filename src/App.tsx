@@ -18,11 +18,14 @@ import './customer-final-pass.css';
 import './final-detail-pass.css';
 import './final-mobile-performance-pass.css';
 import './customer-platform.css';
+import './booking-platform.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { AccountPage, BookingPage, ShopPage } from './components/CustomerPlatformPages';
+import { AccountPage, ShopPage } from './components/CustomerPlatformPages';
+import { InternalBookingPage } from './components/InternalBookingPage';
+import { StaffPlatformPage } from './components/StaffPlatformPages';
 
 interface AppProps {
   url: string;
@@ -74,22 +77,26 @@ function useHomepageHashNavigation(url: string) {
 export function App({ url }: AppProps) {
   useHomepageHashNavigation(url);
 
-  const route = findRoute(url);
   const normalizedUrl = url !== '/' ? url.replace(/\/$/, '') : url;
+  const route = findRoute(normalizedUrl);
   const redirect = legacyRedirects[normalizedUrl];
+  const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
+  const layoutPath = isStaffRoute ? '/staff' : route.path;
 
   return (
-    <SiteLayout currentPath={route.path}>
+    <SiteLayout currentPath={layoutPath}>
       {redirect ? (
         <ClientRedirect to={redirect} />
-      ) : route.path === '/' ? (
+      ) : normalizedUrl === '/' ? (
         <HomePage />
-      ) : route.path === '/book' ? (
-        <BookingPage />
-      ) : route.path === '/shop' ? (
+      ) : normalizedUrl === '/book' ? (
+        <InternalBookingPage />
+      ) : normalizedUrl === '/shop' ? (
         <ShopPage />
-      ) : route.path === '/account' ? (
+      ) : normalizedUrl === '/account' ? (
         <AccountPage />
+      ) : isStaffRoute ? (
+        <StaffPlatformPage path={normalizedUrl} />
       ) : (
         <RoutePage url={url} />
       )}
