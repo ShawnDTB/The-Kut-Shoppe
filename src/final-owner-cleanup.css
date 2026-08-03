@@ -1,0 +1,244 @@
+/* Final owner review cleanup. Loaded last so these decisions remain authoritative. */
+
+/* Header: lower profile, complete wordmark, and simpler booking controls. */
+.header-inner-branded {
+  min-height: 5.35rem;
+  gap: clamp(0.85rem, 1.7vw, 1.65rem);
+}
+
+.brand-emblem,
+.brand-lockup img {
+  width: 3.55rem;
+  height: 3.55rem;
+}
+
+.brand-copy strong {
+  font-size: 1.2rem;
+}
+
+.nav-list-branded a {
+  padding-block: 1.75rem;
+}
+
+.nav-list-branded a::after {
+  bottom: 1.08rem;
+}
+
+.nav-list-branded a[aria-current='page']::before {
+  top: 1rem;
+}
+
+.header-navigation-surface,
+.menu-signature {
+  overflow: hidden;
+}
+
+.menu-signature::before {
+  top: 57%;
+  left: 50%;
+  width: 100%;
+  max-width: 100%;
+  content: 'The Kut Shoppe';
+  font-family: 'Allura', cursive;
+  font-size: clamp(3.6rem, 4.25vw, 5rem);
+  font-style: normal;
+  letter-spacing: 0;
+  opacity: 0.11;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  -webkit-text-stroke: 0.8px rgba(166, 172, 179, 0.72);
+}
+
+.header-actions-direct {
+  gap: 0.45rem;
+  padding-right: 0.75rem;
+}
+
+.provider-booking-link {
+  width: 8.7rem;
+  min-width: 8.7rem;
+  min-height: 2.85rem;
+  justify-content: center;
+  padding: 0.65rem 0.75rem;
+  text-align: center;
+}
+
+.provider-booking-link small {
+  display: none;
+}
+
+.provider-booking-link span {
+  line-height: 1.2;
+}
+
+/* The wide customer pages do not need a repeated icon and eyebrow label. */
+.route-page-intro::before {
+  display: none !important;
+  content: none !important;
+}
+
+.route-services-page .route-page-intro,
+.route-gallery-page .route-page-intro,
+.page-hero:has(.verified-team-grid) .route-page-intro,
+.page-hero:has(.shop-foundation) .route-page-intro {
+  max-width: none;
+  padding-top: 0;
+}
+
+.route-services-page .route-page-intro > .eyebrow,
+.route-gallery-page .route-page-intro > .eyebrow,
+.page-hero:has(.verified-team-grid) .route-page-intro > .eyebrow,
+.page-hero:has(.shop-foundation) .route-page-intro > .eyebrow {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .route-services-page .route-page-intro h1,
+  .route-services-page .route-page-intro .lede,
+  .route-gallery-page .route-page-intro h1,
+  .route-gallery-page .route-page-intro .lede,
+  .page-hero:has(.verified-team-grid) .route-page-intro h1,
+  .page-hero:has(.verified-team-grid) .route-page-intro .lede,
+  .page-hero:has(.shop-foundation) .route-page-intro h1,
+  .page-hero:has(.shop-foundation) .route-page-intro .lede,
+  .services-menu-styling .services-menu-heading h2,
+  .services-menu-styling .services-menu-heading p:not(.eyebrow) {
+    max-width: none;
+    white-space: nowrap;
+  }
+
+  .route-services-page .route-page-intro h1,
+  .route-gallery-page .route-page-intro h1,
+  .page-hero:has(.verified-team-grid) .route-page-intro h1,
+  .page-hero:has(.shop-foundation) .route-page-intro h1 {
+    font-size: clamp(3rem, 4vw, 4.45rem);
+  }
+
+  .route-services-page .route-page-intro .lede,
+  .route-gallery-page .route-page-intro .lede,
+  .page-hero:has(.verified-team-grid) .route-page-intro .lede,
+  .page-hero:has(.shop-foundation) .route-page-intro .lede {
+    font-size: clamp(0.95rem, 1.08vw, 1.08rem);
+  }
+}
+
+/* Services: clear adult and kids groups with no unfinished grid space. */
+.services-menu-list {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  background: #101010;
+}
+
+.services-menu-list::before,
+.services-menu-list::after {
+  grid-column: 1 / -1;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #0b0b0b;
+  color: rgba(244, 244, 244, 0.72);
+  padding: 0.72rem 1rem;
+  font-family: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.services-menu-list::before {
+  content: 'Adult and teen barber services';
+  order: 0;
+}
+
+.services-menu-list::after {
+  content: 'Kids services · ages 3 to 12';
+  order: 8;
+}
+
+.services-menu-list li {
+  grid-column: span 3;
+}
+
+.services-menu-list li:nth-child(4) { order: 1; }
+.services-menu-list li:nth-child(5) { order: 2; }
+.services-menu-list li:nth-child(6) { order: 3; }
+.services-menu-list li:nth-child(7) { order: 4; }
+.services-menu-list li:nth-child(8) { order: 5; }
+.services-menu-list li:nth-child(9) { order: 6; }
+.services-menu-list li:nth-child(10) {
+  grid-column: 1 / -1;
+  order: 7;
+}
+
+.services-menu-list li:nth-child(1),
+.services-menu-list li:nth-child(2),
+.services-menu-list li:nth-child(3) {
+  grid-column: span 2;
+}
+
+.services-menu-list li:nth-child(1) { order: 9; }
+.services-menu-list li:nth-child(2) { order: 10; }
+.services-menu-list li:nth-child(3) { order: 11; }
+
+/* Remove the circular profile-image crop by cropping into the approved Booksy portraits. */
+@media (min-width: 701px) {
+  .verified-team-card:nth-child(-n + 2) > img {
+    width: 125%;
+    max-width: none;
+    margin: -15.625% -12.5%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+/* Restore an actual Kut Shoppe photograph as the homepage focus. */
+.hero-static-media img {
+  object-position: center 42%;
+  filter: saturate(0.72) contrast(1.06) brightness(0.7);
+}
+
+@media (max-width: 1360px) {
+  .header-inner-branded {
+    min-height: 5rem;
+  }
+
+  .menu-signature::before {
+    font-size: clamp(3.2rem, 4vw, 4.35rem);
+  }
+
+  .provider-booking-link {
+    width: 8rem;
+    min-width: 8rem;
+  }
+}
+
+@media (max-width: 1040px) {
+  .header-inner-branded {
+    min-height: 4.9rem;
+  }
+
+  .services-menu-list {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .services-menu-list {
+    grid-template-columns: 1fr;
+  }
+
+  .services-menu-list::before,
+  .services-menu-list::after,
+  .services-menu-list li:nth-child(n) {
+    grid-column: 1;
+  }
+
+  .verified-team-card:nth-child(-n + 2) > img {
+    width: 125%;
+    height: 125%;
+    min-height: 0;
+    margin: -12.5%;
+    object-fit: cover;
+    object-position: center;
+  }
+}
