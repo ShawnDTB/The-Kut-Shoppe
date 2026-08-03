@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   barberServiceOptions,
   createStaffProfileDraft,
@@ -10,7 +10,6 @@ import {
   type StaffProfile,
   type WeeklyWindow,
 } from '../data/platform';
-import { business } from '../data/site';
 
 function StaffNav({ currentPath }: { currentPath: string }) {
   const links = [
@@ -30,7 +29,7 @@ function StaffNav({ currentPath }: { currentPath: string }) {
   );
 }
 
-function StaffShell({ currentPath, children }: { currentPath: string; children: React.ReactNode }) {
+function StaffShell({ currentPath, children }: { currentPath: string; children: ReactNode }) {
   return (
     <section className="section staff-platform-page">
       <div className="container route-wide">
