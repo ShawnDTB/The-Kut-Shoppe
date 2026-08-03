@@ -1,0 +1,342 @@
+/* Customer navigation, hours, and mobile polish. Loaded last. */
+
+.header-inner-branded {
+  min-height: 4.7rem;
+  gap: clamp(0.75rem, 1.35vw, 1.3rem);
+}
+
+.brand-emblem,
+.brand-lockup img {
+  width: 3.2rem;
+  height: 3.2rem;
+}
+
+.brand-emblem::before,
+.brand-emblem::after {
+  display: none;
+}
+
+.brand-copy strong {
+  font-size: 1.12rem;
+}
+
+.nav-list-branded {
+  gap: clamp(0.85rem, 1.25vw, 1.25rem);
+}
+
+.nav-list-branded a {
+  padding-block: 1.45rem;
+}
+
+.nav-list-branded a::after {
+  bottom: 0.78rem;
+}
+
+.menu-signature::before {
+  top: 54%;
+  left: 30%;
+  width: auto;
+  max-width: none;
+  color: transparent;
+  content: 'The Kut Shoppe';
+  font-family: 'Allura', cursive;
+  font-size: clamp(3.2rem, 3.65vw, 4.5rem);
+  font-style: normal;
+  letter-spacing: 0;
+  opacity: 0.1;
+  text-align: left;
+  transform: translate(-12%, -50%);
+  white-space: nowrap;
+  -webkit-text-stroke: 0.75px rgba(166, 172, 179, 0.7);
+}
+
+.header-navigation-surface .header-actions-direct {
+  background: transparent !important;
+}
+
+.nav-list-branded a[aria-current='page']::before {
+  top: 0.2rem;
+  left: 50%;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: none !important;
+  color: rgba(224, 224, 224, 0.76);
+  content: '✂';
+  filter: none;
+  font-family: Georgia, serif;
+  font-size: 0.82rem;
+  line-height: 1;
+  opacity: 1;
+  transform: translateX(-50%) rotate(-8deg);
+}
+
+.header-actions-direct {
+  gap: 0.4rem;
+  padding-right: 0.55rem;
+}
+
+.provider-booking-link {
+  width: 8.8rem;
+  min-width: 8.8rem;
+  min-height: 2.65rem;
+  padding: 0.58rem 0.7rem;
+}
+
+/* Use the actual Kut Shoppe interior as atmosphere, not as a sharp product photo. */
+.hero-shop-interior img {
+  object-position: center 42%;
+  transform: scale(1.06);
+  filter: blur(1px) saturate(0.62) contrast(1.08) brightness(0.5);
+}
+
+.hero-focused .hero-shade {
+  background:
+    linear-gradient(90deg, rgba(5, 5, 5, 0.72), rgba(5, 5, 5, 0.42) 48%, rgba(5, 5, 5, 0.7)),
+    linear-gradient(180deg, rgba(5, 5, 5, 0.2), rgba(5, 5, 5, 0.64));
+}
+
+.hero-hours-panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.18rem 0.85rem;
+  margin: 1.05rem 0;
+  border-top: 1px solid rgba(244, 244, 244, 0.18);
+  border-bottom: 1px solid rgba(244, 244, 244, 0.18);
+  padding: 0.78rem 0;
+}
+
+.hero-hours-panel span {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: rgba(244, 244, 244, 0.58);
+  font-family: var(--accent);
+  font-size: 0.61rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-hours-panel strong {
+  color: var(--paper);
+  font-family: var(--heading-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.hero-hours-panel small {
+  grid-column: 1 / -1;
+  margin-top: 0.35rem;
+  color: rgba(244, 244, 244, 0.58);
+  font-size: 0.67rem;
+  line-height: 1.4;
+}
+
+.footer-main-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.footer-hours-block {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.footer-hours-block strong {
+  color: var(--paper);
+  font-family: var(--heading-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.footer-hours-block small {
+  max-width: 15rem;
+  color: #8d8d8d;
+  line-height: 1.45;
+}
+
+/* Steph's preferred customer-facing title. */
+.verified-team-card:nth-child(4) .eyebrow,
+.compact-crew-card:nth-child(4) small {
+  color: transparent;
+  position: relative;
+}
+
+.verified-team-card:nth-child(4) .eyebrow::after,
+.compact-crew-card:nth-child(4) small::after {
+  position: absolute;
+  inset: 0 auto auto 0;
+  color: var(--paper);
+  content: 'Loctician';
+  white-space: nowrap;
+}
+
+.compact-crew-card:nth-child(4) small::after {
+  color: inherit;
+}
+
+@media (max-width: 1360px) {
+  .header-inner-branded {
+    min-height: 4.55rem;
+  }
+
+  .menu-signature::before {
+    left: 27%;
+    font-size: clamp(2.8rem, 3.5vw, 4rem);
+  }
+
+  .provider-booking-link {
+    width: 8.2rem;
+    min-width: 8.2rem;
+  }
+}
+
+@media (max-width: 1040px) {
+  .header-inner-branded {
+    min-height: 4.75rem;
+  }
+
+  .mobile-nav-branded nav {
+    top: calc(2.45rem + 4.75rem) !important;
+    right: 0 !important;
+    bottom: 0;
+    display: block;
+    width: min(26rem, 100vw);
+    max-height: none !important;
+    border-top: 1px solid rgba(244, 244, 244, 0.2);
+    border-left: 1px solid rgba(244, 244, 244, 0.2);
+    background: #0a0a0a;
+    padding: 1rem 1.1rem 2rem;
+    overscroll-behavior: contain;
+  }
+
+  .mobile-nav-heading {
+    padding: 0.4rem 0.25rem 0.9rem;
+  }
+
+  .mobile-primary-links,
+  .mobile-secondary-links {
+    display: grid;
+  }
+
+  .mobile-primary-links > a,
+  .mobile-secondary-links > a {
+    display: flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    color: var(--paper);
+    padding: 0 0.75rem;
+    font-family: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .mobile-primary-links > a[aria-current='page'] {
+    background: rgba(244, 244, 244, 0.055);
+  }
+
+  .mobile-secondary-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+    margin-top: 0.8rem;
+  }
+
+  .mobile-secondary-links > a {
+    min-height: 2.9rem;
+    border: 1px solid var(--line);
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .mobile-secondary-links > a span {
+    display: none;
+  }
+
+  .mobile-hours-card {
+    display: grid;
+    gap: 0.22rem;
+    margin-top: 0.8rem;
+    border: 1px solid rgba(244, 244, 244, 0.22);
+    padding: 0.9rem 1rem;
+  }
+
+  .mobile-hours-card > span {
+    color: #858585;
+    font-family: var(--accent);
+    font-size: 0.61rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .mobile-hours-card strong {
+    color: var(--paper);
+    font-family: var(--heading-sans);
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  .mobile-hours-card small {
+    margin-top: 0.25rem;
+    color: #858585;
+    line-height: 1.4;
+  }
+
+  .mobile-booking-group {
+    gap: 0.65rem;
+  }
+
+  .provider-booking-actions-mobile {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .provider-booking-actions-mobile .provider-booking-link {
+    width: 100%;
+    min-width: 0;
+    min-height: 3.25rem;
+  }
+
+  .footer-main-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .utility-hours {
+    display: none;
+  }
+
+  .mobile-nav-branded nav {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    padding: 1rem 1.25rem 2rem;
+  }
+
+  .hero-glass-panel {
+    padding: 1.25rem;
+  }
+
+  .hero-hours-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-hours-panel span,
+  .hero-hours-panel strong,
+  .hero-hours-panel small {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .footer-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
