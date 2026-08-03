@@ -18,11 +18,12 @@ function HeroBackdrop() {
   return (
     <div className="hero-static-media hero-shop-floor" aria-hidden="true">
       <img
-        src={originalAssets.hero[3]}
+        src={originalAssets.hero[0]}
         alt=""
         width="1600"
         height="900"
         loading="eager"
+        fetchPriority="high"
         decoding="async"
       />
     </div>
@@ -237,9 +238,7 @@ export function HomePage() {
             <h1 className="hero-accessible-title">
               The Kut Shoppe barbershop and loc care in downtown Stroudsburg
             </h1>
-            <p className="hero-lead">
-              Fresh cuts, clean line-ups, beard work, loc care, braids, and retwists from a Main Street crew that takes the time to get it right.
-            </p>
+            <p className="hero-lead">Fresh cuts. Clean work. Right on Main Street.</p>
 
             <div className="hero-hours-panel hero-hours-daily" aria-label="Shop hours">
               <div className="hero-hours-heading">
