@@ -8,6 +8,7 @@ import './compact-home.css';
 import './ux-performance.css';
 import './mobile-provider.css';
 import './owner-polish.css';
+import './hero-focus.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
