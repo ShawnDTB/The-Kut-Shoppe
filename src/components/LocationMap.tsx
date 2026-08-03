@@ -1,4 +1,5 @@
 import { business } from '../data/site';
+import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
 import { Arrow } from './Layout';
 
 const mapEmbedUrl =
@@ -26,6 +27,12 @@ export function LocationMap({ compact = false }: { compact?: boolean }) {
           <span>Find the shop</span>
           <strong>518 Main Street</strong>
           <p>Downtown Stroudsburg · a few steps away from the Sherman Theater</p>
+        </div>
+        <div className="location-map-hours">
+          <span>Shop hours</span>
+          <strong>{shopHoursSummary}</strong>
+          <strong>{shopClosedSummary}</strong>
+          <small>{shopHoursNote}</small>
         </div>
         <div className="location-map-actions">
           <a href={business.phoneHref}>{business.phone}</a>
