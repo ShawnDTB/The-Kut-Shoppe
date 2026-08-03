@@ -22,6 +22,7 @@ import './account-prototype.css';
 import './commerce-platform.css';
 import './platform-theme.css';
 import './auth-v2.css';
+import './navigation-v2-fixes.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
