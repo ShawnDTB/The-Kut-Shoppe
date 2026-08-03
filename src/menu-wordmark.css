@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
 .site-header::after {
   background: linear-gradient(
     90deg,
@@ -53,26 +55,49 @@
   z-index: -1;
   background: linear-gradient(
     90deg,
-    rgba(9, 9, 9, 0.97),
-    rgba(9, 9, 9, 0.72) 18%,
-    rgba(9, 9, 9, 0.58) 50%,
-    rgba(9, 9, 9, 0.72) 82%,
-    rgba(9, 9, 9, 0.97)
+    rgba(9, 9, 9, 0.98),
+    rgba(9, 9, 9, 0.83) 17%,
+    rgba(9, 9, 9, 0.68) 50%,
+    rgba(9, 9, 9, 0.83) 83%,
+    rgba(9, 9, 9, 0.98)
   );
   content: '';
   pointer-events: none;
 }
 
-.menu-wordmark-pattern {
+.menu-signature {
   position: absolute;
-  inset: 0;
+  top: 51%;
+  left: 50%;
   z-index: -2;
-  background-image: url('/brand/menu-wordmark-pattern.svg');
-  background-position: center;
-  background-repeat: repeat-x;
-  background-size: auto 150%;
-  opacity: 0.68;
+  width: max-content;
+  color: transparent;
+  font-family: 'Great Vibes', 'Segoe Script', 'Brush Script MT', cursive;
+  font-size: clamp(7.4rem, 10vw, 10.5rem);
+  font-weight: 400;
+  line-height: 0.7;
+  letter-spacing: 0.015em;
+  opacity: 0.48;
   pointer-events: none;
+  text-shadow: 0 0 18px rgba(174, 180, 187, 0.035);
+  transform: translate(-49%, -50%) rotate(-4deg) scaleX(1.08);
+  user-select: none;
+  white-space: nowrap;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 7%,
+    #000 93%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 7%,
+    #000 93%,
+    transparent 100%
+  );
+  -webkit-text-stroke: 0.75px rgba(154, 160, 166, 0.62);
 }
 
 .menu-surface .desktop-nav {
@@ -104,11 +129,7 @@
 .booking-menu-panel,
 .mobile-nav-branded nav {
   background-color: rgba(7, 7, 7, 0.985);
-  background-image:
-    linear-gradient(rgba(7, 7, 7, 0.91), rgba(7, 7, 7, 0.97)),
-    url('/brand/menu-wordmark-pattern.svg');
-  background-position: center;
-  background-size: auto, auto 12rem;
+  background-image: none;
 }
 
 @media (max-width: 1240px) {
@@ -118,6 +139,11 @@
 
   .menu-surface .nav-list-branded {
     gap: 0.9rem;
+  }
+
+  .menu-signature {
+    font-size: 7.9rem;
+    opacity: 0.42;
   }
 }
 
@@ -144,7 +170,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu-wordmark-pattern {
-    background-position: center;
+  .menu-signature {
+    transform: translate(-49%, -50%) rotate(-4deg) scaleX(1.08);
   }
 }
