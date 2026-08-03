@@ -3,7 +3,7 @@
   "short_name": "Kut Shoppe",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f1e9",
-  "theme_color": "#111111",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
   "icons": []
 }
