@@ -1,0 +1,166 @@
+.hero-focused {
+  min-height: clamp(39rem, 78vh, 47rem);
+  background: #090909;
+}
+
+.hero-static-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.hero-static-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 46%;
+  transform: scale(1.025);
+  animation: hero-focus-breathe 18s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.hero-focused .hero-shade {
+  background:
+    linear-gradient(90deg, rgba(7, 7, 7, 0.78) 0%, rgba(7, 7, 7, 0.58) 43%, rgba(7, 7, 7, 0.26) 76%, rgba(7, 7, 7, 0.38) 100%),
+    linear-gradient(180deg, rgba(7, 7, 7, 0.14), rgba(7, 7, 7, 0.56));
+}
+
+.hero-content-minimal {
+  display: flex;
+  min-height: inherit;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding-block: clamp(4.5rem, 9vw, 7.2rem);
+  text-align: left;
+}
+
+.hero-glass-panel {
+  width: min(100%, 43rem);
+  border: 1px solid rgba(244, 244, 244, 0.2);
+  background: rgba(9, 9, 9, 0.48);
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.34);
+  padding: clamp(1.65rem, 4vw, 2.7rem);
+  backdrop-filter: blur(13px) saturate(1.05);
+  -webkit-backdrop-filter: blur(13px) saturate(1.05);
+}
+
+.hero-glass-panel::before {
+  display: block;
+  width: 3rem;
+  height: 1px;
+  margin-bottom: 1.2rem;
+  background: rgba(244, 244, 244, 0.56);
+  content: '';
+}
+
+.hero-glass-panel h1 {
+  max-width: 8ch;
+  margin-bottom: 1rem;
+  font-size: clamp(3.7rem, 6.5vw, 6.5rem);
+  line-height: 0.94;
+  text-shadow: 0 0.4rem 2rem rgba(0, 0, 0, 0.55);
+}
+
+.hero-glass-panel .lede {
+  max-width: 37rem;
+  margin-bottom: 0;
+  color: rgba(244, 244, 244, 0.86);
+  font-size: clamp(1rem, 1.6vw, 1.18rem);
+  line-height: 1.65;
+}
+
+.hero-glass-panel .booking-choice-row {
+  width: 100%;
+  margin-top: 1.55rem;
+}
+
+.hero-glass-panel .booking-choice {
+  min-height: 5rem;
+  background: rgba(8, 8, 8, 0.34);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hero-glass-panel .booking-choice:hover {
+  background: rgba(244, 244, 244, 0.1);
+}
+
+.hero-glass-panel .hero-call {
+  display: inline-flex;
+  margin-top: 1rem;
+  color: rgba(244, 244, 244, 0.82);
+  font-size: 0.78rem;
+  text-underline-offset: 0.25rem;
+}
+
+.hero-focused .scroll-cue {
+  background: rgba(8, 8, 8, 0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+@keyframes hero-focus-breathe {
+  from {
+    transform: scale(1.025) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.075) translate3d(0, -0.8%, 0);
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-focused .hero-shade {
+    background:
+      linear-gradient(180deg, rgba(7, 7, 7, 0.34) 0%, rgba(7, 7, 7, 0.5) 52%, rgba(7, 7, 7, 0.76) 100%);
+  }
+
+  .hero-content-minimal {
+    align-items: flex-end;
+  }
+
+  .hero-glass-panel {
+    width: min(100%, 38rem);
+  }
+}
+
+@media (max-width: 620px) {
+  .hero-focused {
+    min-height: max(40rem, 82svh);
+  }
+
+  .hero-static-media img {
+    object-position: 58% center;
+  }
+
+  .hero-content-minimal {
+    align-items: flex-end;
+    padding-block: 4rem 5.5rem;
+  }
+
+  .hero-glass-panel {
+    padding: 1.35rem;
+    background: rgba(8, 8, 8, 0.58);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .hero-glass-panel h1 {
+    font-size: clamp(3.25rem, 15vw, 4.7rem);
+  }
+
+  .hero-glass-panel .booking-choice-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-glass-panel .booking-choice {
+    min-height: 4.55rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-static-media img {
+    animation: none;
+    transform: scale(1.025);
+    will-change: auto;
+  }
+}
