@@ -89,38 +89,40 @@ function Header({ currentPath }: { currentPath: string }) {
             </span>
           </a>
 
-          <div className="menu-surface">
+          <div className="header-navigation-surface">
             <span className="menu-signature" aria-hidden="true" />
-            <nav className="desktop-nav" aria-label="Primary navigation">
-              <ul className="nav-list nav-list-branded">
-                {primaryNavigation.map(([label, href]) => {
-                  const current = isCurrentRoute(currentPath, href);
-                  return (
-                    <li key={href}>
-                      <a
-                        href={href}
-                        aria-current={current ? 'page' : undefined}
-                        onClick={(event) => handleSectionLink(event, href)}
-                      >
-                        {label}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-          </div>
+            <div className="menu-surface">
+              <nav className="desktop-nav" aria-label="Primary navigation">
+                <ul className="nav-list nav-list-branded">
+                  {primaryNavigation.map(([label, href]) => {
+                    const current = isCurrentRoute(currentPath, href);
+                    return (
+                      <li key={href}>
+                        <a
+                          href={href}
+                          aria-current={current ? 'page' : undefined}
+                          onClick={(event) => handleSectionLink(event, href)}
+                        >
+                          {label}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
 
-          <div className="header-actions header-actions-direct">
-            <a
-              className="header-call"
-              href={business.phoneHref}
-              aria-label={`Call The Kut Shoppe at ${business.phone}`}
-            >
-              <span className="header-call-label">Call the shop</span>
-              <strong>{business.phone}</strong>
-            </a>
-            <ProviderBookingActions />
+            <div className="header-actions header-actions-direct">
+              <a
+                className="header-call"
+                href={business.phoneHref}
+                aria-label={`Call The Kut Shoppe at ${business.phone}`}
+              >
+                <span className="header-call-label">Call the shop</span>
+                <strong>{business.phone}</strong>
+              </a>
+              <ProviderBookingActions />
+            </div>
           </div>
 
           <details className="mobile-nav mobile-nav-branded">
@@ -172,40 +174,68 @@ function Header({ currentPath }: { currentPath: string }) {
 
 function Footer() {
   return (
-    <footer className="site-footer">
-      <div className="container footer-grid">
-        <div className="footer-brand">
-          <img src={originalAssets.logo} alt="The Kut Shoppe" width="120" height="120" loading="lazy" decoding="async" />
-          <p>Classic barbering, modern styling, and a neighborhood shop experience in downtown Stroudsburg.</p>
-          <div className="footer-socials" aria-label="The Kut Shoppe social media">
-            {socialLinks.map(([label, href]) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer">
-                {label}
-              </a>
-            ))}
+    <footer className="site-footer footer-refined">
+      <div className="container footer-topline">
+        <div className="footer-brand-refined">
+          <img
+            src={originalAssets.logo}
+            alt="The Kut Shoppe"
+            width="112"
+            height="112"
+            loading="lazy"
+            decoding="async"
+          />
+          <div>
+            <p className="eyebrow">The Kut Shoppe</p>
+            <p className="footer-statement">Good cuts. Personal service. A chair you know on Main Street.</p>
           </div>
         </div>
-        <div>
-          <p className="footer-heading">Visit</p>
-          <p>{business.address}</p>
-          <a href={business.phoneHref}>{business.phone}</a>
-          <a href="/visit">Directions and visit details</a>
-        </div>
-        <div>
-          <p className="footer-heading">Information</p>
-          <a href="/services">Services and pricing</a>
-          <a href="/gallery">Full gallery</a>
-          <a href="/team">Team</a>
-          <a href="/reviews">Reviews</a>
-          <a href="/shop">Shop</a>
-          <a href="/#about">About</a>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
+        <div className="footer-booking-links" aria-label="Booking providers">
+          {bookingPaths.map((path) => (
+            <a key={path.id} href={path.href} target="_blank" rel="noopener noreferrer">
+              <span>{path.shortTitle}</span>
+              <small>{path.provider} ↗</small>
+            </a>
+          ))}
         </div>
       </div>
-      <div className="container footer-bottom">
+
+      <div className="container footer-main-grid">
+        <div className="footer-visit-block">
+          <p className="footer-heading">Visit</p>
+          <strong>518 Main Street</strong>
+          <span>Stroudsburg, PA 18360</span>
+          <a href={business.phoneHref}>{business.phone}</a>
+          <a href="/visit">Directions and visit details <Arrow /></a>
+        </div>
+
+        <nav className="footer-link-group" aria-label="Explore The Kut Shoppe">
+          <p className="footer-heading">Explore</p>
+          <a href="/#services">Services and pricing</a>
+          <a href="/#work">Our work</a>
+          <a href="/team">Meet the crew</a>
+          <a href="/#about">About the shop</a>
+          <a href="/shop">Shop</a>
+        </nav>
+
+        <div className="footer-link-group">
+          <p className="footer-heading">Connect</p>
+          <a href="/reviews">Client reviews</a>
+          {socialLinks.map(([label, href]) => (
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer">
+              {label} <span aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="container footer-bottom footer-bottom-refined">
         <span>© {new Date().getFullYear()} The Kut Shoppe LLC</span>
-        <span>Platform by Designed to Breakthrough LLC</span>
+        <div>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <span>Platform by Designed to Breakthrough LLC</span>
+        </div>
       </div>
     </footer>
   );
