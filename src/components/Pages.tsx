@@ -1,5 +1,11 @@
 import { shopCategories } from '../data/commerce';
-import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
+import {
+  shopClosedSummary,
+  shopHours,
+  shopHoursNote,
+  shopHoursSummary,
+} from '../data/hours';
+import { seniorPricingNote, seniorServicePrices } from '../data/senior-services';
 import {
   bookingPaths,
   booksyUrl,
@@ -18,7 +24,7 @@ const instagramUrl = 'https://www.instagram.com/thekutshoppe/';
 const routePresentation: Partial<Record<string, { heading: string; intro: string }>> = {
   '/services': {
     heading: 'Services and pricing.',
-    intro: 'See the current barber menu below, or book locs, braids, twists, and retwists directly with Crowned by Steph.',
+    intro: 'See the barber menu below, or book locs, braids, twists, and retwists directly with Crowned by Steph.',
   },
   '/team': {
     heading: 'Meet the professionals behind the shop.',
@@ -87,12 +93,8 @@ export function BookPage() {
 function ServicesRoute() {
   const barberBooking = getBookingPath('barber');
   const locticianBooking = getBookingPath('styling');
-  const barberPrices = services
-    .filter((category) => category.bookingType === 'barber')
-    .flatMap((category) => category.prices)
-    .filter(
-      (item, index, list) => list.findIndex((candidate) => candidate.name === item.name) === index,
-    );
+  const adultPrices = services.find((category) => category.title === 'Adult and teen cuts')?.prices ?? [];
+  const kidsPrices = services.find((category) => category.title === 'Kids cuts')?.prices ?? [];
   const locticianCategories = services.filter((category) => category.bookingType === 'styling');
 
   return (
@@ -102,21 +104,61 @@ function ServicesRoute() {
           <div>
             <p className="eyebrow">Haircuts, fades, line-ups, and beard work</p>
             <h2 id="barber-menu-heading">Barber services</h2>
-            <p>Review current prices and appointment times, then choose your barber.</p>
+            <p>Review prices and appointment times, then choose your barber.</p>
           </div>
           <a className="button" href={barberBooking.href} target="_blank" rel="noopener noreferrer">
             {barberBooking.buttonLabel} <span aria-hidden="true">↗</span>
           </a>
         </div>
-        <ul className="services-menu-list">
-          {barberPrices.map((item) => (
-            <li key={item.name}>
-              <span>{item.name}</span>
-              <small>{item.duration}</small>
-              <strong>{item.price}</strong>
-            </li>
-          ))}
-        </ul>
+
+        <div className="service-price-section service-price-section-adult">
+          <div className="service-price-section-heading">
+            <h3>Adult and teen barber services</h3>
+            <span>Ages 13 and up</span>
+          </div>
+          <ul className="services-menu-list services-menu-list-explicit">
+            {adultPrices.map((item) => (
+              <li key={item.name}>
+                <span>{item.name}</span>
+                <small>{item.duration}</small>
+                <strong>{item.price}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="service-price-section service-price-section-senior">
+          <div className="service-price-section-heading">
+            <h3>Senior barber services</h3>
+            <span>Live shop menu reference</span>
+          </div>
+          <ul className="services-menu-list services-menu-list-explicit services-menu-list-three">
+            {seniorServicePrices.map((item) => (
+              <li key={item.name}>
+                <span>{item.name}</span>
+                <small aria-hidden="true" />
+                <strong>{item.price}</strong>
+              </li>
+            ))}
+          </ul>
+          <p className="service-price-source-note">{seniorPricingNote}</p>
+        </div>
+
+        <div className="service-price-section service-price-section-kids">
+          <div className="service-price-section-heading">
+            <h3>Kids barber services</h3>
+            <span>Ages 3 to 12</span>
+          </div>
+          <ul className="services-menu-list services-menu-list-explicit services-menu-list-three">
+            {kidsPrices.map((item) => (
+              <li key={item.name}>
+                <span>{item.name}</span>
+                <small>{item.duration}</small>
+                <strong>{item.price}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <section className="services-menu-block services-menu-styling" aria-labelledby="loctician-menu-heading">
@@ -217,17 +259,25 @@ function VisitRoute() {
   return (
     <div className="visit-route-stack route-content">
       <LocationMap compact />
-      <div className="split-grid">
+      <div className="split-grid visit-hours-grid">
         <div className="content-panel">
           <p className="eyebrow">Walk-in reference hours</p>
-          <h2>{shopHoursSummary}</h2>
-          <p>{shopClosedSummary}</p>
+          <h2>Shop hours</h2>
+          <dl className="visit-hours-list">
+            {shopHours.map((entry) => (
+              <div key={entry.days}>
+                <dt>{entry.days}</dt>
+                <dd>{entry.hours}</dd>
+              </div>
+            ))}
+          </dl>
           <small>{shopHoursNote}</small>
         </div>
         <div className="content-panel">
           <p className="eyebrow">Before you visit</p>
           <h2>Check your professional’s availability.</h2>
           <p>{business.walkIns}</p>
+          <p className="visit-hours-summary">{shopHoursSummary} · {shopClosedSummary}</p>
           <a className="button" href={business.phoneHref}>Call {business.phone}</a>
         </div>
       </div>
