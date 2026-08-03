@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   createOrUpdateStaffAccount,
   endSession,
   findAccount,
   formatPhone,
   getSessionAccount,
-  isValidEmail,
   isValidPhone,
   requestPhoneVerification,
   startSession,
@@ -19,6 +18,7 @@ import {
   createStaffProfileDraft,
   declineAppointment,
   getBarberDirectory,
+  hasAppointmentConflict,
   minutesToTimeLabel,
   primaryLocation,
   proposeAppointmentTime,
@@ -110,6 +110,30 @@ function getProfileForSession() {
   const account = getSessionAccount();
   if (!account?.staffProfileId) return null;
   return readStaffProfiles().find((profile) => profile.id === account.staffProfileId) ?? null;
+}
+
+function isManagerRole() {
+  const role = getSessionAccount()?.role;
+  return role === 'owner' || role === 'manager';
+}
+
+function appointmentsVisibleToStaff(
+  appointments: PlatformAppointment[],
+  profile: StaffProfile,
+  canManageAll: boolean,
+) {
+  if (canManageAll) return appointments;
+  return appointments.filter((appointment) => (
+    appointment.assignedBarberId === profile.id
+    || (
+      appointment.status === 'waitlisted'
+      && profile.bookingRules.acceptsWalkIns
+    )
+  ));
+}
+
+function profilesVisibleToStaff(profile: StaffProfile, canManageAll: boolean) {
+  return canManageAll ? readStaffProfiles() : [profile];
 }
 
 function StaffNav({ currentPath }: { currentPath: string }) {
@@ -264,15 +288,21 @@ function FieldError({ message }: { message?: string }) {
 }
 
 function StaffSetupPage() {
-  const existing = readStaffProfiles().find((profile) => profile.setupComplete);
+  const existingSessionProfile = getProfileForSession();
+  const hasApprovedStaff = readStaffProfiles().some((profile) => profile.setupComplete);
+  const sessionAccount = getSessionAccount();
+  const canCreateAdditionalProfile = !hasApprovedStaff
+    || import.meta.env.DEV
+    || sessionAccount?.role === 'owner'
+    || sessionAccount?.role === 'manager';
   const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState<StaffProfile>(() => existing ?? createStaffProfileDraft());
+  const [profile, setProfile] = useState<StaffProfile>(() => existingSessionProfile ?? createStaffProfileDraft());
   const [verification, setVerification] = useState<VerificationState>(emptyVerification);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (existing) window.location.replace('/staff/settings');
-  }, [existing]);
+    if (existingSessionProfile) window.location.replace('/staff/settings');
+  }, [existingSessionProfile]);
 
   const updateSchedule = (day: WeeklyWindow['day'], patch: Partial<WeeklyWindow>) => {
     setProfile((current) => ({
@@ -338,7 +368,28 @@ function StaffSetupPage() {
     window.location.assign('/staff');
   };
 
-  if (existing) return <section className="section staff-platform-page"><div className="container narrow-container"><div className="staff-empty-state"><h1>Opening staff settings.</h1><p>Completed setup is managed from the protected Settings page.</p><a className="button" href="/staff/settings">Continue</a></div></div></section>;
+  if (existingSessionProfile) {
+    return (
+      <section className="section staff-platform-page">
+        <div className="container narrow-container"><div className="staff-empty-state"><h1>Opening staff settings.</h1><p>Completed setup is managed from the protected Settings page.</p><a className="button" href="/staff/settings">Continue</a></div></div>
+      </section>
+    );
+  }
+
+  if (!canCreateAdditionalProfile) {
+    return (
+      <section className="section staff-platform-page platform-pattern platform-pattern-poles">
+        <div className="container narrow-container">
+          <div className="staff-empty-state">
+            <p className="eyebrow">Staff invitation required</p>
+            <h1>Additional staff accounts require owner approval.</h1>
+            <p>The first local prototype account can initialize setup. Additional production accounts must be invited by an owner or manager before the barber enters personal contact, services, hours, and booking rules.</p>
+            <a className="button" href="/staff/login">Staff sign in</a>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="section staff-platform-page platform-pattern platform-pattern-tools">
@@ -476,8 +527,8 @@ function StaffSettingsPage({ profile }: { profile: StaffProfile }) {
           <p className="eyebrow">Profile and contact</p><h2>Public staff details</h2>
           <div className="staff-form-grid">
             <label>Professional name<input value={draft.professionalName} onChange={(event) => setDraft({ ...draft, professionalName: event.target.value })} /><FieldError message={errors.professionalName} /></label>
-            <label>Email<input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /><FieldError message={errors.email} /></label>
-            <label>Phone<input type="tel" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /><FieldError message={errors.phone} /></label>
+            <label>Email<input type="email" value={draft.email} readOnly /><small>Contact changes require a new verification through owner support.</small></label>
+            <label>Phone<input type="tel" value={formatPhone(draft.phone)} readOnly /><small>Contact changes require a new verification through owner support.</small></label>
             <label className="staff-form-wide">Public introduction<textarea rows={4} value={draft.publicBio} onChange={(event) => setDraft({ ...draft, publicBio: event.target.value })} /></label>
           </div>
         </section>
@@ -520,25 +571,45 @@ function AppointmentActionPanel({
   const [barberId, setBarberId] = useState(appointment.assignedBarberId ?? profiles[0]?.id ?? '');
   const [staffNote, setStaffNote] = useState(appointment.staffNote);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const selectedBarber = directory.find((barber) => (barber.profile?.id ?? barber.id) === barberId);
   const startMinutes = timeLabelToMinutes(time);
+  const endMinutes = startMinutes + appointment.durationMinutes;
+
+  const slotConflicts = () => (
+    Boolean(barberId)
+    && hasAppointmentConflict(
+      barberId,
+      date,
+      startMinutes,
+      endMinutes,
+      readAppointments(),
+      appointment.id,
+    )
+  );
 
   const saveDetails = () => {
+    if (slotConflicts()) {
+      setError('That barber already has a blocking appointment during the selected time.');
+      return false;
+    }
     updateAppointment(appointment.id, {
       date,
       time,
       startMinutes,
-      endMinutes: startMinutes + appointment.durationMinutes,
+      endMinutes,
       assignedBarberId: barberId || null,
       barberName: selectedBarber?.name ?? appointment.barberName,
       staffNote,
     });
     setMessage('Appointment details updated.');
+    setError('');
     onSaved();
+    return true;
   };
 
   const confirm = () => {
-    saveDetails();
+    if (!saveDetails()) return;
     confirmAppointment(appointment.id, barberId);
     onSaved();
     onClose();
@@ -551,7 +622,10 @@ function AppointmentActionPanel({
   };
 
   const propose = () => {
-    if (!selectedBarber || !date || !time) return;
+    if (!selectedBarber || !date || !time || slotConflicts()) {
+      setError('Choose an open barber, date, and time before proposing the appointment.');
+      return;
+    }
     proposeAppointmentTime(appointment.id, {
       date,
       time,
@@ -565,7 +639,10 @@ function AppointmentActionPanel({
   };
 
   const claim = () => {
-    if (!selectedBarber || !date || !time) return;
+    if (!selectedBarber || !date || !time || slotConflicts()) {
+      setError('Choose an open barber, date, and time before claiming the walk-in.');
+      return;
+    }
     claimWalkIn(appointment.id, {
       staffId: barberId,
       barberName: selectedBarber.name,
@@ -584,13 +661,14 @@ function AppointmentActionPanel({
         <div className="appointment-editor-heading"><div><p className="eyebrow">Manage request</p><h2 id="appointment-editor-heading">{appointment.customerName}</h2></div><button className="text-button" type="button" onClick={onClose}>Close</button></div>
         <dl className="appointment-editor-summary"><div><dt>Service</dt><dd>{appointment.serviceName}</dd></div><div><dt>Current status</dt><dd>{appointment.status.replaceAll('-', ' ')}</dd></div><div><dt>Phone</dt><dd>{formatPhone(appointment.customerPhone)}</dd></div><div><dt>Email</dt><dd>{appointment.customerEmail}</dd></div></dl>
         <div className="staff-form-grid">
-          <label>Date<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
-          <label>Time<input type="time" value={startMinutes ? `${String(Math.floor(startMinutes / 60)).padStart(2, '0')}:${String(startMinutes % 60).padStart(2, '0')}` : ''} onChange={(event) => setTime(minutesToTimeLabel(Number(event.target.value.split(':')[0] ?? 0) * 60 + Number(event.target.value.split(':')[1] ?? 0)))} /></label>
-          <label>Assigned barber<select value={barberId} onChange={(event) => setBarberId(event.target.value)}><option value="">Unassigned</option>{directory.map((barber) => { const id = barber.profile?.id ?? barber.id; return <option value={id} key={id}>{barber.name}</option>; })}</select></label>
+          <label>Date<input type="date" value={date} onChange={(event) => { setDate(event.target.value); setError(''); }} /></label>
+          <label>Time<input type="time" value={startMinutes ? `${String(Math.floor(startMinutes / 60)).padStart(2, '0')}:${String(startMinutes % 60).padStart(2, '0')}` : ''} onChange={(event) => { setTime(minutesToTimeLabel(Number(event.target.value.split(':')[0] ?? 0) * 60 + Number(event.target.value.split(':')[1] ?? 0))); setError(''); }} /></label>
+          <label>Assigned barber<select value={barberId} onChange={(event) => { setBarberId(event.target.value); setError(''); }}><option value="">Unassigned</option>{directory.map((barber) => { const id = barber.profile?.id ?? barber.id; return <option value={id} key={id}>{barber.name}</option>; })}</select></label>
           <label className="staff-form-wide">Internal note<textarea rows={4} value={staffNote} onChange={(event) => setStaffNote(event.target.value)} /></label>
         </div>
         {appointment.customerNote ? <p className="appointment-customer-note"><strong>Customer note:</strong> {appointment.customerNote}</p> : null}
         {message ? <p className="success-message" role="status">{message}</p> : null}
+        {error ? <p className="form-error" role="alert">{error}</p> : null}
         <div className="appointment-editor-actions">
           <button className="button button-secondary" type="button" onClick={saveDetails}>Save details</button>
           {appointment.status === 'waitlisted' ? <button className="button" type="button" disabled={!barberId} onClick={claim}>Claim and confirm</button> : <button className="button" type="button" disabled={!barberId} onClick={confirm}>Confirm appointment</button>}
@@ -630,19 +708,30 @@ function AppointmentList({
   );
 }
 
-function StaffDashboardPage({ profile }: { profile: StaffProfile }) {
-  const [appointments, setAppointments] = useState(() => readAppointments());
+function StaffDashboardPage({ profile, canManageAll }: { profile: StaffProfile; canManageAll: boolean }) {
+  const [appointments, setAppointments] = useState(() => appointmentsVisibleToStaff(readAppointments(), profile, canManageAll));
   const [notifications, setNotifications] = useState(() => readNotifications());
-  const profiles = readStaffProfiles();
+  const profiles = profilesVisibleToStaff(profile, canManageAll);
 
   useEffect(() => subscribeToAppointmentChanges(() => {
-    setAppointments(readAppointments());
+    setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll));
     setNotifications(readNotifications());
-  }), []);
+  }), [canManageAll, profile]);
 
   const pending = appointments.filter((appointment) => appointment.status === 'requested' || appointment.status === 'reschedule-proposed');
   const waitlist = appointments.filter((appointment) => appointment.status === 'waitlisted');
   const upcoming = appointments.filter((appointment) => appointment.status === 'confirmed').slice(0, 5);
+  const visibleAppointmentIds = new Set(appointments.map((appointment) => appointment.id));
+  const queuedNotifications = notifications.filter((notification) => (
+    notification.status === 'queued'
+    && (
+      canManageAll
+      || (
+        notification.relatedType === 'appointment'
+        && visibleAppointmentIds.has(notification.relatedId)
+      )
+    )
+  ));
 
   return (
     <StaffShell currentPath="/staff" profile={profile}>
@@ -652,9 +741,9 @@ function StaffDashboardPage({ profile }: { profile: StaffProfile }) {
           <article><small>Needs review</small><strong>{pending.length}</strong><span>appointment requests</span></article>
           <article><small>Waiting list</small><strong>{waitlist.length}</strong><span>last-minute clients</span></article>
           <article><small>Confirmed</small><strong>{upcoming.length}</strong><span>upcoming appointments</span></article>
-          <article><small>Queued updates</small><strong>{notifications.filter((notification) => notification.status === 'queued').length}</strong><span>email or SMS events</span></article>
+          <article><small>Queued updates</small><strong>{queuedNotifications.length}</strong><span>email or SMS events</span></article>
         </section>
-        <section className="staff-dashboard-panel staff-dashboard-wide"><div className="staff-panel-heading"><div><p className="eyebrow">Needs attention</p><h2>Appointment requests</h2></div><a href="/staff/requests">View all</a></div>{pending.length ? <AppointmentList appointments={pending.slice(0, 4)} profiles={profiles} onSaved={() => setAppointments(readAppointments())} /> : <p>No appointment requests are waiting for review.</p>}</section>
+        <section className="staff-dashboard-panel staff-dashboard-wide"><div className="staff-panel-heading"><div><p className="eyebrow">Needs attention</p><h2>Appointment requests</h2></div><a href="/staff/requests">View all</a></div>{pending.length ? <AppointmentList appointments={pending.slice(0, 4)} profiles={profiles} onSaved={() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))} /> : <p>No appointment requests are waiting for review.</p>}</section>
         <section className="staff-dashboard-panel"><div className="staff-panel-heading"><div><p className="eyebrow">Waiting list</p><h2>Open walk-ins</h2></div><a href="/staff/waitlist">Open queue</a></div>{waitlist.length ? <p>{waitlist.length} client{waitlist.length === 1 ? '' : 's'} waiting for a barber to claim or reschedule.</p> : <p>No walk-in requests are waiting.</p>}</section>
         <section className="staff-dashboard-panel"><div className="staff-panel-heading"><div><p className="eyebrow">Published hours</p><h2>This week</h2></div></div><dl className="staff-schedule-summary">{profile.schedule.map((window) => <div key={window.day}><dt>{window.label}</dt><dd>{window.enabled ? `${window.start} to ${window.end}` : 'Not available'}</dd></div>)}</dl></section>
       </div>
@@ -662,20 +751,20 @@ function StaffDashboardPage({ profile }: { profile: StaffProfile }) {
   );
 }
 
-function StaffRequestsPage({ profile }: { profile: StaffProfile }) {
-  const [appointments, setAppointments] = useState(() => readAppointments());
-  const profiles = readStaffProfiles();
-  useEffect(() => subscribeToAppointmentChanges(() => setAppointments(readAppointments())), []);
+function StaffRequestsPage({ profile, canManageAll }: { profile: StaffProfile; canManageAll: boolean }) {
+  const [appointments, setAppointments] = useState(() => appointmentsVisibleToStaff(readAppointments(), profile, canManageAll));
+  const profiles = profilesVisibleToStaff(profile, canManageAll);
+  useEffect(() => subscribeToAppointmentChanges(() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))), [canManageAll, profile]);
   const requests = appointments.filter((appointment) => ['requested', 'reschedule-proposed'].includes(appointment.status));
-  return <StaffShell currentPath="/staff/requests" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Approval queue</p><h2>Appointment requests</h2></div></div>{requests.length ? <AppointmentList appointments={requests} profiles={profiles} onSaved={() => setAppointments(readAppointments())} /> : <div className="staff-empty-state"><h2>No requests need review.</h2></div>}</StaffShell>;
+  return <StaffShell currentPath="/staff/requests" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Approval queue</p><h2>Appointment requests</h2></div></div>{requests.length ? <AppointmentList appointments={requests} profiles={profiles} onSaved={() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))} /> : <div className="staff-empty-state"><h2>No requests need review.</h2></div>}</StaffShell>;
 }
 
-function StaffWaitlistPage({ profile }: { profile: StaffProfile }) {
-  const [appointments, setAppointments] = useState(() => readAppointments());
-  const profiles = readStaffProfiles();
-  useEffect(() => subscribeToAppointmentChanges(() => setAppointments(readAppointments())), []);
+function StaffWaitlistPage({ profile, canManageAll }: { profile: StaffProfile; canManageAll: boolean }) {
+  const [appointments, setAppointments] = useState(() => appointmentsVisibleToStaff(readAppointments(), profile, canManageAll));
+  const profiles = profilesVisibleToStaff(profile, canManageAll);
+  useEffect(() => subscribeToAppointmentChanges(() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))), [canManageAll, profile]);
   const waitlist = appointments.filter((appointment) => appointment.status === 'waitlisted');
-  return <StaffShell currentPath="/staff/waitlist" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Walk-ins and last-minute clients</p><h2>Waiting list</h2></div><a className="button" href="/book/walk-in">Add a customer</a></div>{waitlist.length ? <AppointmentList appointments={waitlist} profiles={profiles} onSaved={() => setAppointments(readAppointments())} /> : <div className="staff-empty-state"><h2>The waiting list is clear.</h2><p>New walk-in requests appear here for the crew to claim or reschedule.</p></div>}</StaffShell>;
+  return <StaffShell currentPath="/staff/waitlist" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Walk-ins and last-minute clients</p><h2>Waiting list</h2></div><a className="button" href="/book/walk-in">Add a customer</a></div>{waitlist.length ? <AppointmentList appointments={waitlist} profiles={profiles} onSaved={() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))} /> : <div className="staff-empty-state"><h2>The waiting list is clear.</h2><p>New walk-in requests appear here for the crew to claim or reschedule.</p></div>}</StaffShell>;
 }
 
 function CalendarToolbar({
@@ -708,14 +797,14 @@ function CalendarToolbar({
   );
 }
 
-function StaffCalendarPage({ profile }: { profile: StaffProfile }) {
-  const [appointments, setAppointments] = useState(() => readAppointments());
+function StaffCalendarPage({ profile, canManageAll }: { profile: StaffProfile; canManageAll: boolean }) {
+  const [appointments, setAppointments] = useState(() => appointmentsVisibleToStaff(readAppointments(), profile, canManageAll));
   const [view, setView] = useState<CalendarView>('day');
   const [dateKey, setDateKey] = useState(todayKey);
   const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatus>('all');
   const [barberFilter, setBarberFilter] = useState('all');
-  const profiles = readStaffProfiles();
-  useEffect(() => subscribeToAppointmentChanges(() => setAppointments(readAppointments())), []);
+  const profiles = profilesVisibleToStaff(profile, canManageAll);
+  useEffect(() => subscribeToAppointmentChanges(() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))), [canManageAll, profile]);
 
   const filtered = appointments.filter((appointment) => (
     (statusFilter === 'all' || appointment.status === statusFilter)
@@ -732,14 +821,14 @@ function StaffCalendarPage({ profile }: { profile: StaffProfile }) {
     <StaffShell currentPath="/staff/calendar" profile={profile}>
       <div className="staff-section-heading"><div><p className="eyebrow">Appointments</p><h2>Calendar</h2></div><div className="staff-dashboard-actions"><a className="button" href="/book">Create request</a><a className="button button-secondary" href="/book/walk-in">Add walk-in</a></div></div>
       <CalendarToolbar view={view} dateKey={dateKey} onView={setView} onDate={setDateKey} />
-      <div className="calendar-filters"><label>Status<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'all' | AppointmentStatus)}><option value="all">All statuses</option><option value="requested">Requested</option><option value="confirmed">Confirmed</option><option value="reschedule-proposed">Reschedule proposed</option><option value="waitlisted">Waitlisted</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option><option value="no-show">No-show</option></select></label><label>Barber<select value={barberFilter} onChange={(event) => setBarberFilter(event.target.value)}><option value="all">All barbers</option>{profiles.map((staff) => <option value={staff.id} key={staff.id}>{staff.professionalName}</option>)}</select></label></div>
+      <div className="calendar-filters"><label>Status<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'all' | AppointmentStatus)}><option value="all">All statuses</option><option value="requested">Requested</option><option value="confirmed">Confirmed</option><option value="reschedule-proposed">Reschedule proposed</option><option value="waitlisted">Waitlisted</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option><option value="no-show">No-show</option></select></label>{canManageAll ? <label>Barber<select value={barberFilter} onChange={(event) => setBarberFilter(event.target.value)}><option value="all">All barbers</option>{profiles.map((staff) => <option value={staff.id} key={staff.id}>{staff.professionalName}</option>)}</select></label> : null}</div>
       {view === 'month' ? (
         <div className="staff-month-grid">{visibleDates.map((day) => { const dayAppointments = visible.filter((appointment) => appointment.date === day); return <button className={day === todayKey() ? 'is-today' : ''} type="button" key={day} onClick={() => { setDateKey(day); setView('day'); }}><span>{new Date(`${day}T12:00:00`).getDate()}</span><strong>{dayAppointments.length}</strong><small>{dayAppointments.length === 1 ? 'appointment' : 'appointments'}</small></button>; })}</div>
       ) : (
         <div className={view === 'week' ? 'staff-week-grid' : 'staff-day-view'}>
           {visibleDates.map((day) => {
             const dayAppointments = visible.filter((appointment) => appointment.date === day);
-            return <section className="staff-calendar-day" key={day}><header><span>{formatDate(day, { weekday: 'short' })}</span><strong>{formatDate(day, { month: 'short', day: 'numeric' })}</strong><small>{dayAppointments.length} scheduled</small></header>{dayAppointments.length ? <AppointmentList appointments={dayAppointments} profiles={profiles} onSaved={() => setAppointments(readAppointments())} /> : <p className="calendar-empty">No matching appointments.</p>}</section>;
+            return <section className="staff-calendar-day" key={day}><header><span>{formatDate(day, { weekday: 'short' })}</span><strong>{formatDate(day, { month: 'short', day: 'numeric' })}</strong><small>{dayAppointments.length} scheduled</small></header>{dayAppointments.length ? <AppointmentList appointments={dayAppointments} profiles={profiles} onSaved={() => setAppointments(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll))} /> : <p className="calendar-empty">No matching appointments.</p>}</section>;
           })}
         </div>
       )}
@@ -757,10 +846,17 @@ function StaffPayoutsPage({ profile }: { profile: StaffProfile }) {
   return <StaffShell currentPath="/staff/payouts" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Payouts</p><h2>Track what the shop owes and pays.</h2></div></div><div className="staff-payout-layout"><section className="staff-dashboard-panel"><p className="eyebrow">Current mode</p><h2>Manual payout ledger</h2><p>The platform can record approved earnings and external payouts without storing bank account numbers.</p><dl className="staff-payout-summary"><div><dt>Available</dt><dd>$0.00</dd></div><div><dt>Pending review</dt><dd>$0.00</dd></div><div><dt>Last payout</dt><dd>None</dd></div></dl></section><section className="staff-dashboard-panel"><p className="eyebrow">Automated payouts</p><h2>Regulated transfer connection required</h2><p>Identity checks, tokenized bank setup, settlement, tax reporting, and disputes must be handled by a licensed provider before direct transfers are enabled.</p><button className="button" type="button" disabled>Connect payout destination later</button></section></div></StaffShell>;
 }
 
-function StaffNotificationsPage({ profile }: { profile: StaffProfile }) {
+function StaffNotificationsPage({ profile, canManageAll }: { profile: StaffProfile; canManageAll: boolean }) {
   const [notifications, setNotifications] = useState<NotificationRecord[]>(() => readNotifications());
   useEffect(() => subscribeToAppointmentChanges(() => setNotifications(readNotifications())), []);
-  return <StaffShell currentPath="/staff/notifications" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Transactional messages</p><h2>Email and SMS outbox</h2></div></div><p className="staff-preview-notice">These records prove when the application would send a verification, confirmation, receipt, or status update. Production delivery still requires configured email and SMS transports.</p>{notifications.length ? <div className="notification-outbox">{notifications.slice().reverse().map((notification) => <article key={notification.id}><div><span>{notification.channel}</span><strong>{notification.subject}</strong><small>{notification.recipient}</small></div><p>{notification.message}</p><span className={`staff-status staff-status-${notification.status}`}>{notification.status}</span></article>)}</div> : <div className="staff-empty-state"><h2>No messages queued yet.</h2></div>}</StaffShell>;
+  const visibleAppointmentIds = new Set(appointmentsVisibleToStaff(readAppointments(), profile, canManageAll).map((appointment) => appointment.id));
+  const visibleNotifications = canManageAll
+    ? notifications
+    : notifications.filter((notification) => (
+        notification.relatedType === 'appointment'
+        && visibleAppointmentIds.has(notification.relatedId)
+      ));
+  return <StaffShell currentPath="/staff/notifications" profile={profile}><div className="staff-section-heading"><div><p className="eyebrow">Transactional messages</p><h2>Email and SMS outbox</h2></div></div><p className="staff-preview-notice">These records prove when the application would send a verification, confirmation, receipt, or status update. Production delivery still requires configured email and SMS transports.</p>{visibleNotifications.length ? <div className="notification-outbox">{visibleNotifications.slice().reverse().map((notification) => <article key={notification.id}><div><span>{notification.channel}</span><strong>{notification.subject}</strong><small>{notification.recipient}</small></div><p>{notification.message}</p><span className={`staff-status staff-status-${notification.status}`}>{notification.status}</span></article>)}</div> : <div className="staff-empty-state"><h2>No messages are available for this account.</h2></div>}</StaffShell>;
 }
 
 function StaffProtectedRoutes({ path }: { path: string }) {
@@ -770,18 +866,19 @@ function StaffProtectedRoutes({ path }: { path: string }) {
     return <section className="section staff-login-required platform-pattern platform-pattern-poles"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">Staff sign-in required</p><h1>Open the protected staff portal.</h1><p>Appointment details, customer contact information, schedules, earnings, and payouts are available only after staff verification.</p><a className="button" href="/staff/login">Staff sign in</a></div></div></section>;
   }
 
-  if (path === '/staff/settings' || path === '/staff/setup') return <StaffSettingsPage profile={profile} />;
-  if (path === '/staff/calendar') return <StaffCalendarPage profile={profile} />;
-  if (path === '/staff/requests') return <StaffRequestsPage profile={profile} />;
-  if (path === '/staff/waitlist') return <StaffWaitlistPage profile={profile} />;
+  const canManageAll = account.role === 'owner' || account.role === 'manager';
+  if (path === '/staff/settings') return <StaffSettingsPage profile={profile} />;
+  if (path === '/staff/calendar') return <StaffCalendarPage profile={profile} canManageAll={canManageAll} />;
+  if (path === '/staff/requests') return <StaffRequestsPage profile={profile} canManageAll={canManageAll} />;
+  if (path === '/staff/waitlist') return <StaffWaitlistPage profile={profile} canManageAll={canManageAll} />;
   if (path === '/staff/earnings') return <StaffEarningsPage profile={profile} />;
   if (path === '/staff/payouts') return <StaffPayoutsPage profile={profile} />;
-  if (path === '/staff/notifications') return <StaffNotificationsPage profile={profile} />;
-  return <StaffDashboardPage profile={profile} />;
+  if (path === '/staff/notifications') return <StaffNotificationsPage profile={profile} canManageAll={canManageAll} />;
+  return <StaffDashboardPage profile={profile} canManageAll={canManageAll} />;
 }
 
 export function StaffPlatformPage({ path }: { path: string }) {
   if (path === '/staff/login') return <StaffLoginPage />;
-  if (path === '/staff/setup' && !readStaffProfiles().some((profile) => profile.setupComplete)) return <StaffSetupPage />;
+  if (path === '/staff/setup') return <StaffSetupPage />;
   return <StaffProtectedRoutes path={path} />;
 }
