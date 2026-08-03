@@ -1,0 +1,980 @@
+.customer-header-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+}
+
+.customer-action {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  padding: 0.65rem 1rem;
+  color: var(--paper);
+  font-family: var(--accent);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.customer-action-book {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.customer-action-account:hover,
+.customer-action-account:focus-visible {
+  border-color: var(--paper);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.customer-header-actions-mobile {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.customer-header-actions-mobile .customer-action {
+  width: 100%;
+}
+
+.mobile-staff-link {
+  display: block;
+  padding: 0.75rem 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.platform-pattern {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.platform-pattern::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  opacity: 0.42;
+}
+
+.platform-pattern-tools::before {
+  background-image:
+    radial-gradient(circle at 85% 12%, rgba(158, 27, 43, 0.19), transparent 30rem),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.065' stroke-width='2'%3E%3Ccircle cx='54' cy='57' r='17'/%3E%3Ccircle cx='95' cy='57' r='17'/%3E%3Cpath d='M67 68l70 81M82 68l-28 81M54 149l83-81M137 68l-30 81'/%3E%3Cpath d='M158 50v98M170 50v98M182 50v98M194 50v98M154 50h44M154 148h44'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, 240px 240px;
+}
+
+.platform-pattern-poles::before {
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(158, 27, 43, 0.18), transparent 24rem),
+    repeating-linear-gradient(125deg, transparent 0 64px, rgba(255, 255, 255, 0.035) 64px 66px, transparent 66px 108px, rgba(158, 27, 43, 0.075) 108px 112px);
+}
+
+.platform-pattern-products::before {
+  background-image:
+    radial-gradient(circle at 84% 18%, rgba(158, 27, 43, 0.17), transparent 28rem),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.06' stroke-width='2'%3E%3Cpath d='M48 66h48v121H48zM59 50h26v16M58 97h28M59 117h26'/%3E%3Cpath d='M136 62h58v125h-58zM145 81h40M145 101h40M145 121h40M145 141h40M145 161h40'/%3E%3Cpath d='M213 55v134M221 55v134M229 55v134M205 55h32M205 189h32'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, 260px 260px;
+}
+
+.platform-pattern > .container {
+  position: relative;
+  z-index: 1;
+}
+
+.platform-pattern h1,
+.platform-pattern h2,
+.platform-pattern h3 {
+  text-wrap: pretty;
+}
+
+.form-error,
+.field-error {
+  color: #ff9b9b;
+}
+
+.form-error {
+  margin: 0.75rem 0;
+  border-left: 3px solid #ff7373;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 80, 80, 0.07);
+}
+
+.field-error {
+  font-weight: 400;
+}
+
+.success-message {
+  border-left: 3px solid #7fd39a;
+  padding: 0.75rem 1rem;
+  background: rgba(83, 179, 115, 0.08);
+  color: #a6e7bb;
+}
+
+.development-code,
+.booking-development-code {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.development-code span,
+.booking-development-code span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.booking-choice-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.booking-choice-grid-three article {
+  min-height: 32rem;
+}
+
+.booking-choice-grid-three h2 {
+  max-width: 11ch;
+}
+
+.booking-step-indicator {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.booking-form-wide,
+.staff-form-wide {
+  grid-column: 1 / -1;
+}
+
+.booking-customer-form select,
+.booking-customer-form textarea,
+.booking-verification-entry input,
+.walk-in-request-card input,
+.walk-in-request-card select,
+.walk-in-request-card textarea,
+.account-auth-fields input,
+.account-code-entry input,
+.staff-verification-entry input {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 1px solid var(--line-strong);
+  background: #080808;
+  color: var(--paper);
+  padding: 0.75rem;
+  font: inherit;
+}
+
+.booking-customer-form textarea,
+.walk-in-request-card textarea {
+  resize: vertical;
+}
+
+.booking-customer-form small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.booking-verification-panel,
+.staff-verification-box {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.booking-verification-panel h3,
+.staff-verification-box h3 {
+  margin-bottom: 0.35rem;
+}
+
+.booking-verification-entry,
+.staff-verification-entry,
+.account-code-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.booking-verification-entry label,
+.staff-verification-entry label,
+.account-code-entry label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.walk-in-request-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.walk-in-request-card > section {
+  border: 1px solid var(--line);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.walk-in-request-card h2 {
+  margin-bottom: 1.2rem;
+}
+
+.walk-in-submit {
+  margin-top: 1rem;
+}
+
+.staff-session-actions,
+.staff-login-links,
+.account-auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.staff-login-page,
+.staff-login-required,
+.account-auth-shell {
+  min-height: 70vh;
+}
+
+.staff-login-card,
+.account-auth-card {
+  display: grid;
+  gap: 1.25rem;
+  border: 1px solid var(--line);
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background: rgba(8, 8, 8, 0.9);
+  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.35);
+}
+
+.staff-login-card h1,
+.account-auth-card h1 {
+  max-width: none;
+}
+
+.staff-login-card .button,
+.account-auth-card .button {
+  justify-self: start;
+}
+
+.staff-verification-box {
+  margin-block: 0.5rem;
+}
+
+.staff-setup-card {
+  min-width: 0;
+}
+
+.staff-setup-card section > p:not(.eyebrow),
+.staff-settings-layout section > p:not(.eyebrow) {
+  max-width: 70ch;
+}
+
+.staff-hours-editor > div {
+  grid-template-columns: minmax(8rem, 1fr) minmax(7rem, 0.7fr) auto minmax(7rem, 0.7fr);
+}
+
+.staff-hours-editor .field-error {
+  grid-column: 1 / -1;
+}
+
+.staff-service-selector.compact {
+  max-height: 30rem;
+  overflow-y: auto;
+  padding-right: 0.3rem;
+}
+
+.staff-settings-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.staff-settings-layout > .button {
+  justify-self: start;
+}
+
+.staff-dashboard-wide {
+  grid-column: 1 / -1;
+}
+
+.staff-status,
+.account-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.staff-status-requested,
+.staff-status-reschedule-proposed,
+.staff-status-waitlisted,
+.staff-status-queued,
+.account-status-requested,
+.account-status-reschedule-proposed,
+.account-status-waitlisted,
+.account-status-submitted,
+.account-status-payment-required,
+.account-status-queued {
+  border-color: rgba(255, 195, 95, 0.55);
+  color: #ffd28a;
+}
+
+.staff-status-confirmed,
+.staff-status-completed,
+.staff-status-sent,
+.account-status-confirmed,
+.account-status-completed,
+.account-status-accepted,
+.account-status-ready-for-pickup,
+.account-status-shipped,
+.account-status-sent {
+  border-color: rgba(135, 218, 163, 0.55);
+  color: #a6e7bb;
+}
+
+.staff-status-declined,
+.staff-status-cancelled,
+.staff-status-no-show,
+.staff-status-failed,
+.account-status-declined,
+.account-status-cancelled,
+.account-status-no-show,
+.account-status-failed {
+  border-color: rgba(255, 113, 113, 0.55);
+  color: #ff9b9b;
+}
+
+.staff-appointment-list article {
+  grid-template-columns: minmax(8rem, 0.3fr) minmax(0, 1fr) auto auto;
+}
+
+.staff-appointment-list article > button {
+  white-space: nowrap;
+}
+
+.appointment-editor {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.appointment-editor-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.78);
+  cursor: pointer;
+}
+
+.appointment-editor > section {
+  position: relative;
+  z-index: 1;
+  width: min(52rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--line-strong);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: #0c0c0c;
+  box-shadow: 0 2rem 7rem rgba(0, 0, 0, 0.6);
+}
+
+.appointment-editor-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.appointment-editor-heading h2 {
+  margin-bottom: 0;
+}
+
+.appointment-editor-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0 0 1rem;
+}
+
+.appointment-editor-summary > div {
+  display: grid;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+}
+
+.appointment-editor-summary dd {
+  margin: 0;
+  color: var(--paper);
+}
+
+.appointment-customer-note {
+  margin-top: 1rem;
+  border-left: 3px solid var(--red);
+  padding: 0.8rem 1rem;
+  background: rgba(158, 27, 43, 0.08);
+}
+
+.appointment-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}
+
+.staff-calendar-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.staff-calendar-toolbar > strong {
+  text-align: center;
+}
+
+.calendar-navigation,
+.calendar-view-switch {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.calendar-navigation button,
+.calendar-view-switch button {
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  padding: 0.55rem 0.75rem;
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.calendar-view-switch button.is-active {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.calendar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-filters label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 13rem;
+  color: var(--paper);
+}
+
+.calendar-filters select {
+  min-height: 3rem;
+  border: 1px solid var(--line-strong);
+  background: #080808;
+  color: var(--paper);
+  padding: 0.65rem;
+}
+
+.staff-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(15rem, 1fr));
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+}
+
+.staff-calendar-day {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.staff-calendar-day > header {
+  display: grid;
+  gap: 0.15rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.8rem;
+}
+
+.staff-calendar-day > header span,
+.staff-calendar-day > header small {
+  color: var(--muted);
+}
+
+.staff-calendar-day .staff-appointment-list article {
+  grid-template-columns: 1fr;
+  padding: 0.75rem;
+}
+
+.staff-calendar-day .staff-appointment-list time {
+  display: flex;
+  justify-content: space-between;
+}
+
+.calendar-empty {
+  min-height: 8rem;
+  padding: 1rem;
+  color: var(--muted);
+}
+
+.staff-day-view .staff-calendar-day .staff-appointment-list article {
+  grid-template-columns: minmax(8rem, 0.3fr) minmax(0, 1fr) auto auto;
+}
+
+.staff-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.staff-month-grid button {
+  display: grid;
+  min-height: 8rem;
+  align-content: space-between;
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--paper);
+  text-align: left;
+  cursor: pointer;
+}
+
+.staff-month-grid button:hover,
+.staff-month-grid button:focus-visible {
+  border-color: var(--paper);
+}
+
+.staff-month-grid button.is-today {
+  border-color: var(--red);
+  background: rgba(158, 27, 43, 0.09);
+}
+
+.staff-month-grid button > span {
+  font-size: 1.25rem;
+}
+
+.staff-month-grid button > strong {
+  font-family: var(--display);
+  font-size: 2.25rem;
+  font-weight: 400;
+}
+
+.staff-month-grid button > small {
+  color: var(--muted);
+}
+
+.staff-preview-notice {
+  border-left: 3px solid var(--red);
+  padding: 1rem;
+  background: rgba(158, 27, 43, 0.08);
+}
+
+.notification-outbox,
+.account-message-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.notification-outbox article,
+.account-message-list article {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.35fr) minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.notification-outbox article > div,
+.account-message-list article > div {
+  display: grid;
+}
+
+.notification-outbox small,
+.account-message-list small {
+  color: var(--muted);
+}
+
+.account-auth-shell {
+  display: grid;
+  place-items: center;
+  padding-block: clamp(3rem, 8vw, 7rem);
+}
+
+.account-auth-card {
+  width: min(38rem, calc(100% - 2rem));
+}
+
+.account-auth-card > img {
+  margin-bottom: 0.25rem;
+}
+
+.account-auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border: 1px solid var(--line);
+  padding: 0.3rem;
+}
+
+.account-auth-tabs button {
+  min-height: 3rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.account-auth-tabs button.is-active {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.account-auth-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.account-auth-fields label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.account-auth-fields label:first-child:nth-last-child(3) {
+  grid-column: 1 / -1;
+}
+
+.account-app-profile-card {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.account-priority-panel {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.account-panel-heading > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.account-appointment-list,
+.account-order-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.account-appointment-card {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.25fr) minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.account-appointment-card time,
+.account-appointment-copy {
+  display: grid;
+}
+
+.account-appointment-card time span,
+.account-appointment-copy p,
+.account-appointment-copy small {
+  color: var(--muted);
+}
+
+.account-appointment-copy h3 {
+  margin-bottom: 0.2rem;
+}
+
+.account-proposal {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-left: 3px solid #ffd28a;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 195, 95, 0.06);
+}
+
+.account-proposal p {
+  margin: 0;
+}
+
+.account-proposal > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.account-cancel {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.account-history {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.account-history summary {
+  margin-bottom: 1rem;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.account-order-card {
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.account-order-card > header,
+.account-order-card > footer,
+.account-order-items > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.account-order-items {
+  margin: 1rem 0;
+  border-block: 1px solid var(--line);
+}
+
+.account-order-items > div {
+  padding: 0.65rem 0;
+}
+
+.account-order-items span {
+  display: grid;
+}
+
+.account-order-items small,
+.account-order-card footer span {
+  color: var(--muted);
+}
+
+@media (max-width: 1100px) {
+  .booking-choice-grid-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-choice-grid-three article:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .staff-month-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .customer-header-actions {
+    display: none;
+  }
+
+  .customer-header-actions-mobile {
+    display: grid;
+  }
+
+  .staff-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-form-wide {
+    grid-column: auto;
+  }
+
+  .staff-calendar-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-calendar-toolbar > strong {
+    order: -1;
+  }
+
+  .calendar-navigation,
+  .calendar-view-switch {
+    justify-content: center;
+  }
+
+  .staff-month-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .staff-day-view .staff-calendar-day .staff-appointment-list article,
+  .staff-appointment-list article {
+    grid-template-columns: minmax(7rem, 0.3fr) minmax(0, 1fr);
+  }
+
+  .staff-appointment-list article > .staff-status,
+  .staff-appointment-list article > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .account-app-profile-card {
+    grid-template-columns: auto 1fr;
+  }
+
+  .account-app-profile-card > span,
+  .account-app-profile-card > button {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 680px) {
+  .booking-choice-grid-three {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-choice-grid-three article:last-child {
+    grid-column: auto;
+  }
+
+  .booking-choice-grid-three article {
+    min-height: auto;
+  }
+
+  .booking-step-indicator {
+    grid-template-columns: repeat(6, minmax(2.5rem, 1fr));
+    overflow-x: auto;
+  }
+
+  .booking-verification-entry,
+  .staff-verification-entry,
+  .account-code-entry,
+  .account-auth-fields,
+  .appointment-editor-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-verification-entry .button,
+  .staff-verification-entry .button,
+  .account-code-entry .button {
+    width: 100%;
+  }
+
+  .staff-session-actions,
+  .account-proposal,
+  .account-proposal > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staff-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .staff-form-actions .button {
+    width: 100%;
+  }
+
+  .staff-hours-editor > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .staff-hours-editor > div > label,
+  .staff-hours-editor > div > .field-error {
+    grid-column: 1 / -1;
+  }
+
+  .staff-hours-editor > div > span {
+    display: none;
+  }
+
+  .staff-appointment-list article,
+  .staff-day-view .staff-calendar-day .staff-appointment-list article,
+  .notification-outbox article,
+  .account-message-list article,
+  .account-appointment-card {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-appointment-list article > .staff-status,
+  .staff-appointment-list article > button,
+  .account-cancel,
+  .account-proposal {
+    grid-column: auto;
+  }
+
+  .staff-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staff-month-grid button {
+    min-height: 6rem;
+  }
+
+  .appointment-editor {
+    align-items: end;
+    padding: 0;
+  }
+
+  .appointment-editor > section {
+    width: 100%;
+    max-height: 92vh;
+    border-inline: 0;
+    border-bottom: 0;
+  }
+
+  .appointment-editor-actions {
+    display: grid;
+  }
+
+  .account-panel-heading > div:last-child,
+  .account-order-card > header,
+  .account-order-card > footer,
+  .account-order-items > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-auth-card > .button,
+  .account-panel-heading .button,
+  .account-proposal .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-pattern *,
+  .appointment-editor * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
