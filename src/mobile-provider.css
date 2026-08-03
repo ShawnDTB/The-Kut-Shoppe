@@ -1,0 +1,40 @@
+@media (max-width: 1040px) {
+  .mobile-booking-group .provider-booking-actions-mobile {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .mobile-booking-group .provider-booking-link {
+    display: flex;
+    min-height: 3.8rem;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border: 1px solid rgba(244, 244, 244, 0.5);
+    padding: 0.7rem 1rem;
+    text-align: center;
+  }
+
+  .mobile-booking-group .provider-booking-barber {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .mobile-booking-group .provider-booking-link span {
+    font-family: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .mobile-booking-group .provider-booking-link small {
+    display: block;
+    margin-top: 0.24rem;
+    font-family: var(--body);
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+  }
+}
