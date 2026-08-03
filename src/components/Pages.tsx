@@ -6,7 +6,7 @@ import {
   services,
   team,
 } from '../data/site';
-import { galleryItems, teamPortraits } from '../data/visuals';
+import { galleryItems, originalAssets, teamPortraits } from '../data/visuals';
 import { Arrow } from './Layout';
 
 export function BookPage() {
@@ -113,6 +113,26 @@ function TeamRoute() {
   );
 }
 
+function AboutRoute() {
+  return (
+    <div className="route-content about-route-layout">
+      <div className="about-route-copy">
+        <h2>A welcoming shop where clients are more than the next appointment.</h2>
+        <p>
+          The Kut Shoppe’s current About page emphasizes the charm of its neighborhood atmosphere, a carefully selected team, and the importance of treating every client as an individual rather than a face in the crowd.
+        </p>
+        <p>
+          The shop takes time to learn what clients want and aims to build long-lasting relationships through classic barbering, modern styling, and consistent personal service in the Poconos.
+        </p>
+        <a className="button" href="/book">Choose an appointment</a>
+      </div>
+      <figure className="editorial-image about-route-image">
+        <img src={originalAssets.introPhoto} alt="Inside The Kut Shoppe" width="900" height="900" loading="lazy" />
+      </figure>
+    </div>
+  );
+}
+
 function VisitRoute() {
   return (
     <div className="split-grid route-content">
@@ -160,7 +180,7 @@ function DefaultRoute({ path }: { path: string }) {
     return (
       <div className="content-panel route-content">
         <h2>Products are promoted in the shop.</h2>
-        <p>The approved online inventory and purchase destination are still being finalized. Ask about available grooming and hair-care products during your next appointment.</p>
+        <p>Ask about available grooming and hair-care products during your next appointment. The online catalog will link only to approved Kut Shoppe merchandise and inventory.</p>
         <a className="button button-secondary" href="/book">Book an appointment</a>
       </div>
     );
@@ -178,31 +198,34 @@ function DefaultRoute({ path }: { path: string }) {
 
   return (
     <div className="content-panel route-content">
-      <h2>More information is being prepared.</h2>
-      <p>This route and its search metadata are established while the final customer-facing content is reviewed.</p>
-      <a className="button button-secondary" href="/book">Book an appointment</a>
+      <h2>Website information</h2>
+      <p>This page will be completed before the code-based website replaces the current WordPress site.</p>
+      <a className="button button-secondary" href="/">Return home</a>
     </div>
   );
 }
 
 export function RoutePage({ url }: { url: string }) {
   const route = findRoute(url);
+  const hasServiceRoute = services.some((item) => item.route === route.path);
+  const isWideRoute = ['/team', '/gallery', '/about'].includes(route.path);
 
   return (
     <section className="section page-hero ornament-section ornament-bg-3">
-      <div className="container narrow-container">
+      <div className={`container ${isWideRoute ? 'route-wide' : 'narrow-container'}`}>
         <p className="eyebrow">{route.eyebrow}</p>
         <h1>{route.heading}</h1>
         <p className="lede">{route.intro}</p>
 
         {route.path === '/services' ? <ServicesRoute /> : null}
-        {services.some((item) => item.route === route.path) ? <ServiceRoute path={route.path} /> : null}
+        {hasServiceRoute ? <ServiceRoute path={route.path} /> : null}
         {route.path === '/team' ? <TeamRoute /> : null}
+        {route.path === '/about' ? <AboutRoute /> : null}
         {route.path === '/visit' ? <VisitRoute /> : null}
         {route.path === '/reviews' ? <ReviewsRoute /> : null}
         {route.path === '/gallery' ? <GalleryRoute /> : null}
-        {!services.some((item) => item.route === route.path) &&
-        !['/services', '/team', '/visit', '/reviews', '/gallery'].includes(route.path) ? (
+        {!hasServiceRoute &&
+        !['/services', '/team', '/about', '/visit', '/reviews', '/gallery'].includes(route.path) ? (
           <DefaultRoute path={route.path} />
         ) : null}
       </div>
