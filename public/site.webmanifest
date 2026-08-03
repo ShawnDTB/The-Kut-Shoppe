@@ -1,0 +1,9 @@
+{
+  "name": "The Kut Shoppe",
+  "short_name": "Kut Shoppe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f1e9",
+  "theme_color": "#111111",
+  "icons": []
+}
