@@ -7,5 +7,4 @@ export const seniorServicePrices = [
   { name: 'HAIRLINE AND FACE SHAPE-UP', price: '$25' },
 ] as const;
 
-export const seniorPricingNote =
-  'Senior prices are carried forward from the live shop menu. Confirm the final service and price when booking.';
+export const seniorPricingNote = '';
