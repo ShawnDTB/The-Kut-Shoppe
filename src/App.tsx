@@ -17,10 +17,12 @@ import './final-owner-cleanup.css';
 import './customer-final-pass.css';
 import './final-detail-pass.css';
 import './final-mobile-performance-pass.css';
+import './customer-platform.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
-import { BookPage, RoutePage } from './components/Pages';
+import { RoutePage } from './components/Pages';
+import { AccountPage, BookingPage, ShopPage } from './components/CustomerPlatformPages';
 
 interface AppProps {
   url: string;
@@ -83,7 +85,11 @@ export function App({ url }: AppProps) {
       ) : route.path === '/' ? (
         <HomePage />
       ) : route.path === '/book' ? (
-        <BookPage />
+        <BookingPage />
+      ) : route.path === '/shop' ? (
+        <ShopPage />
+      ) : route.path === '/account' ? (
+        <AccountPage />
       ) : (
         <RoutePage url={url} />
       )}
