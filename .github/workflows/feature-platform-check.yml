@@ -1,0 +1,53 @@
+name: Feature Platform Check
+
+on:
+  push:
+    branches:
+      - feature/booking-platform
+      - feature/commerce-account
+      - feature/platform-core
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run project checks
+        run: npm run check
+
+      - name: Validate D1 migrations when present
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib
+          import sqlite3
+
+          migrations = sorted(pathlib.Path('migrations').glob('*.sql')) if pathlib.Path('migrations').exists() else []
+          if not migrations:
+              print('No migrations on this branch.')
+              raise SystemExit(0)
+
+          connection = sqlite3.connect(':memory:')
+          connection.execute('PRAGMA foreign_keys = ON')
+          for migration in migrations:
+              print(f'Applying {migration}')
+              connection.executescript(migration.read_text(encoding='utf-8'))
+          print('Migration validation complete.')
+          PY
