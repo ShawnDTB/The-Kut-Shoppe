@@ -2,65 +2,42 @@
   <img src="https://www.thekutshoppe.com/wp-content/uploads/2023/11/a2e8fdecb672406ba74a28a19b4063-the-kut-shoppe-llc-logo-5175fdd512c54b42b4da939b84353a-booksy.png" alt="The Kut Shoppe logo" width="112" height="112" />
   <h1>The Kut Shoppe Website Transformation</h1>
   <p><strong>Fresh cuts. Great conversations. Right here on Main Street.</strong></p>
-  <p>A modern website platform designed and developed by <a href="https://www.dtbsolutions.tech/">Designed to Breakthrough LLC</a>.</p>
+  <p>A Designed to Breakthrough case study in moving a local business beyond WordPress and into a modern, accessible, GitHub-managed platform.</p>
 </div>
 
-## The project
+## Project overview
 
-I am Shawn Dullen, Founder of Designed to Breakthrough LLC.
+The Kut Shoppe is an established Main Street barbershop serving downtown Stroudsburg and the wider Poconos community.
 
-I originally built The Kut Shoppe's website in WordPress. That version gave the business an online presence, but over time it also made the limitations of a page-builder platform increasingly clear. Design changes were harder to control, performance depended on a growing WordPress stack, future features were restricted by plugins, and the business did not have the level of technical ownership I wanted to provide.
+Its original WordPress website created the first digital home for the business, but the platform eventually became too restrictive for the experience the shop needed next. Page-builder limitations, plugin dependence, duplicated business information, inconsistent booking paths, placeholder commerce, and limited control over accessibility and performance made continued growth harder than it needed to be.
 
-This repository represents the next stage of that work.
+Designed to Breakthrough rebuilt the project around a more durable philosophy:
 
-I am rebuilding The Kut Shoppe as a professional, GitHub-managed website platform using React, TypeScript, Vite, and a static deployment workflow. The goal is not simply to copy the WordPress site into a new framework. The goal is to preserve what made the original site and business recognizable while giving The Kut Shoppe a stronger foundation for accessibility, performance, local visibility, customer navigation, booking conversion, future commerce, and long-term development.
+> **Designed for the business. Transform the experience. Breakthrough into what comes next.**
 
-The current WordPress website remains public while this replacement is reviewed, tested, and prepared for launch.
+This repository is the result of that process. It preserves the identity and community presence of The Kut Shoppe while replacing the WordPress runtime with a maintainable React, TypeScript, Vite, and GitHub-based platform.
 
-## Why I moved it beyond WordPress
+The existing WordPress website remains public while the replacement is reviewed, verified, and prepared for production.
 
-WordPress helped establish the first version of the website, but this project needed more control than a traditional theme and plugin stack could provide.
+## The DTB philosophy
 
-The new platform gives me direct ownership of:
+### Designed
 
-- Page structure and visual behavior
-- Mobile and desktop responsiveness
-- Accessibility decisions
-- Performance and image-loading behavior
-- Search metadata and prerendered page content
-- Booking navigation
-- Business information and service data
-- Future Shop, Account, and customer features
-- Version history, review, rollback, and deployment through GitHub
+The work begins with the business, not the framework.
 
-Instead of relying on a collection of page-builder settings and plugins, the website is now built as a maintainable software project. Every important change can be reviewed, documented, tested, committed, and restored when needed.
+The redesign was shaped around how The Kut Shoppe actually operates and how customers move through the experience:
 
-## What Designed to Breakthrough delivered
+- Finding the shop on Main Street
+- Checking hours before visiting
+- Understanding the difference between barber and Loctician services
+- Reviewing prices before booking
+- Choosing the correct booking path
+- Seeing real work from the shop
+- Meeting the Crew
+- Calling when guidance is needed
+- Returning later for products, accounts, and future customer features
 
-This redesign turns the website into a clearer digital headquarters for an established Main Street barbershop.
-
-The current experience includes:
-
-- A focused homepage built around booking, hours, location, services, real work, and the Crew
-- Direct booking paths for barbers and the shop's Loctician
-- A current barber service menu with adult, senior, and kids pricing groups
-- A responsive gallery using real Kut Shoppe work
-- A dedicated Crew page with public professional profiles
-- A Visit page with daily hours, contact information, directions, and Google Maps
-- A mobile navigation drawer designed around touch use and customer priorities
-- A future Shop structure that avoids carrying forward unrelated WordPress placeholder products
-- A future Account route prepared for orders, saved information, and customer features
-- Static prerendering for better first-load content and search visibility
-- Reduced-motion support and accessibility-focused interaction behavior
-- A custom favicon, structured routes, legacy redirects, and production metadata foundations
-
-The result is faster to maintain, easier to extend, and far less confined than the original WordPress implementation.
-
-## Design approach
-
-I did not want this rebuild to become a generic luxury barbershop template.
-
-The visual direction continues the strongest parts of the original Kut Shoppe identity:
+The visual system also preserves the strongest parts of the existing brand rather than replacing them with a generic template:
 
 - Near-black backgrounds
 - White and soft-gray typography
@@ -68,13 +45,89 @@ The visual direction continues the strongest parts of the original Kut Shoppe id
 - Restrained barber-red accents
 - Original illustrated service icons
 - Authentic shop, gallery, and professional photography
-- Clean glass surfaces where they improve readability
-- Subtle ornamental elements drawn from the original site
-- Clear booking, calling, and visit actions
+- A classic barbershop feel with a modern presentation
 
-The tone is intended to remain confident, welcoming, community-oriented, skilled, direct, modern, and human.
+The result is designed around the business identity, the customer journey, and the Poconos community the shop serves.
 
-The Kut Shoppe is presented as a downtown Stroudsburg business that serves clients across the Poconos, not as a disconnected online brand.
+### Transform
+
+The transformation goes beyond a visual reskin.
+
+The project moves The Kut Shoppe from a confined WordPress and page-builder environment into a version-controlled software platform with direct ownership over:
+
+- Page structure
+- Responsive behavior
+- Accessibility
+- Performance
+- Search metadata
+- Booking navigation
+- Business information
+- Service pricing
+- Mobile interaction
+- Static rendering
+- Deployment
+- Future feature development
+
+Business data is centralized instead of repeated across pages. Every major change can be reviewed, tested, committed, documented, and restored through GitHub.
+
+The current transformation includes:
+
+- A condensed homepage focused on booking, hours, location, services, real work, Crew, products, and directions
+- Direct barber and Loctician booking paths
+- Structured adult, senior, and kids barber pricing
+- A responsive gallery using real Kut Shoppe work
+- A dedicated Crew page
+- A Visit page with hours, phone, directions, and Google Maps
+- A mobile navigation drawer designed around touch use
+- Static prerendering for meaningful content before JavaScript loads
+- Reduced-motion support and accessibility-focused behavior
+- A custom favicon, route metadata, redirects, and production foundations
+- A Shop structure that does not carry forward unrelated WordPress placeholder products
+- An Account structure prepared for future customer tools
+
+The transformed platform is faster to maintain, easier to extend, and far less dependent on third-party page-builder behavior.
+
+### Breakthrough
+
+The purpose of the rebuild is not only to improve the current website. It is to create room for the business to keep growing.
+
+The platform is being prepared for future development that would have been difficult to manage cleanly through the former WordPress setup.
+
+#### Booking
+
+The current website routes customers to the appropriate external booking destination:
+
+- **Book with Barber**
+- **Book with Loctician**
+
+The next phase will continue developing the Booking page into a guided experience that can help customers choose by service type, professional, appointment need, and new-client questions before continuing to the correct schedule.
+
+#### Shop
+
+The Shop page will become the verified home for approved Kut Shoppe products, potentially including:
+
+- Grooming products
+- Hair-care products
+- Accessories
+- Kut Shoppe merchandise
+- Approved collections
+
+The unrelated placeholder products from the former WordPress and WooCommerce setup will not be migrated.
+
+Before checkout is enabled, the business will need approved inventory, pricing, product photography, fulfillment rules, taxes, returns, and payment processing.
+
+#### Account
+
+The Account page is reserved for future customer functionality such as:
+
+- Order history
+- Saved customer details
+- Saved addresses
+- Product preferences
+- Account-based checkout
+- Future loyalty and customer tools
+
+These features can now be developed inside one controlled platform instead of being added through disconnected plugins.
 
 ## Current customer experience
 
@@ -82,33 +135,33 @@ The Kut Shoppe is presented as a downtown Stroudsburg business that serves clien
 
 The homepage brings the most important customer information together without forcing visitors through a long sequence of oversized sections.
 
-Customers can immediately find:
+Customers can quickly find:
 
-- The shop's daily hours
-- The Main Street location
-- The phone number
+- Daily shop hours
+- 518 Main Street
+- The shop phone number
 - Barber booking
 - Loctician booking
 - Service categories
-- Recent work
+- Real work from the gallery
 - The Crew
-- Products available through the shop
-- Directions and visit information
+- Product information
+- Directions and visit details
 
 ### Services
 
-The Services page provides a structured barber menu with separate sections for:
+The Services page provides a structured menu with clear sections for:
 
-- Adult and teen services
-- Senior services
-- Kids services
+- Adult and teen barber services
+- Senior barber services
+- Kids barber services
 - Loc care, braids, twists, retwists, and related appointments
 
-The website helps customers understand where to go, while the external booking profiles remain responsible for current availability, provider schedules, appointment policies, and checkout.
+The website helps customers understand the available service paths while the booking providers remain responsible for current availability, schedules, policies, and checkout.
 
 ### Gallery
 
-The Gallery uses labeled work from The Kut Shoppe rather than generic stock examples. It is responsive, readable on touch devices, and organized to help customers understand the range of cuts, styling, beard work, designs, kids services, and first-cut experiences available through the shop.
+The Gallery uses labeled work from The Kut Shoppe instead of generic stock examples. It is responsive, readable on touch devices, and organized around cuts, styling, beard work, designs, kids services, and first-cut experiences.
 
 ### Crew
 
@@ -125,69 +178,9 @@ The Visit page includes:
 - Directions
 - Guidance to confirm individual professional availability
 
-## Booking today
-
-Appointments currently continue through the providers already used by the business.
-
-- **Barber appointments:** [The Kut Shoppe booking profile](https://booksy.com/en-us/71309_the-kut-shoppe_braids-locs_34196_stroudsburg)
-- **Loctician appointments:** [Crowned by Steph](https://crownedbysteph.glossgenius.com/)
-
-The website removes unnecessary provider branding from customer-facing buttons and presents the simpler choices:
-
-- Book with Barber
-- Book with Loctician
-
-A more complete first-party Booking page is part of the next development phase. That experience will be able to guide customers by service type, professional, appointment need, and new-client questions before continuing to the correct scheduling destination.
-
-## What comes next
-
-This platform was built with future development in mind. The current routes already establish the structure for features that could not be handled cleanly inside the old WordPress setup.
-
-### Booking page
-
-The Booking experience will continue developing into a clearer service and professional router. The goal is to help customers understand what they need and reach the right chair with fewer wrong turns.
-
-Planned improvements include:
-
-- Service-first booking guidance
-- Barber and Loctician separation
-- Professional selection
-- New-client guidance
-- Booking policy summaries
-- Better handoff to current scheduling providers
-
-### Shop page
-
-The Shop page will become the verified online home for approved Kut Shoppe products.
-
-The future catalog may include:
-
-- Grooming products
-- Hair-care products
-- Accessories
-- Kut Shoppe merchandise
-- Approved product collections
-
-The unrelated placeholder products from the former WordPress and WooCommerce setup will not be migrated.
-
-Before checkout is enabled, inventory, pricing, product photography, taxes, fulfillment, returns, and payment processing must be approved and configured.
-
-### Account page
-
-The Account page is reserved for future customer functionality such as:
-
-- Order history
-- Saved customer details
-- Saved addresses
-- Product preferences
-- Account-based checkout
-- Future loyalty or customer tools
-
-This foundation means those features can be developed as part of the same controlled platform rather than added through disconnected plugins.
-
 ## Accessibility and usability
 
-Accessibility is part of the platform architecture rather than a final visual patch.
+Accessibility is treated as part of the platform architecture, not a final visual patch.
 
 The current implementation includes:
 
@@ -204,7 +197,7 @@ The current implementation includes:
 - Meaningful content available in prerendered HTML
 - Clear booking, calling, and direction links
 
-The site will continue to receive accessibility review as the Booking, Shop, Account, and checkout experiences are completed.
+Accessibility review will continue as the Booking, Shop, Account, and checkout experiences are completed.
 
 ## Performance and technical ownership
 
@@ -218,9 +211,9 @@ The build process:
 4. Generates a production `404.html` page.
 5. Removes temporary server-rendering files.
 
-This approach provides the maintainability of React while keeping the production output suitable for a fast static host such as Cloudflare Pages.
+This approach keeps the maintainability of React while producing output suitable for a fast static host such as Cloudflare Pages.
 
-Secondary images are lazy-loaded, the primary homepage image receives loading priority, responsive behavior is handled directly in the project, and there is no WordPress runtime or page-builder code required in production.
+Secondary images are lazy-loaded, the primary homepage image receives loading priority, responsive behavior is handled directly in the project, and no WordPress runtime or page-builder code is required in production.
 
 ## Technology
 
@@ -255,6 +248,11 @@ Stroudsburg, PA 18360
 | Sunday | Closed |
 
 These hours are presented as walk-in reference hours. Individual schedules may differ and should be confirmed through the appropriate booking destination.
+
+## Booking destinations
+
+- **Barber appointments:** [The Kut Shoppe booking profile](https://booksy.com/en-us/71309_the-kut-shoppe_braids-locs_34196_stroudsburg)
+- **Loctician appointments:** [Crowned by Steph](https://crownedbysteph.glossgenius.com/)
 
 ## Routes
 
@@ -359,7 +357,7 @@ src/
 
 ## Content control and verification
 
-One of the most important improvements over the former WordPress setup is that business information is now centralized and documented.
+Business information is centralized and documented instead of being repeated across page-builder sections.
 
 Primary data files include:
 
@@ -369,7 +367,7 @@ Primary data files include:
 - `src/data/visuals.ts`
 - `src/data/commerce.ts`
 
-I do not want unverified information silently filling gaps in the website. Prices, services, Crew details, credentials, testimonials, product inventory, accessibility claims, and business policies must be supported or approved before launch.
+Prices, services, Crew details, credentials, testimonials, product inventory, accessibility claims, and business policies must be supported or approved before launch.
 
 Open verification items are tracked in [`docs/foundation/verification-required.md`](./docs/foundation/verification-required.md).
 
@@ -385,7 +383,7 @@ Output directory: dist
 Node version: 20.19 or newer
 ```
 
-Before the production cutover, I will complete a final review of:
+Before production cutover, the final review includes:
 
 - Business hours
 - Launch Crew
@@ -397,10 +395,10 @@ Before the production cutover, I will complete a final review of:
 - Search metadata
 - Redirects
 - Privacy and terms
-- Shop and account requirements
+- Shop and Account requirements
 - Production domain configuration
 
-The current WordPress website will remain available until the replacement is approved and ready to take over.
+The current WordPress website remains available until the replacement is approved and ready to take over.
 
 ## Documentation
 
@@ -409,16 +407,20 @@ The current WordPress website will remain available until the replacement is app
 - [Performance, booking, mobile, and commerce pass](./docs/development/performance-booking-commerce-pass.md)
 - [Verification required before production](./docs/foundation/verification-required.md)
 
-## About Designed to Breakthrough
+## Designed to Breakthrough
 
-Designed to Breakthrough LLC builds websites, IT systems, hosting solutions, automation, and technical documentation for small businesses and creators.
+Designed to Breakthrough LLC builds practical digital systems for small businesses, creators, and service brands.
 
-My work on this project covers discovery, business analysis, interface design, development, data organization, deployment planning, performance, accessibility, documentation, and long-term technical support.
+The work connects business discovery, solution design, interface development, hosting, automation, infrastructure, documentation, and long-term support. The objective is technology that is clear, usable, credible, growth-oriented, and able to evolve with the business.
 
-The Kut Shoppe project demonstrates the difference between simply publishing pages and building a platform a business can continue growing into.
+The Kut Shoppe transformation demonstrates that philosophy in practice:
+
+- **Designed** around the business and its customers
+- **Transform** the platform and customer experience
+- **Breakthrough** into a foundation ready for future growth
 
 ## Ownership
 
-Website strategy, design, and technical implementation by **Shawn Dullen, Founder of Designed to Breakthrough LLC**, for **The Kut Shoppe LLC**.
+Website strategy, design, and technical implementation by **Designed to Breakthrough LLC**, led by **Shawn Dullen, Founder**, for **The Kut Shoppe LLC**.
 
 This repository contains proprietary project code and business assets. Unless a separate license is added, it should not be treated as an open-source project.
