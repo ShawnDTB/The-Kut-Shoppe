@@ -1,11 +1,9 @@
 import { booksyUrl, business, team } from '../data/site';
 import {
-  featureItems,
   galleryItems,
   originalAssets,
   serviceHighlights,
   shopStandards,
-  teamPortraits,
 } from '../data/visuals';
 import { Arrow } from './Layout';
 
@@ -40,67 +38,138 @@ function BookingChoices({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function GalleryPreview() {
+function ServicesOverview() {
   return (
-    <div className="container gallery-grid gallery-grid-expanded">
-      {galleryItems.map((item, index) => (
-        <figure className={`gallery-item gallery-item-${index + 1}`} key={item.src}>
-          <img src={item.src} alt={item.alt} width="800" height="800" loading="lazy" />
-          <figcaption>{item.category}</figcaption>
-        </figure>
-      ))}
-    </div>
-  );
-}
-
-function TeamShowcase() {
-  return (
-    <div className="container team-showcase">
-      <div className="team-collage" aria-hidden="true">
-        {teamPortraits.map((portrait, index) => (
-          <figure className={`team-collage-item team-collage-item-${index + 1}`} key={portrait}>
-            <img src={portrait} alt="" width="700" height="700" loading="lazy" />
-          </figure>
-        ))}
-      </div>
-      <div className="crew-panel">
-        <p className="eyebrow">The Kut Shoppe crew</p>
-        <h2>Familiar professionals. One neighborhood shop.</h2>
-        <p className="lede">
-          Barbering and styling services come together under one roof so clients can choose the service and professional that fit their visit.
-        </p>
-        <ul className="crew-list">
-          {team.map((member) => (
-            <li key={member.name}>{member.name}</li>
-          ))}
-        </ul>
-        <a className="text-link" href="/team">
-          Meet the crew <Arrow />
-        </a>
-      </div>
-    </div>
-  );
-}
-
-function ReviewBand() {
-  return (
-    <section className="review-band" aria-labelledby="review-band-heading">
-      <div className="container review-band-inner">
+    <section id="services" className="section compact-services ornament-section ornament-bg-3">
+      <div className="container compact-services-intro">
         <div>
-          <p className="eyebrow">Client feedback</p>
-          <h2 id="review-band-heading">Real appointments. Real experiences.</h2>
-          <p>
-            Read verified feedback from clients who booked barbering and styling services through The Kut Shoppe.
+          <p className="eyebrow">Services for the whole neighborhood</p>
+          <h2>One shop. Two clear ways to book.</h2>
+          <p className="lede">
+            Choose barbering for cuts, fades, beard work, and shaves—or styling for locs, braids, twists, color, and hair care.
           </p>
         </div>
-        <div className="review-band-actions">
-          <a className="button" href="/reviews">
-            Read client reviews <Arrow />
-          </a>
-          <a className="text-link" href={booksyUrl} target="_blank" rel="noopener noreferrer">
-            View Booksy feedback <span aria-hidden="true">↗</span>
-          </a>
+        <div className="service-summary-panel" aria-label="Service overview">
+          <div>
+            <span>Barbering</span>
+            <strong>Cuts, fades, tapers, beards, and straight-razor details</strong>
+          </div>
+          <div>
+            <span>Styling</span>
+            <strong>Locs, braids, twists, color, washing, and scalp care</strong>
+          </div>
+          <div>
+            <span>Clients</span>
+            <strong>Kids, adults, seniors, women, and longtime regulars</strong>
+          </div>
         </div>
+      </div>
+
+      <div className="container service-icon-strip">
+        {serviceHighlights.map((service) => (
+          <a className="service-icon-link" href={service.route} key={service.title}>
+            <img src={service.icon} alt="" width="88" height="88" loading="lazy" />
+            <span>{service.title}</span>
+          </a>
+        ))}
+      </div>
+
+      <div className="container compact-section-actions">
+        <a className="text-link" href="/services">
+          Services and pricing <Arrow />
+        </a>
+        <BookingChoices compact />
+      </div>
+    </section>
+  );
+}
+
+function WorkAndTrust() {
+  const previewItems = galleryItems.slice(0, 6);
+  const standards = shopStandards.slice(0, 3);
+
+  return (
+    <section id="work" className="section compact-proof ornament-section ornament-bg-5">
+      <div className="container compact-proof-grid">
+        <div className="proof-copy">
+          <p className="eyebrow">Real work. Real appointments.</p>
+          <h2>See the range before choosing your chair.</h2>
+          <p>
+            Fades, tapers, scissor cuts, beard details, locs, braids, designs, and kids cuts—all from the shop’s current gallery.
+          </p>
+          <ul className="trust-shortlist">
+            {standards.map((standard) => (
+              <li key={standard}>{standard}</li>
+            ))}
+          </ul>
+          <div className="proof-actions">
+            <a className="button button-secondary" href="/gallery">
+              View the full gallery <Arrow />
+            </a>
+            <a className="text-link" href={booksyUrl} target="_blank" rel="noopener noreferrer">
+              Read Booksy feedback <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div className="compact-gallery" aria-label="Featured work from The Kut Shoppe">
+          {previewItems.map((item) => (
+            <figure key={item.src}>
+              <img src={item.src} alt={item.alt} width="640" height="640" loading="lazy" />
+              <figcaption>{item.category}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AboutAndCrew() {
+  return (
+    <section id="about" className="section compact-about ornament-section ornament-bg-4">
+      <div className="container compact-about-grid">
+        <figure className="compact-about-image">
+          <img src={originalAssets.introPhoto} alt="Inside The Kut Shoppe" width="1000" height="760" loading="lazy" />
+        </figure>
+        <div className="compact-about-copy">
+          <p className="eyebrow">A modern twist on classic cuts</p>
+          <h2>A neighborhood shop built around the person in the chair.</h2>
+          <p className="lede">
+            The Kut Shoppe brings barbering and styling professionals together in a welcoming Main Street shop serving Stroudsburg and the Pocono area.
+          </p>
+          <ul className="compact-crew-list" aria-label="The Kut Shoppe crew">
+            {team.map((member) => (
+              <li key={member.name}>{member.name}</li>
+            ))}
+          </ul>
+          <div className="compact-about-actions">
+            <a className="text-link" href="/about">
+              About the shop <Arrow />
+            </a>
+            <a className="text-link" href="/team">
+              Meet the crew <Arrow />
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ShopTeaser() {
+  return (
+    <section className="shop-teaser ornament-section ornament-bg-8" aria-labelledby="shop-teaser-heading">
+      <div className="container shop-teaser-grid">
+        <img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="520" height="420" loading="lazy" />
+        <div>
+          <p className="eyebrow">Products from the shop</p>
+          <h2 id="shop-teaser-heading">Keep the fresh look going.</h2>
+          <p>Ask about grooming and hair-care products available through the shop.</p>
+        </div>
+        <a className="button button-secondary" href="/products">
+          Product information <Arrow />
+        </a>
       </div>
     </section>
   );
@@ -109,186 +178,61 @@ function ReviewBand() {
 export function HomePage() {
   return (
     <>
-      <section className="hero">
+      <section className="hero compact-hero">
         <HeroSlideshow />
         <div className="hero-shade" />
         <div className="container hero-content hero-content-refined">
-          <p className="eyebrow">The Kut Shoppe · Barbershop and styling in Stroudsburg</p>
+          <p className="eyebrow">Barbering and styling in downtown Stroudsburg</p>
           <h1>Classic cuts. Modern styles. Your chair is waiting.</h1>
           <p className="lede">
-            Haircuts, fades, tapers, beard work, locs, braids, twists, color, and hair care from a neighborhood crew serving the Pocono area.
+            Haircuts, fades, beard work, locs, braids, twists, color, and hair care from one neighborhood crew.
           </p>
           <BookingChoices />
           <a className="hero-call" href={business.phoneHref}>
-            Not sure which service to book? Call {business.phone}
+            Questions? Call {business.phone}
           </a>
         </div>
-        <a className="scroll-cue" href="#modern-twist" aria-label="Continue to the next section">
+        <a className="scroll-cue" href="#services" aria-label="Continue to services">
           <span />
         </a>
       </section>
 
-      <section className="shop-quickfacts" aria-label="Shop information">
+      <section className="shop-quickfacts compact-quickfacts" aria-label="Shop information">
         <div className="container quickfacts-grid">
-          <div>
+          <a href="/visit">
             <span>Visit</span>
             <strong>518 Main Street</strong>
             <small>Downtown Stroudsburg</small>
-          </div>
-          <div>
+          </a>
+          <a href="/book">
             <span>Appointments</span>
             <strong>Recommended</strong>
-            <small>Walk-ins based on availability</small>
-          </div>
-          <div>
+            <small>Walk-ins when availability allows</small>
+          </a>
+          <a href={business.phoneHref}>
             <span>Questions</span>
             <strong>{business.phone}</strong>
-            <small>Call before your visit</small>
-          </div>
-        </div>
-      </section>
-
-      <section id="modern-twist" className="section ornament-section ornament-bg-3">
-        <div className="container editorial-split">
-          <div className="editorial-copy">
-            <p className="eyebrow">A modern twist on classic cuts</p>
-            <h2>A barbershop built around the people in the chair.</h2>
-            <p className="lede">
-              The Kut Shoppe pairs the welcoming atmosphere of a neighborhood barbershop with barbering, loc, braid, styling, color, and hair-care services for clients across generations.
-            </p>
-            <p>
-              The experience is personal: take time to understand the look, provide a comfortable visit, and build the kind of relationship that keeps clients coming back.
-            </p>
-            <a className="text-link" href="/about">
-              More about the shop <Arrow />
-            </a>
-          </div>
-          <figure className="editorial-image offset-image">
-            <img src={originalAssets.introPhoto} alt="Inside The Kut Shoppe" width="900" height="900" />
-          </figure>
-        </div>
-        <div className="container feature-grid">
-          {featureItems.map((item) => (
-            <article className="feature-item" key={item.title}>
-              <img src={item.icon} alt="" width="96" height="96" loading="lazy" />
-              <div>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="section services-section ornament-section ornament-bg-2">
-        <div className="container centered-heading">
-          <p className="eyebrow">Our services</p>
-          <h2>You look great. Now make it perfect.</h2>
-          <p>Explore barbering, grooming, styling, color, and hair-care services available through the shop.</p>
-        </div>
-        <div className="container service-icon-grid service-icon-grid-detailed">
-          {serviceHighlights.map((service) => (
-            <article className="service-icon-card" key={service.title}>
-              <img src={service.icon} alt="" width="112" height="112" loading="lazy" />
-              <h3>{service.title}</h3>
-              <p>{service.description}</p>
-              <a href={service.route} className="text-link">
-                View services <Arrow />
-              </a>
-            </article>
-          ))}
-        </div>
-        <div className="container service-booking-block">
-          <p>Know what you need?</p>
-          <BookingChoices compact />
-        </div>
-      </section>
-
-      <section
-        className="parallax-divider"
-        style={{ backgroundImage: `url(${originalAssets.firstDivider})` }}
-      >
-        <div className="parallax-shade" />
-        <div className="container divider-content">
-          <p className="eyebrow">Come visit us today</p>
-          <h2>Experience the art of grooming at its finest.</h2>
-          <p>Barbering and styling services on Main Street in downtown Stroudsburg.</p>
-          <a className="button" href="/book">
-            Choose your appointment <Arrow />
+            <small>Call the shop directly</small>
           </a>
         </div>
       </section>
 
-      <section className="section gallery-section ornament-section ornament-bg-5">
-        <div className="container centered-heading">
-          <p className="eyebrow">Real work from the shop</p>
-          <h2>Best known for a great haircut—and much more.</h2>
-          <p>Fades, tapers, scissor cuts, beard details, locs, braids, designs, kids cuts, and first-cut moments.</p>
-        </div>
-        <GalleryPreview />
-        <div className="container centered-action">
-          <a className="button button-secondary" href="/gallery">
-            Explore the full gallery <Arrow />
-          </a>
-        </div>
-      </section>
-
-      <section className="section trust-section ornament-section ornament-bg-4">
-        <div className="container editorial-split editorial-split-reverse">
-          <figure className="editorial-image">
-            <img src={originalAssets.trustPhoto} alt="The Kut Shoppe workspace" width="900" height="900" loading="lazy" />
-          </figure>
-          <div className="editorial-copy">
-            <p className="eyebrow">Why choose us</p>
-            <h2>A clean, personal, and carefully finished experience.</h2>
-            <p className="lede">
-              Great service is more than the final mirror check. It starts with a clean workspace, fresh client supplies, personal attention, and a professional appointment experience.
-            </p>
-            <ul className="standards-list">
-              {shopStandards.map((standard) => (
-                <li key={standard}>{standard}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <ReviewBand />
-
-      <section className="section team-section ornament-section ornament-bg-9">
-        <TeamShowcase />
-      </section>
-
-      <section className="section products-section ornament-section ornament-bg-8">
-        <div className="container editorial-split">
-          <div className="editorial-copy">
-            <p className="eyebrow">Our merchandise</p>
-            <h2>Keep the fresh look going between appointments.</h2>
-            <p className="lede">
-              Grooming and hair-care products are available through the shop to help maintain the finished look between visits.
-            </p>
-            <a className="text-link" href="/products">
-              Product information <Arrow />
-            </a>
-          </div>
-          <figure className="editorial-image product-image">
-            <img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="900" height="900" loading="lazy" />
-          </figure>
-        </div>
-      </section>
+      <ServicesOverview />
+      <WorkAndTrust />
+      <AboutAndCrew />
+      <ShopTeaser />
 
       <section
-        className="parallax-divider appointment-divider final-conversion"
+        id="visit"
+        className="parallax-divider appointment-divider final-conversion compact-final"
         style={{ backgroundImage: `url(${originalAssets.secondDivider})` }}
       >
         <div className="parallax-shade parallax-shade-gradient" />
         <div className="container conversion-panel">
           <div className="conversion-copy">
-            <p className="eyebrow">Make an appointment</p>
-            <h2>Choose your service, then choose your time.</h2>
-            <p>
-              The Kut Shoppe is appointment-focused. Walk-ins are welcome when availability allows, and the shop is available by phone when you need help choosing the correct service.
-            </p>
+            <p className="eyebrow">Ready when you are</p>
+            <h2>Choose the service. Choose the time.</h2>
+            <p>Appointments are recommended. Walk-ins are welcome when availability allows.</p>
             <BookingChoices compact />
           </div>
           <aside className="visit-card" aria-label="Visit The Kut Shoppe">
