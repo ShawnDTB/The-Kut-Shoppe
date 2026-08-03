@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 220" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="wordmarkPattern" width="460" height="112" patternUnits="userSpaceOnUse" patternTransform="rotate(-6)">
+      <text
+        x="18"
+        y="48"
+        fill="none"
+        stroke="#aeb4bb"
+        stroke-width="1.05"
+        stroke-linejoin="round"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="30"
+        letter-spacing="3.2"
+        opacity="0.34"
+      >THE KUT SHOPPE</text>
+      <text
+        x="154"
+        y="96"
+        fill="none"
+        stroke="#7f878f"
+        stroke-width="0.8"
+        stroke-linejoin="round"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="19"
+        letter-spacing="2.6"
+        opacity="0.22"
+      >THE KUT SHOPPE</text>
+    </pattern>
+    <linearGradient id="horizontalFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="white" stop-opacity="0" />
+      <stop offset="0.12" stop-color="white" stop-opacity="0.72" />
+      <stop offset="0.5" stop-color="white" stop-opacity="1" />
+      <stop offset="0.88" stop-color="white" stop-opacity="0.72" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="verticalFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="white" stop-opacity="0" />
+      <stop offset="0.22" stop-color="white" stop-opacity="1" />
+      <stop offset="0.78" stop-color="white" stop-opacity="1" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </linearGradient>
+    <mask id="softEdges">
+      <rect width="1400" height="220" fill="url(#horizontalFade)" />
+      <rect width="1400" height="220" fill="url(#verticalFade)" style="mix-blend-mode:multiply" />
+    </mask>
+  </defs>
+  <rect width="1400" height="220" fill="url(#wordmarkPattern)" mask="url(#softEdges)" />
+</svg>
