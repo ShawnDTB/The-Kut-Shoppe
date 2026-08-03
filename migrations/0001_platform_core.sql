@@ -28,7 +28,7 @@ CREATE INDEX sessions_expires_at_idx ON sessions(expires_at);
 
 CREATE TABLE customer_profiles (
   user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  preferred_staff_id TEXT,
+  preferred_staff_id TEXT REFERENCES staff_profiles(id) ON DELETE SET NULL,
   marketing_consent INTEGER NOT NULL DEFAULT 0 CHECK (marketing_consent IN (0, 1)),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -66,10 +66,6 @@ CREATE TABLE staff_profiles (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
-
-ALTER TABLE customer_profiles
-  ADD CONSTRAINT customer_profiles_preferred_staff_fk
-  FOREIGN KEY (preferred_staff_id) REFERENCES staff_profiles(id) ON DELETE SET NULL;
 
 CREATE TABLE staff_locations (
   staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
