@@ -47,28 +47,26 @@ function BookingChoices({ compact = false }: { compact?: boolean }) {
 function ServicesOverview() {
   return (
     <section id="services" className="section compact-services ornament-section ornament-bg-3">
-      <div className="container compact-services-intro">
-        <div>
+      <div className="container services-chair-intro">
+        <div className="services-chair-copy">
           <p className="eyebrow">Services for the whole neighborhood</p>
-          <h2>One shop. Two clear ways to book.</h2>
+          <h2>Come in with the look you want. Leave with it done right.</h2>
           <p className="lede">
-            Choose Booksy for barbering or Crowned by Steph on GlossGenius for locs, braids, twists, and styling.
+            Whether it is your regular fade, a beard clean-up, your kid’s first cut, or loc and styling work, we will get you to the right chair without making the process complicated.
           </p>
+          <p className="services-owner-note">Cuts for the whole neighborhood. Personal service every time.</p>
         </div>
-        <div className="service-summary-panel" aria-label="Service overview">
-          <div>
-            <span>Barbering</span>
-            <strong>Current Booksy cuts, fades, line-ups, beard combinations, and kids services</strong>
-          </div>
-          <div>
-            <span>Styling</span>
-            <strong>Locs, braids, twists, color, washing, and hair care with Crowned by Steph</strong>
-          </div>
-          <div>
-            <span>Clients</span>
-            <strong>Kids, adults, seniors, women, and longtime regulars</strong>
-          </div>
-        </div>
+        <figure className="services-chair-photo">
+          <img
+            src={originalAssets.introPhoto}
+            alt="A barber at The Kut Shoppe working with a client"
+            width="1000"
+            height="760"
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>Haircuts, fades, beard work, kids cuts, locs, braids, and styling under one roof.</figcaption>
+        </figure>
       </div>
 
       <div className="container service-icon-strip">
@@ -137,8 +135,8 @@ function AboutAndCrew() {
       <div className="container compact-about-grid">
         <figure className="compact-about-image">
           <img
-            src={originalAssets.introPhoto}
-            alt="Inside The Kut Shoppe"
+            src={originalAssets.trustPhoto}
+            alt="The Kut Shoppe prepared for a client visit"
             width="1000"
             height="760"
             loading="lazy"
@@ -268,9 +266,9 @@ export function HomePage() {
         <div className="parallax-shade parallax-shade-gradient" />
         <div className="container conversion-panel">
           <div className="conversion-copy">
-            <p className="eyebrow">Ready when you are</p>
-            <h2>Choose the service. Choose the provider.</h2>
-            <p>Book barbering on Booksy or styling with Crowned by Steph on GlossGenius.</p>
+            <p className="eyebrow">Ready for the next one?</p>
+            <h2>Your chair is ready when you are.</h2>
+            <p>Book your cut on Booksy. For locs, braids, twists, and styling, book directly with Steph.</p>
             <BookingChoices compact />
           </div>
           <aside className="visit-card" aria-label="Visit The Kut Shoppe">
