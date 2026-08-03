@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   endPlatformSession,
   getPlatformSessionAccount,
@@ -28,16 +28,22 @@ function logout() {
 }
 
 function CustomerSummary({ account }: { account: PlatformAccount }) {
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    const refresh = () => setVersion((value) => value + 1);
-    const unsubscribeAppointments = subscribeToAppointmentChanges(refresh);
-    const unsubscribeOrders = subscribeToStorefrontChanges(refresh);
-    return () => { unsubscribeAppointments(); unsubscribeOrders(); };
-  }, []);
+  const [appointments, setAppointments] = useState(() => readAppointments().filter((appointment) => appointment.customerEmail === account.email));
+  const [orders, setOrders] = useState(() => readOrders().filter((order) => order.customer.email === account.email));
 
-  const appointments = useMemo(() => readAppointments().filter((appointment) => appointment.customerEmail === account.email), [account.email, version]);
-  const orders = useMemo(() => readOrders().filter((order) => order.customer.email === account.email), [account.email, version]);
+  useEffect(() => {
+    const refreshAppointments = () => setAppointments(readAppointments().filter((appointment) => appointment.customerEmail === account.email));
+    const refreshOrders = () => setOrders(readOrders().filter((order) => order.customer.email === account.email));
+    const unsubscribeAppointments = subscribeToAppointmentChanges(refreshAppointments);
+    const unsubscribeOrders = subscribeToStorefrontChanges(refreshOrders);
+    refreshAppointments();
+    refreshOrders();
+    return () => {
+      unsubscribeAppointments();
+      unsubscribeOrders();
+    };
+  }, [account.email]);
+
   const active = appointments.filter((appointment) => ['requested', 'confirmed', 'reschedule-proposed', 'waitlisted'].includes(appointment.status));
 
   return (
