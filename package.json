@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build": "node scripts/build.mjs",
-    "check": "npm run typecheck && npm run lint && npm run build",
+    "bundlecheck": "node scripts/check-bundle-size.mjs",
+    "check": "npm run typecheck && npm run lint && npm run build && npm run bundlecheck",
     "preview": "vite preview"
   },
   "dependencies": {
