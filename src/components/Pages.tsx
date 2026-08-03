@@ -21,15 +21,15 @@ const instagramUrl = 'https://www.instagram.com/thekutshoppe/';
 const routePresentation: Partial<Record<string, { heading: string; intro: string }>> = {
   '/services': {
     heading: 'Services and pricing.',
-    intro: 'Review barber and loc-care services, then start from one booking page that directs you to the right chair.',
+    intro: 'Find the service you need, then start one clear booking process.',
   },
   '/team': {
     heading: 'Meet the professionals behind the shop.',
-    intro: 'Learn who is behind each chair, then begin through The Kut Shoppe booking page.',
+    intro: 'Choose a professional or begin with any available barber.',
   },
   '/gallery': {
     heading: 'Cuts and styles from the shop.',
-    intro: 'Browse fades, tapers, scissor cuts, beard work, locs, braids, kids cuts, and designs in one clear gallery.',
+    intro: 'Browse fades, tapers, scissor cuts, beard work, locs, braids, kids cuts, and designs.',
   },
   '/reviews': {
     heading: 'A reputation built one appointment at a time.',
@@ -37,11 +37,11 @@ const routePresentation: Partial<Record<string, { heading: string; intro: string
   },
   '/contact': {
     heading: 'Call the shop when you need guidance.',
-    intro: 'Get help choosing a service, confirming walk-in availability, or finding the correct booking option.',
+    intro: 'Get help choosing a service, checking availability, or finding the right booking option.',
   },
   '/privacy': {
     heading: 'Privacy information.',
-    intro: 'This page will reflect the finished booking, verification, commerce, account, and contact services enabled for production.',
+    intro: 'This page will reflect the finished booking, commerce, account, and contact services enabled for production.',
   },
   '/terms': {
     heading: 'Website terms.',
@@ -61,7 +61,7 @@ function ServicesRoute() {
           <div>
             <p className="eyebrow">Haircuts, fades, line-ups, and beard work</p>
             <h2 id="barber-menu-heading">Barber services</h2>
-            <p>Review prices and appointment times, then choose your barber inside The Kut Shoppe booking app.</p>
+            <p>Review prices, then choose a barber and available time.</p>
           </div>
           <a className="button" href="/book">Book now <Arrow /></a>
         </div>
@@ -88,9 +88,9 @@ function ServicesRoute() {
           <div>
             <p className="eyebrow">Locs, braids, twists, retwists, and hair care</p>
             <h2 id="loctician-menu-heading">Loc care with Crowned by Steph</h2>
-            <p>Start through the same booking page, then continue to Steph’s current schedule and policies.</p>
+            <p>Begin on the same booking page, then continue to Steph’s current availability.</p>
           </div>
-          <a className="button button-secondary" href="/book">Book now <Arrow /></a>
+          <a className="button button-secondary" href="/book?type=loctician">Book Steph <Arrow /></a>
         </div>
         <div className="styling-category-grid">{locticianCategories.map((category) => <article key={category.route}><h3>{category.title}</h3><p>{category.summary}</p><a className="text-link" href={category.route}>Service details <Arrow /></a></article>)}</div>
       </section>
@@ -101,26 +101,43 @@ function ServicesRoute() {
 function ServiceRoute({ path }: { path: string }) {
   const service = services.find((item) => item.route === path);
   if (!service) return null;
+  const href = service.bookingType === 'barber' ? '/book' : '/book?type=loctician';
 
   return (
     <div className="content-panel route-content">
       <div className="service-heading-row">
         <div><p className="eyebrow">{service.bookingType === 'barber' ? 'Barber booking' : 'Loctician booking'}</p><h2>{service.prices.length ? 'Services and pricing' : 'Services and availability'}</h2></div>
-        <a className="button button-secondary" href="/book">Book now <Arrow /></a>
+        <a className="button button-secondary" href={href}>Book now <Arrow /></a>
       </div>
-      {service.prices.length ? <ul className="price-list price-list-current">{service.prices.map((item) => <li key={item.name}><span>{item.name}</span><small>{item.duration}</small><strong>{item.price}</strong></li>)}</ul> : <p>The booking path maintains the current service menu, policies, and available appointment times for this category.</p>}
+      {service.prices.length ? <ul className="price-list price-list-current">{service.prices.map((item) => <li key={item.name}><span>{item.name}</span><small>{item.duration}</small><strong>{item.price}</strong></li>)}</ul> : <p>Continue to the current service menu, policies, and available appointment times for this category.</p>}
       <p className="fine-print">Confirm final pricing and availability while booking.</p>
     </div>
   );
+}
+
+function memberBookingHref(shortName: string, bookingType: string) {
+  if (bookingType === 'styling') return '/book?type=loctician';
+  const barberIds: Record<string, string> = {
+    KasH: 'kash',
+    'Mr. Glen': 'mr-glen',
+    'Kris-P': 'kris-p',
+  };
+  return `/book?barber=${barberIds[shortName] ?? 'any'}`;
+}
+
+function memberKey(shortName: string) {
+  return shortName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
 function TeamRoute() {
   return (
     <div className="route-content verified-team-grid">
       {team.map((member) => (
-        <article className="verified-team-card" key={member.name}>
-          {member.photo ? <img src={member.photo} alt="" width="480" height="480" loading="lazy" decoding="async" /> : <div className="verified-team-placeholder" aria-hidden="true">CS</div>}
-          <div><p className="eyebrow">{member.specialty}</p><h2>{member.name}</h2><a className="text-link" href="/book">Start booking with {member.shortName} <Arrow /></a></div>
+        <article className="verified-team-card" data-member={memberKey(member.shortName)} key={member.name}>
+          <div className="verified-team-media">
+            {member.photo ? <img src={member.photo} alt={`${member.name}, ${member.specialty} at The Kut Shoppe`} width="640" height="800" loading="lazy" decoding="async" /> : <div className="verified-team-placeholder" aria-hidden="true">CS</div>}
+          </div>
+          <div className="verified-team-copy"><p className="eyebrow">{member.specialty}</p><h2>{member.name}</h2><a className="text-link" href={memberBookingHref(member.shortName, member.bookingType)}>Book {member.shortName} <Arrow /></a></div>
         </article>
       ))}
     </div>
@@ -133,7 +150,7 @@ function VisitRoute() {
       <LocationMap compact />
       <div className="split-grid visit-hours-grid">
         <div className="content-panel"><p className="eyebrow">Walk-in reference hours</p><h2>Shop hours</h2><dl className="visit-hours-list">{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl><small>{shopHoursNote}</small></div>
-        <div className="content-panel"><p className="eyebrow">Before you visit</p><h2>Check your professional’s availability.</h2><p>{business.walkIns}</p><p className="visit-hours-summary">{shopHoursSummary} · {shopClosedSummary}</p><div className="proof-actions"><a className="button" href="/book/walk-in">Join the walk-in list</a><a className="button button-secondary" href={business.phoneHref}>Call {business.phone}</a></div></div>
+        <div className="content-panel"><p className="eyebrow">Before you visit</p><h2>Check current availability.</h2><p>{business.walkIns}</p><p className="visit-hours-summary">{shopHoursSummary} · {shopClosedSummary}</p><div className="proof-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href={business.phoneHref}>Call {business.phone}</a></div></div>
       </div>
     </div>
   );
@@ -165,10 +182,18 @@ export function RoutePage({ url }: { url: string }) {
   const presentation = routePresentation[route.path];
   const hasServiceRoute = services.some((item) => item.route === route.path);
   const isWideRoute = ['/team', '/gallery', '/services'].includes(route.path);
-  const pageClass = route.path === '/services' ? 'route-services-page' : route.path === '/gallery' ? 'route-gallery-page' : '';
+  const pageClass = route.path === '/services'
+    ? 'route-services-page route-pattern-tools'
+    : route.path === '/gallery'
+      ? 'route-gallery-page route-pattern-gallery'
+      : route.path === '/team'
+        ? 'route-team-page route-pattern-chairs'
+        : route.path === '/visit'
+          ? 'route-visit-page route-pattern-map'
+          : 'route-default-page';
 
   return (
-    <section className={`section page-hero ornament-section ornament-bg-3 ${pageClass}`}>
+    <section className={`section page-hero ${pageClass}`}>
       <div className={`container ${isWideRoute ? 'route-wide' : 'narrow-container'}`}>
         <header className="route-page-intro"><p className="eyebrow">{route.eyebrow}</p><h1>{presentation?.heading ?? route.heading}</h1><p className="lede">{presentation?.intro ?? route.intro}</p></header>
         {route.path === '/services' ? <ServicesRoute /> : null}

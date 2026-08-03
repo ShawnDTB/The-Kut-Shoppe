@@ -26,6 +26,7 @@ import './navigation-v2-fixes.css';
 import './booking-v2.css';
 import './storefront-v2.css';
 import './staff-onboarding-v2.css';
+import './visual-accessibility-v2.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
