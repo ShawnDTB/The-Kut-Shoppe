@@ -1,12 +1,18 @@
-import type { ReactNode } from 'react';
-import { business } from '../data/site';
+import type { MouseEvent, ReactNode } from 'react';
+import { bookingPaths, business } from '../data/site';
 import { originalAssets } from '../data/visuals';
 
 const primaryNavigation = [
   ['Services', '/#services'],
   ['Work', '/#work'],
   ['About', '/#about'],
-  ['Shop', '/products'],
+  ['Shop', '/shop'],
+] as const;
+
+const secondaryNavigation = [
+  ['Meet the team', '/team'],
+  ['Visit the shop', '/visit'],
+  ['Client reviews', '/reviews'],
 ] as const;
 
 const socialLinks = [
@@ -19,41 +25,37 @@ function isCurrentRoute(currentPath: string, href: string) {
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
+function handleSectionLink(event: MouseEvent<HTMLAnchorElement>, href: string) {
+  if (!href.startsWith('/#') || window.location.pathname !== '/') return;
+
+  const section = document.getElementById(href.slice(2));
+  if (!section) return;
+
+  event.preventDefault();
+  window.history.replaceState(null, '', href.slice(1));
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 export function Arrow() {
   return <span aria-hidden="true">→</span>;
 }
 
-function BookingMenu() {
+function ProviderBookingActions({ mobile = false }: { mobile?: boolean }) {
   return (
-    <details className="booking-menu">
-      <summary>
-        <span>Book now</span>
-        <span className="booking-menu-chevron" aria-hidden="true" />
-      </summary>
-      <div className="booking-menu-panel">
-        <div className="booking-menu-heading">
-          <span>Appointments</span>
-          <strong>Choose the service you need.</strong>
-        </div>
-        <a className="booking-menu-choice" href="/book#barber">
-          <span>
-            <small>Haircuts · fades · beards</small>
-            <strong>Book with a barber</strong>
-          </span>
-          <Arrow />
+    <div className={mobile ? 'provider-booking-actions provider-booking-actions-mobile' : 'provider-booking-actions'}>
+      {bookingPaths.map((path) => (
+        <a
+          className={`provider-booking-link provider-booking-${path.type}`}
+          href={path.href}
+          key={path.id}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>{path.shortTitle}</span>
+          <small>{path.provider}</small>
         </a>
-        <a className="booking-menu-choice" href="/book#styling">
-          <span>
-            <small>Locs · braids · styling</small>
-            <strong>Book styling services</strong>
-          </span>
-          <Arrow />
-        </a>
-        <a className="booking-menu-all" href="/book">
-          View all booking information
-        </a>
-      </div>
-    </details>
+      ))}
+    </div>
   );
 }
 
@@ -62,7 +64,7 @@ function Header({ currentPath }: { currentPath: string }) {
     <>
       <div className="utility-bar">
         <div className="container utility-inner">
-          <a className="utility-location" href="/#visit">
+          <a className="utility-location" href="/visit">
             <span className="utility-marker" aria-hidden="true" />
             518 Main Street · Downtown Stroudsburg
           </a>
@@ -94,7 +96,11 @@ function Header({ currentPath }: { currentPath: string }) {
                   const current = isCurrentRoute(currentPath, href);
                   return (
                     <li key={href}>
-                      <a href={href} aria-current={current ? 'page' : undefined}>
+                      <a
+                        href={href}
+                        aria-current={current ? 'page' : undefined}
+                        onClick={(event) => handleSectionLink(event, href)}
+                      >
                         {label}
                       </a>
                     </li>
@@ -104,7 +110,7 @@ function Header({ currentPath }: { currentPath: string }) {
             </nav>
           </div>
 
-          <div className="header-actions">
+          <div className="header-actions header-actions-direct">
             <a
               className="header-call"
               href={business.phoneHref}
@@ -113,7 +119,7 @@ function Header({ currentPath }: { currentPath: string }) {
               <span className="header-call-label">Call the shop</span>
               <strong>{business.phone}</strong>
             </a>
-            <BookingMenu />
+            <ProviderBookingActions />
           </div>
 
           <details className="mobile-nav mobile-nav-branded">
@@ -132,20 +138,25 @@ function Header({ currentPath }: { currentPath: string }) {
               {primaryNavigation.map(([label, href]) => {
                 const current = isCurrentRoute(currentPath, href);
                 return (
-                  <a key={href} href={href} aria-current={current ? 'page' : undefined}>
+                  <a
+                    key={href}
+                    href={href}
+                    aria-current={current ? 'page' : undefined}
+                    onClick={(event) => handleSectionLink(event, href)}
+                  >
                     {label}
                     <Arrow />
                   </a>
                 );
               })}
-              <a href="/#visit">
-                Visit
-                <Arrow />
-              </a>
+              <div className="mobile-secondary-links">
+                {secondaryNavigation.map(([label, href]) => (
+                  <a key={href} href={href}>{label}</a>
+                ))}
+              </div>
               <div className="mobile-booking-group">
-                <span>Book an appointment</span>
-                <a href="/book#barber">Barber services</a>
-                <a href="/book#styling">Locs, braids and styling</a>
+                <span>Book directly</span>
+                <ProviderBookingActions mobile />
               </div>
               <a className="mobile-call-link" href={business.phoneHref}>
                 Call {business.phone}
@@ -163,7 +174,7 @@ function Footer() {
     <footer className="site-footer">
       <div className="container footer-grid">
         <div className="footer-brand">
-          <img src={originalAssets.logo} alt="The Kut Shoppe" width="120" height="120" />
+          <img src={originalAssets.logo} alt="The Kut Shoppe" width="120" height="120" loading="lazy" decoding="async" />
           <p>Classic barbering, modern styling, and a neighborhood shop experience in downtown Stroudsburg.</p>
           <div className="footer-socials" aria-label="The Kut Shoppe social media">
             {socialLinks.map(([label, href]) => (
@@ -177,14 +188,16 @@ function Footer() {
           <p className="footer-heading">Visit</p>
           <p>{business.address}</p>
           <a href={business.phoneHref}>{business.phone}</a>
-          <a href="/#visit">Directions and visit details</a>
+          <a href="/visit">Directions and visit details</a>
         </div>
         <div>
           <p className="footer-heading">Information</p>
-          <a href="/#services">Services</a>
+          <a href="/services">Services and pricing</a>
           <a href="/gallery">Full gallery</a>
+          <a href="/team">Team</a>
           <a href="/reviews">Reviews</a>
-          <a href="/products">Shop</a>
+          <a href="/shop">Shop</a>
+          <a href="/#about">About</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
         </div>
