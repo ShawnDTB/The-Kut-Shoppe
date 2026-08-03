@@ -1,8 +1,7 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { business } from '../data/site';
 import {
   shopClosedSummary,
-  shopHours,
   shopHoursNote,
   shopHoursSummary,
 } from '../data/hours';
@@ -45,6 +44,7 @@ function CustomerActions({ mobile = false, onNavigate }: { mobile?: boolean; onN
 function MobileNavigation({ currentPath }: { currentPath: string }) {
   const [open, setOpen] = useState(false);
   const drawerId = useId();
+  const drawerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -55,6 +55,7 @@ function MobileNavigation({ currentPath }: { currentPath: string }) {
     };
 
     document.body.style.overflow = 'hidden';
+    drawerRef.current?.scrollTo({ top: 0 });
     window.addEventListener('keydown', closeOnEscape);
 
     return () => {
@@ -81,7 +82,7 @@ function MobileNavigation({ currentPath }: { currentPath: string }) {
       {open ? (
         <div className="mobile-nav-overlay">
           <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" onClick={close} />
-          <aside className="mobile-nav-drawer" id={drawerId} aria-modal="true" aria-label="Site navigation">
+          <aside ref={drawerRef} className="mobile-nav-drawer" id={drawerId} aria-modal="true" aria-label="Site navigation">
             <div className="mobile-drawer-header">
               <a className="mobile-drawer-brand" href="/" onClick={close}>
                 <img src={originalAssets.logo} alt="" width="58" height="58" />
@@ -98,14 +99,15 @@ function MobileNavigation({ currentPath }: { currentPath: string }) {
                 })}
               </div>
               <div className="mobile-secondary-links">{secondaryNavigation.map(([label, href]) => <a key={href} href={href} onClick={close}>{label}<Arrow /></a>)}</div>
-              <div className="mobile-booking-group"><span>Appointments and account</span><CustomerActions mobile onNavigate={close} /></div>
-              <div className="mobile-hours-card">
+              <div className="mobile-booking-group"><span>Book and manage</span><CustomerActions mobile onNavigate={close} /></div>
+              <div className="mobile-hours-card mobile-hours-card-compact">
                 <div className="mobile-hours-heading"><span>Shop hours</span><small>Walk-in reference</small></div>
-                <dl>{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl>
+                <strong>{shopHoursSummary}</strong>
+                <span>{shopClosedSummary}</span>
                 <small>{shopHoursNote}</small>
+                <a href="/visit" onClick={close}>View full hours and directions <Arrow /></a>
               </div>
               <a className="mobile-call-link" href={business.phoneHref} onClick={close}>Call {business.phone}</a>
-              <a className="mobile-staff-link" href="/staff/login" onClick={close}>Staff portal</a>
             </nav>
           </aside>
         </div>
@@ -165,8 +167,8 @@ function Footer() {
       <div className="container footer-main-grid">
         <div className="footer-visit-block"><p className="footer-heading">Visit</p><strong>518 Main Street</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and visit details <Arrow /></a></div>
         <div className="footer-hours-block"><p className="footer-heading">Hours</p><strong>{shopHoursSummary}</strong><strong>{shopClosedSummary}</strong><small>{shopHoursNote}</small></div>
-        <nav className="footer-link-group" aria-label="Explore The Kut Shoppe"><p className="footer-heading">Explore</p><a href="/services">Services and pricing</a><a href="/gallery">Full gallery</a><a href="/team">Meet the crew</a><a href="/shop">Shop</a><a href="/account">Customer account</a></nav>
-        <div className="footer-link-group"><p className="footer-heading">Connect</p><a href="/reviews">Client reviews</a>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}<a href="/staff/login">Staff portal</a></div>
+        <nav className="footer-link-group" aria-label="Explore The Kut Shoppe"><p className="footer-heading">Explore</p><a href="/services">Services and pricing</a><a href="/gallery">Full gallery</a><a href="/team">Meet the crew</a><a href="/shop">Shop</a><a href="/account">Account / Login</a></nav>
+        <div className="footer-link-group"><p className="footer-heading">Connect</p><a href="/reviews">Client reviews</a>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</div>
       </div>
 
       <div className="container footer-bottom footer-bottom-refined"><span>© {new Date().getFullYear()} The Kut Shoppe LLC</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Platform by Designed to Breakthrough LLC</span></div></div>
