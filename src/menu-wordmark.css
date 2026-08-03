@@ -44,20 +44,14 @@
   margin-left: auto;
   overflow: hidden;
   border-inline: 1px solid rgba(244, 244, 244, 0.075);
+  background: #101010;
 }
 
 .header-navigation-surface::after {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(
-    90deg,
-    rgba(9, 9, 9, 0.97) 0%,
-    rgba(9, 9, 9, 0.82) 18%,
-    rgba(9, 9, 9, 0.7) 52%,
-    rgba(9, 9, 9, 0.84) 84%,
-    rgba(9, 9, 9, 0.97) 100%
-  );
+  background: rgba(7, 7, 7, 0.34);
   content: '';
   pointer-events: none;
 }
@@ -67,13 +61,11 @@
   inset: 0;
   z-index: -2;
   background-image: url('/brand/menu-wordmark-pattern.svg');
-  background-position: left center;
+  background-position: center;
   background-repeat: no-repeat;
-  background-size: 100% 165%;
-  opacity: 0.17;
+  background-size: 94% auto;
+  opacity: 0.34;
   pointer-events: none;
-  transform: scaleX(1.42);
-  transform-origin: left center;
 }
 
 .menu-surface {
@@ -104,8 +96,8 @@
 }
 
 .menu-surface .nav-list-branded a {
-  color: #c7c7c7;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.96);
+  color: #d1d1d1;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 1);
 }
 
 .menu-surface .nav-list-branded a:hover,
@@ -114,14 +106,14 @@
 }
 
 .menu-surface .nav-list-branded a[aria-current='page']::before {
-  border-color: #aeb4bb;
-  background: rgba(174, 180, 187, 0.1);
+  border-color: #b7bcc2;
+  background: rgba(183, 188, 194, 0.12);
 }
 
 .header-navigation-surface .header-actions-direct {
   align-self: stretch;
   padding-right: clamp(0.75rem, 1.25vw, 1.15rem);
-  background: linear-gradient(90deg, transparent, rgba(8, 8, 8, 0.42) 18%, rgba(8, 8, 8, 0.72));
+  background: linear-gradient(90deg, rgba(8, 8, 8, 0.08), rgba(8, 8, 8, 0.42) 48%, rgba(8, 8, 8, 0.72));
 }
 
 .mobile-nav-branded > summary {
@@ -143,7 +135,8 @@
   }
 
   .menu-signature {
-    opacity: 0.14;
+    background-size: 97% auto;
+    opacity: 0.29;
   }
 }
 
@@ -166,11 +159,5 @@
   .brand-lockup img {
     width: 3.05rem;
     height: 3.05rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .menu-signature {
-    transform: scaleX(1.42);
   }
 }
