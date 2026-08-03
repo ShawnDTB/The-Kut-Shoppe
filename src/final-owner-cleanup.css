@@ -25,7 +25,20 @@
 }
 
 .nav-list-branded a[aria-current='page']::before {
-  top: 1rem;
+  top: 0.3rem;
+  left: 50%;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 0;
+  background-color: transparent;
+  background-image: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/Service-1.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: '';
+  filter: grayscale(1) brightness(1.45);
+  opacity: 0.82;
+  transform: translateX(-50%);
 }
 
 .header-navigation-surface,
