@@ -1,4 +1,5 @@
 import { bookingPaths, booksyUrl, business, team } from '../data/site';
+import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
 import {
   galleryItems,
   originalAssets,
@@ -10,17 +11,21 @@ import { LocationMap } from './LocationMap';
 
 function HeroBackdrop() {
   return (
-    <div className="hero-static-media" aria-hidden="true">
+    <div className="hero-static-media hero-shop-interior" aria-hidden="true">
       <img
-        src={originalAssets.hero[1]}
+        src={originalAssets.productsPhoto}
         alt=""
-        width="1920"
-        height="1080"
+        width="1600"
+        height="1200"
         loading="eager"
         decoding="async"
       />
     </div>
   );
+}
+
+function getBookingLabel(type: 'barber' | 'styling') {
+  return type === 'barber' ? 'Book with Barber' : 'Book with Loctician';
 }
 
 function BookingChoices({ compact = false }: { compact?: boolean }) {
@@ -35,10 +40,9 @@ function BookingChoices({ compact = false }: { compact?: boolean }) {
           rel="noopener noreferrer"
         >
           <span className="booking-choice-kicker">
-            {path.type === 'barber' ? 'Haircuts · fades · beards' : 'Locs · braids · styling'}
+            {path.type === 'barber' ? 'Haircuts · fades · beards' : 'Locs · braids · retwists'}
           </span>
-          <strong>{path.shortTitle}</strong>
-          <small className="booking-choice-provider">{path.provider}</small>
+          <strong>{getBookingLabel(path.type)}</strong>
           <Arrow />
         </a>
       ))}
@@ -54,9 +58,9 @@ function ServicesOverview() {
           <p className="eyebrow">Services for the whole neighborhood</p>
           <h2>You know the look. We will take care of the rest.</h2>
           <p className="lede">
-            Fresh fade, clean line-up, beard work, a first cut for the little one, or locs and styling. Tell us what you are going for and we will get you in the right chair.
+            Fresh fade, clean line-up, beard work, a first cut for the little one, or loc and braid work. Tell us what you are going for and we will get you in the right chair.
           </p>
-          <p className="services-owner-note">Barbering and styling on Main Street in downtown Stroudsburg.</p>
+          <p className="services-owner-note">Barbering and loc care on Main Street in downtown Stroudsburg.</p>
         </div>
         <figure className="services-chair-photo">
           <img
@@ -113,7 +117,7 @@ function WorkAndTrust() {
               View the full gallery <Arrow />
             </a>
             <a className="text-link" href={booksyUrl} target="_blank" rel="noopener noreferrer">
-              Read Booksy feedback <span aria-hidden="true">↗</span>
+              Read client feedback <span aria-hidden="true">↗</span>
             </a>
           </div>
         </div>
@@ -152,7 +156,7 @@ function AboutAndCrew() {
           <p className="eyebrow">A modern twist on classic cuts</p>
           <h2>A Main Street shop built around the person in the chair.</h2>
           <p className="lede">
-            The Kut Shoppe brings barbering and styling professionals together in downtown Stroudsburg, a few steps away from the Sherman Theater.
+            The Kut Shoppe brings barbers and a loctician together in downtown Stroudsburg, a few steps away from the Sherman Theater.
           </p>
           <div className="compact-crew-grid" aria-label="The Kut Shoppe crew">
             {team.map((member) => (
@@ -177,7 +181,7 @@ function AboutAndCrew() {
                 )}
                 <span>
                   <strong>{member.shortName}</strong>
-                  <small>{member.specialty}</small>
+                  <small>{member.bookingType === 'styling' ? 'Loctician' : member.specialty}</small>
                 </span>
               </a>
             ))}
@@ -227,8 +231,16 @@ export function HomePage() {
             <p className="eyebrow">The Kut Shoppe · Downtown Stroudsburg</p>
             <h1>Your look. Done right.</h1>
             <p className="lede">
-              Fresh cuts, beard work, locs, braids, and styling from a Main Street crew that knows its clients.
+              Fresh cuts, beard work, locs, braids, and retwists from a Main Street crew that knows its clients.
             </p>
+
+            <div className="hero-hours-panel" aria-label="Shop hours">
+              <span>Shop hours</span>
+              <strong>{shopHoursSummary}</strong>
+              <strong>{shopClosedSummary}</strong>
+              <small>{shopHoursNote}</small>
+            </div>
+
             <BookingChoices compact />
             <a className="hero-call" href={business.phoneHref}>
               Questions? Call {business.phone}
@@ -247,10 +259,10 @@ export function HomePage() {
             <strong>518 Main Street</strong>
             <small>A few steps away from the Sherman Theater</small>
           </a>
-          <a href="/book">
-            <span>Appointments</span>
-            <strong>Two booking providers</strong>
-            <small>Choose barbering or styling</small>
+          <a href="/visit">
+            <span>Hours</span>
+            <strong>{shopHoursSummary}</strong>
+            <small>{shopClosedSummary}</small>
           </a>
           <a href={business.phoneHref}>
             <span>Questions</span>
@@ -270,7 +282,7 @@ export function HomePage() {
           <div className="conversion-copy location-conversion-copy">
             <p className="eyebrow">Ready for the next one?</p>
             <h2>Your chair is ready when you are.</h2>
-            <p>Book your cut on Booksy. For locs, braids, twists, and styling, book directly with Steph.</p>
+            <p>Book your cut with a barber. For locs, braids, twists, and retwists, book directly with the loctician.</p>
             <BookingChoices compact />
           </div>
           <LocationMap />
