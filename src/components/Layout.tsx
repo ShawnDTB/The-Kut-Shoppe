@@ -289,6 +289,7 @@ function Footer() {
           <a href="/gallery">Full gallery</a>
           <a href="/team">Meet the crew</a>
           <a href="/shop">Shop</a>
+          <a href="/account">Customer account</a>
         </nav>
 
         <div className="footer-link-group">
