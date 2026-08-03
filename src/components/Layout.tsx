@@ -3,11 +3,10 @@ import { business } from '../data/site';
 import { originalAssets } from '../data/visuals';
 
 const primaryNavigation = [
-  ['Services', '/services'],
-  ['Gallery', '/gallery'],
-  ['Team', '/team'],
-  ['About', '/about'],
-  ['Visit', '/visit'],
+  ['Services', '/#services'],
+  ['Work', '/#work'],
+  ['About', '/#about'],
+  ['Shop', '/products'],
 ] as const;
 
 const socialLinks = [
@@ -16,6 +15,7 @@ const socialLinks = [
 ] as const;
 
 function isCurrentRoute(currentPath: string, href: string) {
+  if (href.includes('#')) return false;
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
@@ -62,7 +62,7 @@ function Header({ currentPath }: { currentPath: string }) {
     <>
       <div className="utility-bar">
         <div className="container utility-inner">
-          <a className="utility-location" href="/visit">
+          <a className="utility-location" href="/#visit">
             <span className="utility-marker" aria-hidden="true" />
             518 Main Street · Downtown Stroudsburg
           </a>
@@ -138,6 +138,10 @@ function Header({ currentPath }: { currentPath: string }) {
                   </a>
                 );
               })}
+              <a href="/#visit">
+                Visit
+                <Arrow />
+              </a>
               <div className="mobile-booking-group">
                 <span>Book an appointment</span>
                 <a href="/book#barber">Barber services</a>
@@ -173,15 +177,14 @@ function Footer() {
           <p className="footer-heading">Visit</p>
           <p>{business.address}</p>
           <a href={business.phoneHref}>{business.phone}</a>
-          <a href="/visit">Directions and visit details</a>
+          <a href="/#visit">Directions and visit details</a>
         </div>
         <div>
           <p className="footer-heading">Information</p>
-          <a href="/services">Services</a>
-          <a href="/gallery">Gallery</a>
+          <a href="/#services">Services</a>
+          <a href="/gallery">Full gallery</a>
           <a href="/reviews">Reviews</a>
-          <a href="/products">Products</a>
-          <a href="/contact">Contact</a>
+          <a href="/products">Shop</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
         </div>
