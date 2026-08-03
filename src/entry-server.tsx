@@ -44,6 +44,16 @@ const platformRoutes: RouteDefinition[] = [
     status: 'placeholder',
   },
   {
+    path: '/admin/access',
+    label: 'Owner Access',
+    title: 'Owner Access | The Kut Shoppe',
+    description: 'Development-only owner access for local platform review.',
+    eyebrow: 'Administration',
+    heading: 'Local owner access.',
+    intro: 'Unavailable in production builds.',
+    status: 'placeholder',
+  },
+  {
     path: '/admin/products',
     label: 'Product Administration',
     title: 'Product Administration | The Kut Shoppe',
