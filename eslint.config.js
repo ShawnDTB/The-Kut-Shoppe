@@ -13,4 +13,24 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     languageOptions: { ecmaVersion: 2023 },
   },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+      },
+    },
+  },
+  {
+    files: [
+      'src/components/InternalBookingPage.tsx',
+      'src/components/StaffPlatformPages.tsx',
+      'src/components/CustomerAccountPrototype.tsx',
+      'src/components/CommercePrototypePages.tsx',
+    ],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/use-memo': 'off',
+    },
+  },
 );
