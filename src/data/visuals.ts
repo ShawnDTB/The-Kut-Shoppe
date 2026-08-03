@@ -25,7 +25,7 @@ export const featureItems = [
   {
     icon: `${mediaRoot}/2-Icon.png`,
     title: 'A customized grooming experience',
-    text: 'Fades, tapers, locs, cornrows, braids, twists, shape-ups, beard work, and more through one neighborhood shop.',
+    text: 'Fades, tapers, locs, cornrows, braids, twists, shape-ups, beard work, and more through one Main Street shop.',
   },
   {
     icon: `${mediaRoot}/1-Icon.png`,
@@ -75,52 +75,56 @@ export const serviceHighlights = [
 
 export const galleryItems = [
   {
-    src: `${galleryRoot}/Fade-1.png`,
-    category: 'Fades & tapers',
-    alt: 'Fade haircut from The Kut Shoppe gallery',
-  },
-  {
     src: `${galleryRoot}/Taper-1.png`,
-    category: 'Fades & tapers',
-    alt: 'Taper haircut from The Kut Shoppe gallery',
+    title: 'Clean taper',
+    category: 'Fades and tapers',
+    alt: 'Clean taper haircut from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/Scissorcut.png`,
-    category: 'Classic & scissor cuts',
-    alt: 'Scissor haircut from The Kut Shoppe gallery',
+    title: 'Classic scissor cut',
+    category: 'Classic cuts',
+    alt: 'Classic scissor haircut from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/Design-1.png`,
-    category: 'Designs & details',
-    alt: 'Hair design from The Kut Shoppe gallery',
+    title: 'Custom design',
+    category: 'Designs and details',
+    alt: 'Custom hair design from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/Bald-and-Beard-1.png`,
-    category: 'Beards & details',
+    title: 'Bald cut and beard detail',
+    category: 'Beards and details',
     alt: 'Bald cut and beard work from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/Braid-Locs-11.png`,
-    category: 'Locs, braids & styling',
-    alt: 'Loc and braid styling from The Kut Shoppe gallery',
+    title: 'Loc styling',
+    category: 'Locs and styling',
+    alt: 'Loc styling from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/Braids-Locs-1.png`,
-    category: 'Locs, braids & styling',
+    title: 'Braided style',
+    category: 'Braids and styling',
     alt: 'Braided hairstyle from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/Caesar_Buzzcut-1.png`,
+    title: 'Kids Caesar cut',
     category: 'Kids cuts',
     alt: 'Kids Caesar or buzz cut from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/KidsFade-1.png`,
+    title: 'Kids fade',
     category: 'Kids cuts',
     alt: 'Kids fade from The Kut Shoppe gallery',
   },
   {
     src: `${galleryRoot}/FirstCutCertificate-3.jpg`,
+    title: 'First cut certificate',
     category: 'First cuts',
     alt: 'First haircut certificate experience from The Kut Shoppe gallery',
   },
