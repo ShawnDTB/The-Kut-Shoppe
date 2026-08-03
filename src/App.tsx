@@ -29,6 +29,7 @@ import './staff-onboarding-v2.css';
 import './visual-accessibility-v2.css';
 import './polish-round-2.css';
 import './polish-round-3.css';
+import './polish-round-3-fixes.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
