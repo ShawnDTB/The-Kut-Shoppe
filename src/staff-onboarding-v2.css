@@ -1,0 +1,378 @@
+.staff-v2-page {
+  min-height: 72vh;
+  padding-block: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+.staff-v2-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.staff-v2-header h1 {
+  max-width: 14ch;
+  margin-bottom: 0.55rem;
+  text-wrap: pretty;
+}
+
+.staff-v2-header p:not(.eyebrow) {
+  max-width: 66ch;
+  color: var(--muted);
+}
+
+.staff-v2-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.staff-v2-progress li {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 1px solid var(--line);
+  border-right: 0;
+  color: #777;
+  padding: 0.6rem;
+}
+
+.staff-v2-progress li:last-child {
+  border-right: 1px solid var(--line);
+}
+
+.staff-v2-progress li.is-current,
+.staff-v2-progress li.is-complete {
+  color: var(--paper);
+}
+
+.staff-v2-progress li.is-current {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.staff-v2-progress li span {
+  display: grid;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border: 1px solid currentColor;
+  font-size: 0.72rem;
+}
+
+.staff-v2-progress small {
+  font-family: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.staff-v2-panel,
+.staff-v2-state {
+  border: 1px solid var(--line-strong);
+  padding: clamp(1.25rem, 4vw, 3rem);
+  background: rgba(8, 8, 8, 0.93);
+}
+
+.staff-v2-panel > section > h2,
+.staff-v2-state h1,
+.staff-v2-state h2 {
+  margin-bottom: 0.65rem;
+}
+
+.staff-v2-state > p:not(.eyebrow),
+.staff-v2-panel > section > p:not(.eyebrow) {
+  max-width: 68ch;
+  color: var(--muted);
+}
+
+.staff-v2-state.compact {
+  padding: 1.25rem;
+  border-style: dashed;
+}
+
+.staff-v2-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+}
+
+.staff-v2-fields label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.staff-v2-fields label > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.staff-v2-fields input,
+.staff-v2-fields textarea,
+.staff-v2-fields select,
+.staff-v2-hours input {
+  width: 100%;
+  min-height: 3.2rem;
+  border: 1px solid var(--line-strong);
+  padding: 0.7rem 0.8rem;
+  background: #080808;
+  color: var(--paper);
+  font: inherit;
+}
+
+.staff-v2-fields input[readonly] {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.staff-v2-fields textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.staff-v2-fields small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.staff-v2-wide {
+  grid-column: 1 / -1;
+}
+
+.staff-v2-location {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  padding: 1rem;
+}
+
+.staff-v2-location span {
+  color: var(--muted);
+}
+
+.staff-v2-services {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.staff-v2-services label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 4.8rem;
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.staff-v2-services label.is-selected {
+  border-color: var(--paper);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.staff-v2-services label > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.staff-v2-services label > span:last-child {
+  justify-items: end;
+}
+
+.staff-v2-services small {
+  color: var(--muted);
+}
+
+.staff-v2-hours {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.staff-v2-hours > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(8rem, 0.7fr) auto minmax(8rem, 0.7fr);
+  gap: 0.65rem;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+}
+
+.staff-v2-hours > div > label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.staff-v2-hours > div > label input {
+  width: auto;
+  min-height: auto;
+}
+
+.staff-v2-hours .field-error {
+  grid-column: 1 / -1;
+}
+
+.staff-v2-toggles {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.staff-v2-toggles label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--line);
+  padding: 0.9rem;
+  cursor: pointer;
+}
+
+.staff-v2-toggles label > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.staff-v2-toggles small {
+  color: var(--muted);
+}
+
+.staff-v2-payout-note {
+  margin-top: 1rem;
+  border-left: 3px solid var(--red);
+  padding: 0.9rem 1rem;
+  background: rgba(158, 27, 43, 0.08);
+}
+
+.staff-v2-payout-note p {
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.staff-v2-review {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.staff-v2-review > div {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--line);
+  padding: 0.85rem;
+}
+
+.staff-v2-review dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.staff-v2-review dd {
+  margin: 0;
+  color: var(--paper);
+}
+
+.staff-v2-review-note {
+  margin-top: 1rem;
+  border: 1px dashed var(--line-strong);
+  padding: 0.85rem;
+}
+
+.staff-v2-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+@media (max-width: 850px) {
+  .staff-v2-header,
+  .staff-v2-fields,
+  .staff-v2-services {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-v2-header {
+    align-items: start;
+  }
+
+  .staff-v2-wide {
+    grid-column: auto;
+  }
+
+  .staff-v2-hours > div {
+    grid-template-columns: minmax(8rem, 1fr) minmax(7rem, 0.8fr) auto minmax(7rem, 0.8fr);
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .staff-v2-page {
+    padding-block: 2.75rem;
+  }
+
+  .staff-v2-progress {
+    grid-template-columns: repeat(5, minmax(5rem, 1fr));
+    overflow-x: auto;
+  }
+
+  .staff-v2-progress li {
+    min-width: 5rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    text-align: center;
+  }
+
+  .staff-v2-panel,
+  .staff-v2-state {
+    padding: 1rem;
+  }
+
+  .staff-v2-hours > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .staff-v2-hours > div > label,
+  .staff-v2-hours .field-error {
+    grid-column: 1 / -1;
+  }
+
+  .staff-v2-hours > div > span {
+    display: none;
+  }
+
+  .staff-v2-review {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-v2-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .staff-v2-actions .button {
+    width: 100%;
+  }
+}
