@@ -54,9 +54,9 @@ function ServicesOverview() {
       <div className="container services-chair-intro">
         <div className="services-chair-copy">
           <p className="eyebrow">Services for the whole neighborhood</p>
-          <h2>You know the look. We will take care of the rest.</h2>
+          <h2>You look great. Now let us make it perfect.</h2>
           <p className="lede">
-            Fresh fades, clean line-ups, beard work, kids cuts, locs, braids, and styling—done by a crew that takes the time to get it right.
+            Fades, clean line-ups, beard work, kids cuts, locs, braids, and styling—whatever brings you in, the crew takes the time to get it right.
           </p>
           <p className="services-owner-note">Top-rated barbering and styling in downtown Stroudsburg.</p>
         </div>
