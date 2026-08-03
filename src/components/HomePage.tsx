@@ -1,5 +1,10 @@
 import { bookingPaths, booksyUrl, business, team } from '../data/site';
-import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
+import {
+  shopClosedSummary,
+  shopHours,
+  shopHoursNote,
+  shopHoursSummary,
+} from '../data/hours';
 import {
   galleryItems,
   originalAssets,
@@ -11,12 +16,12 @@ import { LocationMap } from './LocationMap';
 
 function HeroBackdrop() {
   return (
-    <div className="hero-static-media hero-shop-interior" aria-hidden="true">
+    <div className="hero-static-media hero-shop-floor" aria-hidden="true">
       <img
-        src={originalAssets.productsPhoto}
+        src={originalAssets.hero[3]}
         alt=""
         width="1600"
-        height="1200"
+        height="900"
         loading="eager"
         decoding="async"
       />
@@ -227,18 +232,29 @@ export function HomePage() {
         <HeroBackdrop />
         <div className="hero-shade" />
         <div className="container hero-content hero-content-minimal">
-          <div className="hero-glass-panel">
+          <div className="hero-glass-panel hero-glass-panel-hours">
             <p className="eyebrow">The Kut Shoppe · Downtown Stroudsburg</p>
-            <h1>Your look. Done right.</h1>
-            <p className="lede">
-              Fresh cuts, beard work, locs, braids, and retwists from a Main Street crew that knows its clients.
+            <h1 className="hero-accessible-title">
+              The Kut Shoppe barbershop and loc care in downtown Stroudsburg
+            </h1>
+            <p className="hero-lead">
+              Fresh cuts, clean line-ups, beard work, loc care, braids, and retwists from a Main Street crew that takes the time to get it right.
             </p>
 
-            <div className="hero-hours-panel" aria-label="Shop hours">
-              <span>Shop hours</span>
-              <strong>{shopHoursSummary}</strong>
-              <strong>{shopClosedSummary}</strong>
-              <small>{shopHoursNote}</small>
+            <div className="hero-hours-panel hero-hours-daily" aria-label="Shop hours">
+              <div className="hero-hours-heading">
+                <span>Shop hours</span>
+                <small>Walk-in reference</small>
+              </div>
+              <dl>
+                {shopHours.map((entry) => (
+                  <div key={entry.days}>
+                    <dt>{entry.days}</dt>
+                    <dd>{entry.hours}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p>{shopHoursNote}</p>
             </div>
 
             <BookingChoices compact />
@@ -261,7 +277,7 @@ export function HomePage() {
           </a>
           <a href="/visit">
             <span>Hours</span>
-            <strong>{shopHoursSummary}</strong>
+            <strong>Open Monday through Saturday</strong>
             <small>{shopClosedSummary}</small>
           </a>
           <a href={business.phoneHref}>
