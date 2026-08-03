@@ -15,7 +15,7 @@ import './owner-refinement.css';
 import './menu-final.css';
 import './final-owner-cleanup.css';
 import './customer-final-pass.css';
-import './final-responsive-check.css';
+import './final-detail-pass.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
