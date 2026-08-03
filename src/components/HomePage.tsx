@@ -1,4 +1,4 @@
-import { booksyUrl, business, team } from '../data/site';
+import { bookingPaths, booksyUrl, business, team } from '../data/site';
 import {
   galleryItems,
   originalAssets,
@@ -24,16 +24,22 @@ function HeroSlideshow() {
 function BookingChoices({ compact = false }: { compact?: boolean }) {
   return (
     <div className={compact ? 'booking-choice-row booking-choice-row-compact' : 'booking-choice-row'}>
-      <a className="booking-choice" href="/book#barber">
-        <span className="booking-choice-kicker">Haircuts · fades · beards</span>
-        <strong>Book with a barber</strong>
-        <Arrow />
-      </a>
-      <a className="booking-choice" href="/book#styling">
-        <span className="booking-choice-kicker">Locs · braids · styling</span>
-        <strong>Book styling services</strong>
-        <Arrow />
-      </a>
+      {bookingPaths.map((path) => (
+        <a
+          className="booking-choice"
+          href={path.href}
+          key={path.id}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span className="booking-choice-kicker">
+            {path.type === 'barber' ? 'Haircuts · fades · beards' : 'Locs · braids · styling'}
+          </span>
+          <strong>{path.shortTitle}</strong>
+          <small className="booking-choice-provider">{path.provider}</small>
+          <Arrow />
+        </a>
+      ))}
     </div>
   );
 }
@@ -46,17 +52,17 @@ function ServicesOverview() {
           <p className="eyebrow">Services for the whole neighborhood</p>
           <h2>One shop. Two clear ways to book.</h2>
           <p className="lede">
-            Choose barbering for cuts, fades, beard work, and shaves—or styling for locs, braids, twists, color, and hair care.
+            Choose Booksy for barbering or Crowned by Steph on GlossGenius for locs, braids, twists, and styling.
           </p>
         </div>
         <div className="service-summary-panel" aria-label="Service overview">
           <div>
             <span>Barbering</span>
-            <strong>Cuts, fades, tapers, beards, and straight-razor details</strong>
+            <strong>Current Booksy cuts, fades, line-ups, beard combinations, and kids services</strong>
           </div>
           <div>
             <span>Styling</span>
-            <strong>Locs, braids, twists, color, washing, and scalp care</strong>
+            <strong>Locs, braids, twists, color, washing, and hair care with Crowned by Steph</strong>
           </div>
           <div>
             <span>Clients</span>
@@ -68,7 +74,7 @@ function ServicesOverview() {
       <div className="container service-icon-strip">
         {serviceHighlights.map((service) => (
           <a className="service-icon-link" href={service.route} key={service.title}>
-            <img src={service.icon} alt="" width="88" height="88" loading="lazy" />
+            <img src={service.icon} alt="" width="88" height="88" loading="lazy" decoding="async" />
             <span>{service.title}</span>
           </a>
         ))}
@@ -76,7 +82,7 @@ function ServicesOverview() {
 
       <div className="container compact-section-actions">
         <a className="text-link" href="/services">
-          Services and pricing <Arrow />
+          Current services and pricing <Arrow />
         </a>
         <BookingChoices compact />
       </div>
@@ -95,7 +101,7 @@ function WorkAndTrust() {
           <p className="eyebrow">Real work. Real appointments.</p>
           <h2>See the range before choosing your chair.</h2>
           <p>
-            Fades, tapers, scissor cuts, beard details, locs, braids, designs, and kids cuts—all from the shop’s current gallery.
+            Fades, tapers, scissor cuts, beard details, locs, braids, designs, and kids cuts from the shop gallery.
           </p>
           <ul className="trust-shortlist">
             {standards.map((standard) => (
@@ -115,7 +121,7 @@ function WorkAndTrust() {
         <div className="compact-gallery" aria-label="Featured work from The Kut Shoppe">
           {previewItems.map((item) => (
             <figure key={item.src}>
-              <img src={item.src} alt={item.alt} width="640" height="640" loading="lazy" />
+              <img src={item.src} alt={item.alt} width="640" height="640" loading="lazy" decoding="async" />
               <figcaption>{item.category}</figcaption>
             </figure>
           ))}
@@ -130,7 +136,14 @@ function AboutAndCrew() {
     <section id="about" className="section compact-about ornament-section ornament-bg-4">
       <div className="container compact-about-grid">
         <figure className="compact-about-image">
-          <img src={originalAssets.introPhoto} alt="Inside The Kut Shoppe" width="1000" height="760" loading="lazy" />
+          <img
+            src={originalAssets.introPhoto}
+            alt="Inside The Kut Shoppe"
+            width="1000"
+            height="760"
+            loading="lazy"
+            decoding="async"
+          />
         </figure>
         <div className="compact-about-copy">
           <p className="eyebrow">A modern twist on classic cuts</p>
@@ -138,19 +151,37 @@ function AboutAndCrew() {
           <p className="lede">
             The Kut Shoppe brings barbering and styling professionals together in a welcoming Main Street shop serving Stroudsburg and the Pocono area.
           </p>
-          <ul className="compact-crew-list" aria-label="The Kut Shoppe crew">
+          <div className="compact-crew-grid" aria-label="The Kut Shoppe crew">
             {team.map((member) => (
-              <li key={member.name}>{member.name}</li>
+              <a
+                className="compact-crew-card"
+                href={member.bookingHref}
+                key={member.name}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {member.photo ? (
+                  <img
+                    src={member.photo}
+                    alt=""
+                    width="112"
+                    height="112"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span className="compact-crew-monogram" aria-hidden="true">CS</span>
+                )}
+                <span>
+                  <strong>{member.shortName}</strong>
+                  <small>{member.specialty}</small>
+                </span>
+              </a>
             ))}
-          </ul>
-          <div className="compact-about-actions">
-            <a className="text-link" href="/about">
-              About the shop <Arrow />
-            </a>
-            <a className="text-link" href="/team">
-              Meet the crew <Arrow />
-            </a>
           </div>
+          <a className="text-link" href="/team">
+            Meet the crew <Arrow />
+          </a>
         </div>
       </div>
     </section>
@@ -161,14 +192,21 @@ function ShopTeaser() {
   return (
     <section className="shop-teaser ornament-section ornament-bg-8" aria-labelledby="shop-teaser-heading">
       <div className="container shop-teaser-grid">
-        <img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="520" height="420" loading="lazy" />
+        <img
+          src={originalAssets.productsPhoto}
+          alt="Product display inside The Kut Shoppe"
+          width="520"
+          height="420"
+          loading="lazy"
+          decoding="async"
+        />
         <div>
           <p className="eyebrow">Products from the shop</p>
           <h2 id="shop-teaser-heading">Keep the fresh look going.</h2>
-          <p>Ask about grooming and hair-care products available through the shop.</p>
+          <p>Explore the foundation for approved grooming, hair-care, accessory, and Kut Shoppe merchandise.</p>
         </div>
-        <a className="button button-secondary" href="/products">
-          Product information <Arrow />
+        <a className="button button-secondary" href="/shop">
+          Visit the shop <Arrow />
         </a>
       </div>
     </section>
@@ -206,8 +244,8 @@ export function HomePage() {
           </a>
           <a href="/book">
             <span>Appointments</span>
-            <strong>Recommended</strong>
-            <small>Walk-ins when availability allows</small>
+            <strong>Two booking providers</strong>
+            <small>Choose barbering or styling</small>
           </a>
           <a href={business.phoneHref}>
             <span>Questions</span>
@@ -231,8 +269,8 @@ export function HomePage() {
         <div className="container conversion-panel">
           <div className="conversion-copy">
             <p className="eyebrow">Ready when you are</p>
-            <h2>Choose the service. Choose the time.</h2>
-            <p>Appointments are recommended. Walk-ins are welcome when availability allows.</p>
+            <h2>Choose the service. Choose the provider.</h2>
+            <p>Book barbering on Booksy or styling with Crowned by Steph on GlossGenius.</p>
             <BookingChoices compact />
           </div>
           <aside className="visit-card" aria-label="Visit The Kut Shoppe">
