@@ -87,7 +87,9 @@ function Header({ currentPath }: { currentPath: string }) {
           </a>
 
           <div className="menu-surface">
-            <span className="menu-wordmark-pattern" aria-hidden="true" />
+            <span className="menu-signature" aria-hidden="true">
+              The Kut Shoppe
+            </span>
             <nav className="desktop-nav" aria-label="Primary navigation">
               <ul className="nav-list nav-list-branded">
                 {primaryNavigation.map(([label, href]) => {
