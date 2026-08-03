@@ -6,15 +6,16 @@ import {
   shopStandards,
 } from '../data/visuals';
 import { Arrow } from './Layout';
+import { LocationMap } from './LocationMap';
 
 function HeroBackdrop() {
   return (
     <div className="hero-static-media" aria-hidden="true">
       <img
-        src={originalAssets.hero[0]}
+        src={originalAssets.introPhoto}
         alt=""
-        width="1920"
-        height="1080"
+        width="1600"
+        height="1200"
         loading="eager"
         decoding="async"
       />
@@ -46,27 +47,29 @@ function BookingChoices({ compact = false }: { compact?: boolean }) {
 }
 
 function ServicesOverview() {
+  const featuredCut = galleryItems[0];
+
   return (
     <section id="services" className="section compact-services ornament-section ornament-bg-3">
       <div className="container services-chair-intro">
         <div className="services-chair-copy">
           <p className="eyebrow">Services for the whole neighborhood</p>
-          <h2>Come in with the look you want. Leave with it done right.</h2>
+          <h2>You know the look. We will take care of the rest.</h2>
           <p className="lede">
-            Whether it is your regular fade, a beard clean-up, your kid’s first cut, or loc and styling work, we will get you to the right chair without making the process complicated.
+            Fresh fades, clean line-ups, beard work, kids cuts, locs, braids, and styling—done by a crew that takes the time to get it right.
           </p>
-          <p className="services-owner-note">Cuts for the whole neighborhood. Personal service every time.</p>
+          <p className="services-owner-note">Top-rated barbering and styling in downtown Stroudsburg.</p>
         </div>
-        <figure className="services-chair-photo">
+        <figure className="services-chair-photo services-finished-cut">
           <img
-            src={originalAssets.introPhoto}
-            alt="A barber at The Kut Shoppe working with a client"
-            width="1000"
-            height="760"
+            src={featuredCut.src}
+            alt={featuredCut.alt}
+            width="900"
+            height="900"
             loading="lazy"
             decoding="async"
           />
-          <figcaption>Haircuts, fades, beard work, kids cuts, locs, braids, and styling under one roof.</figcaption>
+          <figcaption>The Kut Shoppe · 518 Main Street · steps from the Sherman Theater</figcaption>
         </figure>
       </div>
 
@@ -98,7 +101,7 @@ function WorkAndTrust() {
       <div className="container compact-proof-grid">
         <div className="proof-copy">
           <p className="eyebrow">Real work. Real appointments.</p>
-          <h2>See the range before choosing your chair.</h2>
+          <h2>Check the work out. Then choose your chair.</h2>
           <p>
             Fades, tapers, scissor cuts, beard details, locs, braids, designs, and kids cuts from the shop gallery.
           </p>
@@ -146,9 +149,9 @@ function AboutAndCrew() {
         </figure>
         <div className="compact-about-copy">
           <p className="eyebrow">A modern twist on classic cuts</p>
-          <h2>A neighborhood shop built around the person in the chair.</h2>
+          <h2>A Main Street shop built around the person in the chair.</h2>
           <p className="lede">
-            The Kut Shoppe brings barbering and styling professionals together in a welcoming Main Street shop serving Stroudsburg and the Pocono area.
+            The Kut Shoppe brings barbering and styling professionals together in downtown Stroudsburg, just steps from the Sherman Theater.
           </p>
           <div className="compact-crew-grid" aria-label="The Kut Shoppe crew">
             {team.map((member) => (
@@ -202,7 +205,7 @@ function ShopTeaser() {
         <div>
           <p className="eyebrow">Products from the shop</p>
           <h2 id="shop-teaser-heading">Keep the fresh look going.</h2>
-          <p>Explore the foundation for approved grooming, hair-care, accessory, and Kut Shoppe merchandise.</p>
+          <p>Ask about grooming, hair-care, accessories, and Kut Shoppe merchandise available through the shop.</p>
         </div>
         <a className="button button-secondary" href="/shop">
           Visit the shop <Arrow />
@@ -223,7 +226,7 @@ export function HomePage() {
             <p className="eyebrow">The Kut Shoppe · Downtown Stroudsburg</p>
             <h1>Your look. Done right.</h1>
             <p className="lede">
-              Fresh cuts, beard work, locs, braids, and styling from a neighborhood crew that knows its clients.
+              Fresh cuts, beard work, locs, braids, and styling from a Main Street crew that knows its clients.
             </p>
             <BookingChoices compact />
             <a className="hero-call" href={business.phoneHref}>
@@ -241,7 +244,7 @@ export function HomePage() {
           <a href="/visit">
             <span>Visit</span>
             <strong>518 Main Street</strong>
-            <small>Downtown Stroudsburg</small>
+            <small>Steps from the Sherman Theater</small>
           </a>
           <a href="/book">
             <span>Appointments</span>
@@ -261,28 +264,15 @@ export function HomePage() {
       <AboutAndCrew />
       <ShopTeaser />
 
-      <section
-        id="visit"
-        className="parallax-divider appointment-divider final-conversion compact-final"
-        style={{ backgroundImage: `url(${originalAssets.secondDivider})` }}
-      >
-        <div className="parallax-shade parallax-shade-gradient" />
-        <div className="container conversion-panel">
-          <div className="conversion-copy">
+      <section id="visit" className="section location-conversion">
+        <div className="container location-conversion-grid">
+          <div className="conversion-copy location-conversion-copy">
             <p className="eyebrow">Ready for the next one?</p>
             <h2>Your chair is ready when you are.</h2>
             <p>Book your cut on Booksy. For locs, braids, twists, and styling, book directly with Steph.</p>
             <BookingChoices compact />
           </div>
-          <aside className="visit-card" aria-label="Visit The Kut Shoppe">
-            <span>Visit the shop</span>
-            <strong>518 Main Street</strong>
-            <p>Stroudsburg, PA 18360</p>
-            <a href={business.phoneHref}>{business.phone}</a>
-            <a className="text-link" href="/visit">
-              Visit details <Arrow />
-            </a>
-          </aside>
+          <LocationMap />
         </div>
       </section>
     </>
