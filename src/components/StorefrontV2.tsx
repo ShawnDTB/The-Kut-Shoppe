@@ -6,10 +6,6 @@ import {
   type PlatformAccount,
 } from '../data/auth-v2';
 import {
-  ensureDevelopmentStorefrontSeed,
-  isDevelopmentPreviewProduct,
-} from '../data/development-storefront-seed';
-import {
   addToCart,
   formatMoney,
   getAvailableStock,
@@ -23,6 +19,10 @@ import {
 } from '../data/storefront';
 
 type CategoryFilter = 'All' | ProductCategory;
+
+function isPreviewProduct(product: StoreProduct) {
+  return product.id.startsWith('preview-product-');
+}
 
 function productPrice(product: StoreProduct) {
   const prices = product.variants.filter((variant) => variant.active).map((variant) => variant.priceCents);
@@ -49,11 +49,6 @@ export function StorefrontV2() {
   const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
-    const seeded = ensureDevelopmentStorefrontSeed();
-    if (seeded) {
-      setProducts(readProducts().filter((product) => product.status === 'published'));
-      setCart(readCart());
-    }
     const unsubscribeStore = subscribeToStorefrontChanges(() => {
       setProducts(readProducts().filter((product) => product.status === 'published'));
       setCart(readCart());
@@ -124,7 +119,7 @@ export function StorefrontV2() {
               return <button className={category === item ? 'is-active' : ''} type="button" key={item} onClick={() => setCategory(item)}>{item} <span>{count}</span></button>;
             })}
           </nav>
-          {import.meta.env.DEV && products.some(isDevelopmentPreviewProduct) ? <p className="storefront-v2-preview-note">Preview products are local test records and can be edited or deleted from Manage Products.</p> : null}
+          {import.meta.env.DEV && products.some(isPreviewProduct) ? <p className="storefront-v2-preview-note">Preview products are local test records and can be edited or deleted from Manage Products.</p> : null}
         </div>
 
         {message ? <div className="storefront-v2-toast" role="status" aria-live="polite"><span>{message}</span><button type="button" onClick={() => setMessage('')} aria-label="Dismiss cart message">×</button></div> : null}
@@ -136,7 +131,7 @@ export function StorefrontV2() {
               const activeVariants = product.variants.filter((variant) => variant.active);
               const available = activeVariants.reduce((total, variant) => total + getAvailableStock(product, variant), 0);
               const inCart = cartQuantity(cart, product.id);
-              const preview = isDevelopmentPreviewProduct(product);
+              const preview = isPreviewProduct(product);
               return (
                 <article className={preview ? 'storefront-v2-card is-preview' : 'storefront-v2-card'} key={product.id}>
                   <a className="storefront-v2-media" href={`/shop/${product.slug}`} aria-label={`View ${product.name}`}>
