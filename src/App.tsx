@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import './styles.css';
 import './refinement.css';
 import './route-refinement.css';
@@ -49,6 +49,30 @@ const legacyRedirects: Record<string, string> = {
   '/login': '/account',
   '/booking': '/book',
 };
+
+const subscribeToHydration = () => () => undefined;
+const getHydratedSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+function ClientPlatform({ children, label }: { children: ReactNode; label: string }) {
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerSnapshot,
+  );
+
+  if (!hydrated) {
+    return (
+      <section className="section platform-loading-state platform-pattern platform-pattern-tools">
+        <div className="container narrow-container">
+          <div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening {label}.</h1></div>
+        </div>
+      </section>
+    );
+  }
+
+  return children;
+}
 
 function ClientRedirect({ to }: { to: string }) {
   useEffect(() => {
@@ -102,23 +126,23 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/book/walk-in' ? (
         <WalkInRequestPage />
       ) : normalizedUrl === '/shop' ? (
-        <CommerceStorefrontPage />
+        <ClientPlatform label="the current Shop"><CommerceStorefrontPage /></ClientPlatform>
       ) : productMatch ? (
-        <ProductDetailPage slug={decodeURIComponent(productMatch[1] ?? '')} />
+        <ClientPlatform label="this product"><ProductDetailPage slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
       ) : normalizedUrl === '/cart' ? (
-        <CartPage />
+        <ClientPlatform label="your cart"><CartPage /></ClientPlatform>
       ) : normalizedUrl === '/checkout' ? (
-        <CheckoutPage />
+        <ClientPlatform label="checkout"><CheckoutPage /></ClientPlatform>
       ) : normalizedUrl === '/account' ? (
-        <CustomerAccountPrototype />
+        <ClientPlatform label="your Account"><CustomerAccountPrototype /></ClientPlatform>
       ) : normalizedUrl === '/admin/access' ? (
-        <AdminAccessPage />
+        <ClientPlatform label="development owner access"><AdminAccessPage /></ClientPlatform>
       ) : normalizedUrl === '/admin/products' ? (
-        <AdminGuard><CatalogAdminPage /></AdminGuard>
+        <ClientPlatform label="product administration"><AdminGuard><CatalogAdminPage /></AdminGuard></ClientPlatform>
       ) : normalizedUrl === '/admin/orders' ? (
-        <AdminGuard><OrderAdminPage /></AdminGuard>
+        <ClientPlatform label="order administration"><AdminGuard><OrderAdminPage /></AdminGuard></ClientPlatform>
       ) : isStaffRoute ? (
-        <StaffPlatformPage path={normalizedUrl} />
+        <ClientPlatform label="the staff portal"><StaffPlatformPage path={normalizedUrl} /></ClientPlatform>
       ) : (
         <RoutePage url={url} />
       )}
