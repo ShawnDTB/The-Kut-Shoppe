@@ -2,11 +2,11 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(244, 244, 244, 0.08) 14%,
-    rgba(244, 244, 244, 0.28) 38%,
-    rgba(244, 244, 244, 0.52) 50%,
-    rgba(244, 244, 244, 0.28) 62%,
-    rgba(244, 244, 244, 0.08) 86%,
+    rgba(244, 244, 244, 0.06) 16%,
+    rgba(244, 244, 244, 0.2) 42%,
+    rgba(244, 244, 244, 0.32) 50%,
+    rgba(244, 244, 244, 0.2) 58%,
+    rgba(244, 244, 244, 0.06) 84%,
     transparent 100%
   );
 }
@@ -43,7 +43,7 @@
   isolation: isolate;
   margin-left: auto;
   overflow: hidden;
-  border-inline: 1px solid rgba(244, 244, 244, 0.075);
+  border-inline: 1px solid rgba(244, 244, 244, 0.07);
   background: #101010;
 }
 
@@ -51,7 +51,12 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: rgba(7, 7, 7, 0.34);
+  background: linear-gradient(
+    90deg,
+    rgba(9, 9, 9, 0.58),
+    rgba(9, 9, 9, 0.28) 48%,
+    rgba(9, 9, 9, 0.52)
+  );
   content: '';
   pointer-events: none;
 }
@@ -60,12 +65,28 @@
   position: absolute;
   inset: 0;
   z-index: -2;
-  background-image: url('/brand/menu-wordmark-pattern.svg');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 94% auto;
-  opacity: 0.34;
+  overflow: hidden;
   pointer-events: none;
+}
+
+.menu-signature::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  color: transparent;
+  content: 'The Kut Shoppe';
+  font-family: var(--editorial);
+  font-size: clamp(5rem, 6.5vw, 8rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 1;
+  opacity: 0.16;
+  transform: translate(-50%, -51%) scaleX(1.06);
+  white-space: nowrap;
+  -webkit-text-stroke: 1px rgba(174, 180, 187, 0.8);
+  text-stroke: 1px rgba(174, 180, 187, 0.8);
 }
 
 .menu-surface {
@@ -107,7 +128,7 @@
 
 .menu-surface .nav-list-branded a[aria-current='page']::before {
   border-color: #b7bcc2;
-  background: rgba(183, 188, 194, 0.12);
+  background: rgba(183, 188, 194, 0.1);
 }
 
 .header-navigation-surface .header-actions-direct {
@@ -134,9 +155,9 @@
     gap: 0.9rem;
   }
 
-  .menu-signature {
-    background-size: 97% auto;
-    opacity: 0.29;
+  .menu-signature::before {
+    font-size: clamp(4.5rem, 6vw, 6.4rem);
+    opacity: 0.13;
   }
 }
 
