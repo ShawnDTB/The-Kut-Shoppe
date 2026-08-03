@@ -15,51 +15,135 @@ const socialLinks = [
   ['Facebook', 'https://www.facebook.com/TheKutShoppe/'],
 ] as const;
 
+function isCurrentRoute(currentPath: string, href: string) {
+  return currentPath === href || currentPath.startsWith(`${href}/`);
+}
+
 export function Arrow() {
   return <span aria-hidden="true">→</span>;
 }
 
-function Header() {
+function BookingMenu() {
+  return (
+    <details className="booking-menu">
+      <summary>
+        <span>Book now</span>
+        <span className="booking-menu-chevron" aria-hidden="true" />
+      </summary>
+      <div className="booking-menu-panel">
+        <div className="booking-menu-heading">
+          <span>Appointments</span>
+          <strong>Choose the service you need.</strong>
+        </div>
+        <a className="booking-menu-choice" href="/book#barber">
+          <span>
+            <small>Haircuts · fades · beards</small>
+            <strong>Book with a barber</strong>
+          </span>
+          <Arrow />
+        </a>
+        <a className="booking-menu-choice" href="/book#styling">
+          <span>
+            <small>Locs · braids · styling</small>
+            <strong>Book styling services</strong>
+          </span>
+          <Arrow />
+        </a>
+        <a className="booking-menu-all" href="/book">
+          View all booking information
+        </a>
+      </div>
+    </details>
+  );
+}
+
+function Header({ currentPath }: { currentPath: string }) {
   return (
     <>
       <div className="utility-bar">
         <div className="container utility-inner">
-          <span>{business.address}</span>
-          <span className="utility-hours">Appointments recommended · Walk-ins based on availability</span>
-          <a href={business.phoneHref}>{business.phone}</a>
+          <a className="utility-location" href="/visit">
+            <span className="utility-marker" aria-hidden="true" />
+            518 Main Street · Downtown Stroudsburg
+          </a>
+          <span className="utility-hours">
+            Appointment based · Walk-ins when availability allows
+          </span>
+          <a className="utility-phone" href={business.phoneHref}>
+            Call {business.phone}
+          </a>
         </div>
       </div>
       <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="/" aria-label="The Kut Shoppe home">
-            <img src={originalAssets.logo} alt="" width="64" height="64" />
-            <span>The Kut Shoppe</span>
+        <div className="header-ornament" aria-hidden="true" />
+        <div className="container header-inner header-inner-branded">
+          <a className="brand brand-lockup" href="/" aria-label="The Kut Shoppe home">
+            <span className="brand-emblem">
+              <img src={originalAssets.logo} alt="" width="76" height="76" />
+            </span>
+            <span className="brand-copy">
+              <strong>The Kut Shoppe</strong>
+              <small>Classic barbering · Modern styling</small>
+            </span>
           </a>
+
           <nav className="desktop-nav" aria-label="Primary navigation">
-            <ul className="nav-list">
-              {primaryNavigation.map(([label, href]) => (
-                <li key={href}>
-                  <a href={href}>{label}</a>
-                </li>
-              ))}
+            <ul className="nav-list nav-list-branded">
+              {primaryNavigation.map(([label, href]) => {
+                const current = isCurrentRoute(currentPath, href);
+                return (
+                  <li key={href}>
+                    <a href={href} aria-current={current ? 'page' : undefined}>
+                      {label}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
-          <a className="header-phone" href={business.phoneHref} aria-label={`Call The Kut Shoppe at ${business.phone}`}>
-            Call
-          </a>
-          <a className="button button-compact header-book" href="/book">
-            Book
-          </a>
-          <details className="mobile-nav">
-            <summary aria-label="Open navigation">Menu</summary>
+
+          <div className="header-actions">
+            <a
+              className="header-call"
+              href={business.phoneHref}
+              aria-label={`Call The Kut Shoppe at ${business.phone}`}
+            >
+              <span className="header-call-label">Call the shop</span>
+              <strong>{business.phone}</strong>
+            </a>
+            <BookingMenu />
+          </div>
+
+          <details className="mobile-nav mobile-nav-branded">
+            <summary aria-label="Open navigation">
+              <span className="mobile-menu-icon" aria-hidden="true">
+                <i />
+                <i />
+              </span>
+              <span>Menu</span>
+            </summary>
             <nav aria-label="Mobile navigation">
-              {primaryNavigation.map(([label, href]) => (
-                <a key={href} href={href}>
-                  {label}
-                </a>
-              ))}
-              <a href={business.phoneHref}>Call the shop</a>
-              <a href="/book">Book appointment</a>
+              <div className="mobile-nav-heading">
+                <span>Explore</span>
+                <strong>The Kut Shoppe</strong>
+              </div>
+              {primaryNavigation.map(([label, href]) => {
+                const current = isCurrentRoute(currentPath, href);
+                return (
+                  <a key={href} href={href} aria-current={current ? 'page' : undefined}>
+                    {label}
+                    <Arrow />
+                  </a>
+                );
+              })}
+              <div className="mobile-booking-group">
+                <span>Book an appointment</span>
+                <a href="/book#barber">Barber services</a>
+                <a href="/book#styling">Locs, braids and styling</a>
+              </div>
+              <a className="mobile-call-link" href={business.phoneHref}>
+                Call {business.phone}
+              </a>
             </nav>
           </details>
         </div>
@@ -108,10 +192,16 @@ function Footer() {
   );
 }
 
-export function SiteLayout({ children }: { children: ReactNode }) {
+export function SiteLayout({
+  children,
+  currentPath,
+}: {
+  children: ReactNode;
+  currentPath: string;
+}) {
   return (
     <div className="site-shell">
-      <Header />
+      <Header currentPath={currentPath} />
       <main id="main-content">{children}</main>
       <Footer />
     </div>
