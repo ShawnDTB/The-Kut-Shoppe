@@ -25,7 +25,7 @@ export function LocationMap({ compact = false }: { compact?: boolean }) {
         <div>
           <span>Find the shop</span>
           <strong>518 Main Street</strong>
-          <p>Downtown Stroudsburg · steps from the Sherman Theater</p>
+          <p>Downtown Stroudsburg · a few steps away from the Sherman Theater</p>
         </div>
         <div className="location-map-actions">
           <a href={business.phoneHref}>{business.phone}</a>
