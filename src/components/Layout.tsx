@@ -10,6 +10,11 @@ const primaryNavigation = [
   ['Visit', '/visit'],
 ] as const;
 
+const socialLinks = [
+  ['Instagram', 'https://www.instagram.com/thekutshoppe/'],
+  ['Facebook', 'https://www.facebook.com/TheKutShoppe/'],
+] as const;
+
 export function Arrow() {
   return <span aria-hidden="true">→</span>;
 }
@@ -70,6 +75,13 @@ function Footer() {
         <div className="footer-brand">
           <img src={originalAssets.logo} alt="The Kut Shoppe" width="120" height="120" />
           <p>Classic barbering, modern styling, and a neighborhood shop experience in downtown Stroudsburg.</p>
+          <div className="footer-socials" aria-label="The Kut Shoppe social media">
+            {socialLinks.map(([label, href]) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer">
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
         <div>
           <p className="footer-heading">Visit</p>
@@ -82,6 +94,7 @@ function Footer() {
           <a href="/services">Services</a>
           <a href="/gallery">Gallery</a>
           <a href="/reviews">Reviews</a>
+          <a href="/products">Products</a>
           <a href="/contact">Contact</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
