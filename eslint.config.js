@@ -26,7 +26,7 @@ export default tseslint.config(
       'src/components/InternalBookingPage.tsx',
       'src/components/StaffPlatformPages.tsx',
       'src/components/CustomerAccountPrototype.tsx',
-      'src/components/CommercePrototypePages.tsx',
+      'src/components/CommercePlatformPages.tsx',
     ],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
