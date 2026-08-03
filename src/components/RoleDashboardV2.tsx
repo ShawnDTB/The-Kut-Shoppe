@@ -58,22 +58,11 @@ function StaffSummary({ account }: { account: PlatformAccount }) {
   const isBarber = account.role === 'barber';
   const canManageShop = hasPlatformCapability(account, 'manage-shop-appointments');
   const canManageStore = hasPlatformCapability(account, 'manage-products');
+  const setupComplete = Boolean(account.staffProfileId);
 
   return (
     <div className="v2-dashboard-grid">
-      <section className="v2-panel v2-panel-priority">
-        <p className="eyebrow">Operations</p>
-        <h2>{isBarber ? 'Manage your chair.' : 'Manage the shop.'}</h2>
-        <p>{isBarber ? 'Open your schedule, appointment requests, waitlist entries and availability settings.' : 'Review shop-wide appointments, staff access, inventory and customer orders.'}</p>
-        <div className="v2-action-grid">
-          <a href="/staff">Staff overview</a>
-          <a href="/staff/calendar">Calendar</a>
-          <a href="/staff/requests">Appointment requests</a>
-          <a href="/staff/waitlist">Waitlist</a>
-          <a href="/staff/settings">Availability and services</a>
-          <a href="/staff/earnings">Earnings</a>
-        </div>
-      </section>
+      {!setupComplete ? <section className="v2-panel v2-panel-priority v2-setup-callout"><p className="eyebrow">Professional setup required</p><h2>Finish connecting this account to the shop.</h2><p>The role is approved. Add the professional display name, business phone, location, services, hours and booking rules without another SMS verification step.</p><a className="button" href="/staff/setup">Complete professional setup</a></section> : <section className="v2-panel v2-panel-priority"><p className="eyebrow">Operations</p><h2>{isBarber ? 'Manage your chair.' : 'Manage the shop.'}</h2><p>{isBarber ? 'Open your schedule, appointment requests, waitlist entries and availability settings.' : 'Review shop-wide appointments, staff access, inventory and customer orders.'}</p><div className="v2-action-grid"><a href="/staff">Staff overview</a><a href="/staff/calendar">Calendar</a><a href="/staff/requests">Appointment requests</a><a href="/staff/waitlist">Waitlist</a><a href="/staff/settings">Availability and services</a><a href="/staff/earnings">Earnings</a></div></section>}
       {canManageStore ? <section className="v2-panel"><p className="eyebrow">Storefront</p><h2>Products and orders</h2><div className="v2-action-grid"><a href="/admin/products">Product catalog</a><a href="/admin/orders">Order management</a><a href="/shop">Customer storefront</a></div></section> : null}
       {canManageShop ? <section className="v2-panel"><p className="eyebrow">Team</p><h2>Staff and access</h2><p>Approve professional accounts and keep elevated access limited to the people who need it.</p><a className="button button-secondary" href="#access">Manage account roles</a></section> : null}
     </div>
@@ -91,7 +80,7 @@ function AccessManager({ actor }: { actor: PlatformAccount }) {
     try {
       updatePlatformRole(actor, accountId, role);
       setAccounts(readPlatformAccounts());
-      setMessage('Account access updated.');
+      setMessage('Account access updated. The user can complete professional setup after signing in.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to update access.');
     }
@@ -105,7 +94,7 @@ function AccessManager({ actor }: { actor: PlatformAccount }) {
       <div className="v2-account-table">
         {accounts.map((account) => (
           <article key={account.id}>
-            <div><strong>{account.name}</strong><span>{account.email}</span><small>{account.emailVerified ? 'Email verified' : 'Email verification pending'}</small></div>
+            <div><strong>{account.name}</strong><span>{account.email}</span><small>{account.emailVerified ? 'Email verified' : 'Email verification pending'} · {account.staffProfileId ? 'Professional setup linked' : account.role === 'customer' ? 'Customer account' : 'Professional setup pending'}</small></div>
             <label>Role<select value={account.role} disabled={account.id === actor.id && actor.role === 'owner'} onChange={(event) => changeRole(account.id, event.target.value as PlatformRole)}><option value="customer">Customer</option><option value="barber">Barber</option><option value="manager">Manager</option>{canAssignElevated ? <option value="owner">Owner</option> : null}{canAssignElevated ? <option value="developer">Developer</option> : null}</select></label>
           </article>
         ))}
@@ -126,7 +115,7 @@ export function RoleDashboardV2() {
   return (
     <section className="section v2-dashboard-page platform-pattern platform-pattern-tools">
       <div className="container route-wide">
-        <header className="v2-dashboard-header"><div><p className="eyebrow">{roleLabels[account.role]} account</p><h1>Welcome, {account.name}.</h1><p>{elevated ? 'Your dashboard adapts to the responsibilities assigned to this account.' : 'Manage appointments first, then review purchases and account details.'}</p></div><div className="v2-profile-summary"><strong>{roleLabels[account.role]}</strong><span>{account.email}</span><button className="text-button" type="button" onClick={logout}>Log out</button></div></header>
+        <header className="v2-dashboard-header"><div><p className="eyebrow">{roleLabels[account.role]} account</p><h1>Welcome, {account.name}.</h1><p>{elevated ? 'Your dashboard adapts to the responsibilities assigned to this account.' : 'Manage appointments first, then review purchases and account details.'}</p></div><div className="v2-profile-summary"><strong>{roleLabels[account.role]}</strong><span>{account.email}</span><small>{elevated ? account.staffProfileId ? 'Professional profile connected' : 'Professional setup pending' : 'Customer account'}</small><button className="text-button" type="button" onClick={logout}>Log out</button></div></header>
         {elevated ? <StaffSummary account={account} /> : <CustomerSummary account={account} />}
         {hasPlatformCapability(account, 'manage-staff') ? <AccessManager actor={account} /> : null}
       </div>

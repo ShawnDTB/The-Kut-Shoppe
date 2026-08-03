@@ -25,12 +25,14 @@ import './auth-v2.css';
 import './navigation-v2-fixes.css';
 import './booking-v2.css';
 import './storefront-v2.css';
+import './staff-onboarding-v2.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
 import { BookingV2 } from './components/BookingV2';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
+import { StaffOnboardingV2 } from './components/StaffOnboardingV2';
 import { AccountAccessV2 } from './components/AccountAccessV2';
 import { RoleDashboardV2 } from './components/RoleDashboardV2';
 import { StorefrontV2 } from './components/StorefrontV2';
@@ -144,6 +146,8 @@ export function App({ url }: AppProps) {
         <ClientPlatform label="your Account"><AccountAccessV2 /></ClientPlatform>
       ) : normalizedUrl === '/dashboard' ? (
         <ClientPlatform label="your dashboard"><RoleDashboardV2 /></ClientPlatform>
+      ) : normalizedUrl === '/staff/setup' ? (
+        <ClientPlatform label="professional setup"><StaffOnboardingV2 /></ClientPlatform>
       ) : normalizedUrl === '/admin/products' ? (
         <ClientPlatform label="product administration"><AdminGuard><CatalogAdminPage /></AdminGuard></ClientPlatform>
       ) : normalizedUrl === '/admin/orders' ? (
