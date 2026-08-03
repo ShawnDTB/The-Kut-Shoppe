@@ -1,14 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
+
 .site-header::after {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(244, 244, 244, 0.06) 16%,
-    rgba(244, 244, 244, 0.2) 42%,
-    rgba(244, 244, 244, 0.32) 50%,
-    rgba(244, 244, 244, 0.2) 58%,
-    rgba(244, 244, 244, 0.06) 84%,
-    transparent 100%
-  );
+  height: 1px;
+  background: rgba(244, 244, 244, 0.13);
 }
 
 .header-inner-branded {
@@ -38,25 +32,22 @@
   position: relative;
   display: flex;
   min-width: 0;
+  flex: 1 1 auto;
   align-self: stretch;
   align-items: center;
+  justify-content: flex-end;
   isolation: isolate;
   margin-left: auto;
   overflow: hidden;
-  border-inline: 1px solid rgba(244, 244, 244, 0.07);
-  background: #101010;
+  border: 0;
+  background: #090909;
 }
 
 .header-navigation-surface::after {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(
-    90deg,
-    rgba(9, 9, 9, 0.58),
-    rgba(9, 9, 9, 0.28) 48%,
-    rgba(9, 9, 9, 0.52)
-  );
+  background: rgba(9, 9, 9, 0.34);
   content: '';
   pointer-events: none;
 }
@@ -76,25 +67,25 @@
   width: max-content;
   color: transparent;
   content: 'The Kut Shoppe';
-  font-family: var(--editorial);
-  font-size: clamp(5rem, 6.5vw, 8rem);
-  font-style: italic;
+  font-family: 'Allura', cursive;
+  font-size: clamp(5rem, 6vw, 7.4rem);
   font-weight: 400;
-  letter-spacing: -0.065em;
+  letter-spacing: 0;
   line-height: 1;
-  opacity: 0.16;
-  transform: translate(-50%, -51%) scaleX(1.06);
+  opacity: 0.14;
+  transform: translate(-50%, -49%);
   white-space: nowrap;
-  -webkit-text-stroke: 1px rgba(174, 180, 187, 0.8);
-  text-stroke: 1px rgba(174, 180, 187, 0.8);
+  -webkit-text-stroke: 0.85px rgba(166, 172, 179, 0.72);
 }
 
 .menu-surface {
   position: relative;
   display: flex;
   min-width: 0;
+  flex: 1 1 auto;
   align-self: stretch;
   align-items: center;
+  justify-content: center;
   margin-left: 0;
   overflow: visible;
   border: 0;
@@ -112,13 +103,22 @@
   z-index: 1;
 }
 
+.menu-surface .desktop-nav,
+.menu-surface .nav-list-branded {
+  width: 100%;
+}
+
 .menu-surface .desktop-nav {
   margin-left: 0;
 }
 
+.menu-surface .nav-list-branded {
+  justify-content: center;
+}
+
 .menu-surface .nav-list-branded a {
-  color: #d1d1d1;
-  text-shadow: 0 1px 14px rgba(0, 0, 0, 1);
+  color: #d4d4d4;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.96);
 }
 
 .menu-surface .nav-list-branded a:hover,
@@ -128,21 +128,22 @@
 
 .menu-surface .nav-list-branded a[aria-current='page']::before {
   border-color: #b7bcc2;
-  background: rgba(183, 188, 194, 0.1);
+  background: rgba(183, 188, 194, 0.08);
 }
 
 .header-navigation-surface .header-actions-direct {
   align-self: stretch;
+  border-left: 0;
   padding-right: clamp(0.75rem, 1.25vw, 1.15rem);
-  background: linear-gradient(90deg, rgba(8, 8, 8, 0.08), rgba(8, 8, 8, 0.42) 48%, rgba(8, 8, 8, 0.72));
+  background: rgba(9, 9, 9, 0.36);
 }
 
 .mobile-nav-branded > summary {
-  border-color: rgba(244, 244, 244, 0.55);
+  border-color: rgba(244, 244, 244, 0.45);
 }
 
 .mobile-nav-branded nav {
-  background-color: rgba(7, 7, 7, 0.985);
+  background-color: #080808;
   background-image: none;
 }
 
@@ -156,8 +157,8 @@
   }
 
   .menu-signature::before {
-    font-size: clamp(4.5rem, 6vw, 6.4rem);
-    opacity: 0.13;
+    font-size: clamp(4.4rem, 5.6vw, 6rem);
+    opacity: 0.11;
   }
 }
 
