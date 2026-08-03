@@ -1,0 +1,665 @@
+.customer-platform-page {
+  min-height: 72vh;
+  padding-block: clamp(4.5rem, 8vw, 7rem);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(158, 27, 43, 0.08), transparent 25rem),
+    var(--charcoal);
+}
+
+.customer-platform-page .route-wide {
+  display: grid;
+  gap: clamp(4.5rem, 8vw, 7.5rem);
+}
+
+.customer-platform-hero {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+}
+
+.customer-platform-hero-split {
+  grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 0.72fr);
+  align-items: center;
+}
+
+.customer-platform-hero-copy {
+  max-width: 49rem;
+}
+
+.customer-platform-hero h1 {
+  max-width: 12ch;
+  margin-bottom: 1.4rem;
+  font-size: clamp(3.7rem, 7vw, 7.2rem);
+}
+
+.customer-platform-hero .lede {
+  max-width: 48rem;
+  margin-bottom: 0;
+}
+
+.customer-platform-actions,
+.shop-today-actions,
+.account-boundary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 2rem;
+}
+
+.customer-platform-actions .button,
+.shop-today-actions .button,
+.account-boundary-actions .button {
+  min-height: 3.4rem;
+}
+
+.booking-platform-hero {
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(32rem, 1.28fr);
+  align-items: stretch;
+}
+
+.booking-router {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  background: rgba(8, 8, 8, 0.42);
+}
+
+.booking-router-card {
+  position: relative;
+  display: flex;
+  min-height: 29rem;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(2rem, 4vw, 3.3rem);
+  overflow: hidden;
+}
+
+.booking-router-card + .booking-router-card {
+  border-left: 1px solid var(--line);
+}
+
+.customer-card-number {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  color: rgba(244, 244, 244, 0.18);
+  font-family: var(--display);
+  font-size: clamp(3.4rem, 7vw, 6rem);
+  line-height: 1;
+}
+
+.booking-router-card .eyebrow {
+  position: relative;
+  z-index: 1;
+  max-width: 18rem;
+  margin-top: auto;
+}
+
+.booking-router-card h2 {
+  max-width: 9ch;
+  margin-bottom: 1rem;
+  font-size: clamp(2.5rem, 4.5vw, 4.5rem);
+}
+
+.booking-router-card p:not(.eyebrow) {
+  max-width: 31rem;
+  color: var(--muted);
+}
+
+.booking-router-card .button {
+  margin-top: auto;
+}
+
+.customer-platform-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 760px;
+}
+
+.customer-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: clamp(2rem, 4vw, 3.5rem);
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.customer-section-heading h2 {
+  max-width: 18ch;
+  margin-bottom: 0;
+  font-size: clamp(2.7rem, 5vw, 5rem);
+}
+
+.customer-section-heading .eyebrow {
+  margin-bottom: 0.7rem;
+}
+
+.booking-service-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.booking-service-card {
+  display: flex;
+  min-height: 20rem;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.18);
+}
+
+.booking-service-card h3 {
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+}
+
+.booking-service-card p:not(.eyebrow) {
+  color: var(--muted);
+}
+
+.booking-service-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.booking-professional-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.booking-professional-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.22);
+}
+
+.booking-professional-card img,
+.booking-professional-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1.08;
+  object-fit: cover;
+  object-position: center 22%;
+  background: #101010;
+}
+
+.booking-professional-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: 4rem;
+}
+
+.booking-professional-card > div:last-child {
+  display: flex;
+  min-height: 12rem;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.35rem;
+}
+
+.booking-professional-card h3 {
+  font-family: var(--display);
+  font-size: clamp(1.65rem, 2.6vw, 2.35rem);
+  font-weight: 400;
+}
+
+.booking-professional-card .text-link {
+  margin-top: auto;
+}
+
+.booking-guidance-grid,
+.customer-capability-grid,
+.account-privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.booking-guidance-grid article,
+.customer-capability-grid article,
+.account-privacy-grid p {
+  min-height: 15rem;
+  margin: 0;
+  padding: clamp(1.5rem, 3vw, 2.3rem);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.booking-guidance-grid article > span {
+  display: block;
+  margin-bottom: 2.5rem;
+  color: var(--steel);
+  font-family: var(--accent);
+  letter-spacing: 0.12em;
+}
+
+.booking-guidance-grid p,
+.customer-capability-grid p,
+.account-privacy-grid p {
+  color: var(--muted);
+}
+
+.customer-help-panel,
+.shop-today-panel,
+.account-boundary-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2rem;
+  padding: clamp(2rem, 5vw, 4rem);
+  border: 1px solid var(--line-strong);
+  background:
+    linear-gradient(105deg, rgba(158, 27, 43, 0.1), transparent 45%),
+    rgba(8, 8, 8, 0.58);
+}
+
+.customer-help-panel h2,
+.shop-today-panel h2,
+.account-boundary-panel h2 {
+  max-width: 17ch;
+  margin-bottom: 1rem;
+  font-size: clamp(2.4rem, 4.6vw, 4.5rem);
+}
+
+.shop-platform-photo {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--line);
+  background: #0a0a0a;
+}
+
+.shop-platform-photo img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.shop-platform-photo figcaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 1rem 1.2rem;
+  background: rgba(5, 5, 5, 0.88);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.shop-principle-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: calc(clamp(4.5rem, 8vw, 7.5rem) * -0.45);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.shop-principle-strip span {
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shop-platform-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.shop-platform-category-card {
+  position: relative;
+  display: flex;
+  min-height: 22rem;
+  flex-direction: column;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.shop-platform-category-card h3 {
+  margin-top: auto;
+  font-family: var(--display);
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 400;
+}
+
+.shop-platform-category-card p {
+  color: var(--muted);
+}
+
+.shop-platform-category-card small {
+  display: block;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--steel);
+}
+
+.customer-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 2rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.customer-status-in-development {
+  border-color: rgba(244, 244, 244, 0.3);
+  color: var(--paper);
+}
+
+.customer-status-requires-approval {
+  border-color: rgba(158, 27, 43, 0.5);
+  color: #e0b2b8;
+}
+
+.account-preview {
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 8, 8, 0.62);
+  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.24);
+}
+
+.account-preview-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-preview-header img {
+  width: 3.2rem;
+  height: 3.2rem;
+  object-fit: contain;
+}
+
+.account-preview-header span:not(.customer-status) {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.account-preview-header strong {
+  display: block;
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: 1.45rem;
+  font-weight: 400;
+}
+
+.account-preview-header .customer-status {
+  margin-bottom: 0;
+}
+
+.account-preview-body {
+  display: grid;
+  gap: 0;
+  padding: 0 1.2rem;
+}
+
+.account-preview-body > div {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1.3rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-preview-body small {
+  color: var(--steel);
+  font-family: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.account-preview-body strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.account-preview button {
+  width: calc(100% - 2.4rem);
+  min-height: 3.5rem;
+  margin: 1.2rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--steel);
+  font-family: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: not-allowed;
+}
+
+.account-capability-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.account-capability-grid article {
+  min-height: 20rem;
+}
+
+.account-boundary-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.55fr);
+}
+
+.account-boundary-actions {
+  display: grid;
+  margin-top: 0;
+}
+
+.account-boundary-actions .button {
+  width: 100%;
+  justify-content: space-between;
+}
+
+@media (hover: hover) {
+  .booking-router-card,
+  .booking-service-card,
+  .booking-professional-card,
+  .shop-platform-category-card,
+  .customer-capability-grid article {
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+
+  .booking-router-card:hover,
+  .booking-service-card:hover,
+  .booking-professional-card:hover,
+  .shop-platform-category-card:hover,
+  .customer-capability-grid article:hover {
+    border-color: var(--line-strong);
+    background-color: rgba(244, 244, 244, 0.025);
+  }
+}
+
+@media (max-width: 70rem) {
+  .customer-platform-hero-split,
+  .booking-platform-hero,
+  .account-boundary-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-service-grid,
+  .booking-guidance-grid,
+  .customer-capability-grid,
+  .account-privacy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-professional-grid,
+  .shop-platform-category-grid,
+  .account-capability-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shop-platform-photo {
+    max-width: 38rem;
+  }
+
+  .shop-principle-strip {
+    margin-top: -2rem;
+  }
+
+  .account-boundary-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .customer-platform-page {
+    padding-block: 3.5rem 5rem;
+  }
+
+  .customer-platform-page .route-wide {
+    gap: 4.5rem;
+  }
+
+  .customer-platform-hero h1 {
+    max-width: none;
+    font-size: clamp(3rem, 15vw, 4.8rem);
+  }
+
+  .booking-router,
+  .booking-service-grid,
+  .booking-professional-grid,
+  .booking-guidance-grid,
+  .customer-capability-grid,
+  .account-privacy-grid,
+  .shop-platform-category-grid,
+  .account-capability-grid,
+  .shop-principle-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-router-card {
+    min-height: 24rem;
+  }
+
+  .booking-router-card + .booking-router-card {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .customer-section-heading,
+  .customer-help-panel,
+  .shop-today-panel {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .customer-section-heading {
+    display: grid;
+  }
+
+  .customer-section-heading h2,
+  .customer-help-panel h2,
+  .shop-today-panel h2,
+  .account-boundary-panel h2 {
+    max-width: none;
+  }
+
+  .booking-service-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .booking-professional-card {
+    grid-template-columns: 7.5rem 1fr;
+    grid-template-rows: auto;
+  }
+
+  .booking-professional-card img,
+  .booking-professional-placeholder {
+    height: 100%;
+    min-height: 12rem;
+    aspect-ratio: auto;
+  }
+
+  .booking-professional-card > div:last-child {
+    min-height: 12rem;
+  }
+
+  .booking-guidance-grid article,
+  .customer-capability-grid article,
+  .account-privacy-grid p,
+  .account-capability-grid article {
+    min-height: auto;
+  }
+
+  .shop-principle-strip {
+    margin-top: -1.5rem;
+  }
+
+  .shop-principle-strip span {
+    min-height: 3.4rem;
+  }
+
+  .customer-platform-actions,
+  .shop-today-actions,
+  .account-boundary-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .customer-platform-actions .button,
+  .shop-today-actions .button,
+  .account-boundary-actions .button,
+  .customer-help-panel .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .account-preview-header {
+    grid-template-columns: auto 1fr;
+  }
+
+  .account-preview-header .customer-status {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 30rem) {
+  .booking-professional-card {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-professional-card img,
+  .booking-professional-placeholder {
+    aspect-ratio: 4 / 3;
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-router-card,
+  .booking-service-card,
+  .booking-professional-card,
+  .shop-platform-category-card,
+  .customer-capability-grid article {
+    transition: none;
+  }
+}
