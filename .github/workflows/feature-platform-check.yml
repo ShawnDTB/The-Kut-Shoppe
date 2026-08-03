@@ -6,6 +6,7 @@ on:
       - feature/booking-platform
       - feature/commerce-account
       - feature/platform-core
+      - feature/platform-integration
   pull_request:
     branches:
       - main
