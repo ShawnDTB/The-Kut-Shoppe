@@ -53,10 +53,10 @@ export const bookingPaths = [
   {
     id: 'barber',
     type: 'barber' as BookingType,
-    title: 'Book a barber',
-    shortTitle: 'Book barber',
+    title: 'Book with a barber',
+    shortTitle: 'Book with Barber',
     provider: 'Booksy',
-    buttonLabel: 'Continue to Booksy',
+    buttonLabel: 'Book with Barber',
     description:
       'Haircuts, fades, tapers, buzz cuts, bald cuts, line-ups, beard work, and related barber services.',
     href: booksyUrl,
@@ -65,12 +65,12 @@ export const bookingPaths = [
   {
     id: 'styling',
     type: 'styling' as BookingType,
-    title: 'Book locs, braids or styling',
-    shortTitle: 'Book styling',
+    title: 'Book with the loctician',
+    shortTitle: 'Book with Loctician',
     provider: 'GlossGenius',
-    buttonLabel: 'Continue to GlossGenius',
+    buttonLabel: 'Book with Loctician',
     description:
-      'Loc maintenance, retwists, braids, twists, cornrows, consultations, and related styling services with Crowned by Steph.',
+      'Loc maintenance, retwists, braids, twists, cornrows, consultations, and related services with Crowned by Steph.',
     href: glossGeniusUrl,
     status: 'verified-booking-platform' as VerificationStatus,
   },
@@ -158,7 +158,7 @@ export const services: readonly ServiceCategory[] = [
     title: 'Color, washing and scalp care',
     route: '/services/color-scalp-care',
     summary:
-      'Ask about color, washing, detangling, drying, and scalp-care availability through the styling booking profile.',
+      'Ask about color, washing, detangling, drying, and scalp-care availability through the loctician booking profile.',
     bookingType: 'styling',
     prices: [],
   },
@@ -195,7 +195,7 @@ export const team = [
   {
     name: 'Crowned by Steph',
     shortName: 'Steph',
-    specialty: 'Loctician and stylist',
+    specialty: 'Loctician',
     bookingType: 'styling' as BookingType,
     bookingHref: glossGeniusUrl,
     photo: null,
@@ -203,9 +203,9 @@ export const team = [
 ] as const;
 
 export const navigation = [
-  ['Services', '/#services'],
-  ['Work', '/#work'],
-  ['About', '/#about'],
+  ['Services', '/services'],
+  ['Gallery', '/gallery'],
+  ['Crew', '/team'],
   ['Shop', '/shop'],
 ] as const;
 
@@ -213,25 +213,25 @@ export const routes: RouteDefinition[] = [
   {
     path: '/',
     label: 'Home',
-    title: 'The Kut Shoppe | Barbershop & Styling in Stroudsburg, PA',
+    title: 'The Kut Shoppe | Barbershop & Loc Care in Stroudsburg, PA',
     description:
-      'Book current barbering services through Booksy or loc, braid, and styling services through Crowned by Steph in Stroudsburg.',
+      'Book current barbering services or loc, braid, and retwist services with Crowned by Steph in Stroudsburg.',
     eyebrow: 'Stroudsburg, Pennsylvania',
-    heading: 'Precision cuts. Modern styling. Right on Main Street.',
+    heading: 'Precision cuts. Loc care. Right on Main Street.',
     intro:
-      'A neighborhood shop bringing barbering and styling professionals together for clients across Stroudsburg and the Poconos.',
+      'A Main Street shop bringing barbers and a loctician together for clients across Stroudsburg and the Poconos.',
     status: 'verified-live-site',
   },
   {
     path: '/services',
     label: 'Services',
-    title: 'Current Barbering & Styling Services | The Kut Shoppe',
+    title: 'Current Barbering & Loc Services | The Kut Shoppe',
     description:
-      'View current Booksy barber service names and pricing, plus the styling booking path for Crowned by Steph.',
+      'View current barber service names and pricing, plus the booking path for Crowned by Steph.',
     eyebrow: 'Services',
-    heading: 'Current services, current booking providers.',
+    heading: 'Current services and booking options.',
     intro:
-      'Barber pricing is synchronized to the public Booksy profile. Styling availability and pricing are confirmed through GlossGenius.',
+      'Barber pricing follows the public booking profile. Loc and braid availability is confirmed through Crowned by Steph.',
     status: 'verified-booking-platform',
   },
   {
@@ -239,11 +239,11 @@ export const routes: RouteDefinition[] = [
     label: 'Adult & Teen Cuts',
     title: 'Adult & Teen Haircuts in Stroudsburg | The Kut Shoppe',
     description:
-      'View current Booksy pricing for specialty, buzz, bald, and line-up services at The Kut Shoppe.',
-    eyebrow: 'Booksy barber services',
+      'View current pricing for specialty, buzz, bald, and line-up services at The Kut Shoppe.',
+    eyebrow: 'Barber services',
     heading: 'Adult and teen cuts, exactly as currently listed.',
     intro:
-      'Current public pricing is shown for reference; Booksy remains the final source for availability and checkout details.',
+      'Current public pricing is shown for reference. The booking profile remains the final source for availability and checkout details.',
     status: 'verified-booking-platform',
   },
   {
@@ -251,11 +251,11 @@ export const routes: RouteDefinition[] = [
     label: 'Beard & Line-Up Combos',
     title: 'Beard & Line-Up Combinations | The Kut Shoppe',
     description:
-      'View current Booksy haircut combinations that include facial-hair and beard line-ups.',
-    eyebrow: 'Booksy barber services',
+      'View current haircut combinations that include facial-hair and beard line-ups.',
+    eyebrow: 'Barber services',
     heading: 'Haircut and facial-hair combinations.',
     intro:
-      'These names and prices follow the public Booksy service menu rather than the older WordPress menu.',
+      'These names and prices follow the current public service menu.',
     status: 'verified-booking-platform',
   },
   {
@@ -263,23 +263,23 @@ export const routes: RouteDefinition[] = [
     label: 'Kids Cuts',
     title: 'Kids Haircuts in Stroudsburg | The Kut Shoppe',
     description:
-      'View current Booksy pricing for children ages 3 through 12 at The Kut Shoppe.',
-    eyebrow: 'Booksy barber services',
+      'View current pricing for children ages 3 through 12 at The Kut Shoppe.',
+    eyebrow: 'Barber services',
     heading: 'Current kids services for ages 3 through 12.',
     intro:
-      'Choose a specialty cut, buzz cut, or head line-up, then continue to Booksy for staff and time availability.',
+      'Choose a specialty cut, buzz cut, or head line-up, then continue to select a barber and available time.',
     status: 'verified-booking-platform',
   },
   {
     path: '/services/locs-braids',
     label: 'Locs & Braids',
-    title: 'Locs, Braids & Styling | Crowned by Steph',
+    title: 'Locs, Braids & Retwists | Crowned by Steph',
     description:
-      'Continue to Crowned by Steph on GlossGenius for current loc, braid, twist, and styling services.',
+      'Continue to Crowned by Steph for current loc, braid, twist, and retwist services.',
     eyebrow: 'Crowned by Steph',
-    heading: 'Locs, braids, twists, and styling.',
+    heading: 'Locs, braids, twists, and retwists.',
     intro:
-      'Current styling services, pricing, policies, and availability are maintained through Crowned by Steph’s GlossGenius profile.',
+      'Current services, pricing, policies, and availability are maintained through Crowned by Steph’s booking profile.',
     status: 'verified-booking-platform',
   },
   {
@@ -287,31 +287,31 @@ export const routes: RouteDefinition[] = [
     label: 'Color & Hair Care',
     title: 'Color, Washing & Hair Care | The Kut Shoppe',
     description:
-      'Check current color, washing, detangling, drying, and hair-care availability through the styling booking provider.',
-    eyebrow: 'Styling and hair care',
+      'Check current color, washing, detangling, drying, and hair-care availability through the loctician.',
+    eyebrow: 'Loc and hair care',
     heading: 'Care beyond the cut.',
     intro:
-      'Continue to the styling profile for current services, pricing, policies, and available appointment times.',
+      'Continue to the loctician profile for current services, pricing, policies, and available appointment times.',
     status: 'verified-booking-platform',
   },
   {
     path: '/team',
-    label: 'Team',
-    title: 'Meet The Kut Shoppe Team | Stroudsburg',
+    label: 'Crew',
+    title: 'Meet The Kut Shoppe Crew | Stroudsburg',
     description:
-      'Meet the public barbering and styling professionals associated with The Kut Shoppe.',
+      'Meet the barbers and loctician associated with The Kut Shoppe.',
     eyebrow: 'The crew',
     heading: 'Meet the professionals behind the shop.',
     intro:
-      'Choose a professional and continue directly to the booking provider that manages their current availability.',
+      'Choose a professional and continue directly to the booking profile that manages their current availability.',
     status: 'verified-booking-platform',
   },
   {
     path: '/gallery',
     label: 'Gallery',
-    title: 'Haircut, Loc & Styling Gallery | The Kut Shoppe',
+    title: 'Haircut, Loc & Braid Gallery | The Kut Shoppe',
     description:
-      'Explore featured haircut, loc, braid, beard, and styling work from The Kut Shoppe.',
+      'Explore featured haircut, loc, braid, beard, and design work from The Kut Shoppe.',
     eyebrow: 'Portfolio',
     heading: 'Real work from the shop.',
     intro:
@@ -354,12 +354,12 @@ export const routes: RouteDefinition[] = [
   },
   {
     path: '/about',
-    label: 'About',
-    title: 'About The Kut Shoppe | Stroudsburg Barbershop',
-    description: 'Continue to the shop story on The Kut Shoppe homepage.',
-    eyebrow: 'About',
-    heading: 'Continue to the shop story.',
-    intro: 'The About experience now lives within the homepage journey.',
+    label: 'Crew',
+    title: 'Meet The Kut Shoppe Crew | Stroudsburg',
+    description: 'Continue to The Kut Shoppe crew page.',
+    eyebrow: 'Crew',
+    heading: 'Continue to the crew.',
+    intro: 'The team experience now lives at /team.',
     status: 'verified-live-site',
   },
   {
@@ -367,11 +367,11 @@ export const routes: RouteDefinition[] = [
     label: 'Reviews',
     title: 'Verified Client Reviews | The Kut Shoppe',
     description:
-      'Read verified client feedback and visit The Kut Shoppe’s current Booksy profile.',
+      'Read verified client feedback and visit The Kut Shoppe’s current barber booking profile.',
     eyebrow: 'Client trust',
     heading: 'A reputation built one appointment at a time.',
     intro:
-      'The public Booksy profile currently shows a 5.0 rating from hundreds of verified client reviews.',
+      'The public barber booking profile currently shows a 5.0 rating from hundreds of verified client reviews.',
     status: 'verified-booking-platform',
   },
   {
@@ -391,11 +391,11 @@ export const routes: RouteDefinition[] = [
     label: 'Book',
     title: 'Book an Appointment | The Kut Shoppe',
     description:
-      'Book barber services through Booksy or loc, braid, and styling services through Crowned by Steph on GlossGenius.',
+      'Book barber services or loc, braid, and retwist services with Crowned by Steph.',
     eyebrow: 'Appointments',
     heading: 'Choose the professional service you need.',
     intro:
-      'Use the provider that matches your appointment. Each provider maintains its own availability, policies, and checkout.',
+      'Choose the option that matches your appointment. Each professional maintains current availability and policies through their booking profile.',
     status: 'verified-booking-platform',
   },
   {
@@ -403,11 +403,11 @@ export const routes: RouteDefinition[] = [
     label: 'Contact',
     title: 'Contact The Kut Shoppe | Stroudsburg, PA',
     description:
-      'Call The Kut Shoppe for service guidance, walk-in questions, or help finding the correct booking provider.',
+      'Call The Kut Shoppe for service guidance, walk-in questions, or help finding the correct booking option.',
     eyebrow: 'Contact',
     heading: 'Call the shop when you need guidance.',
     intro:
-      'For the fastest answer, call the shop directly or use the booking provider for your service.',
+      'For the fastest answer, call the shop directly or use the booking option for your service.',
     status: 'verified-live-site',
   },
   {
@@ -429,7 +429,7 @@ export const routes: RouteDefinition[] = [
     eyebrow: 'Legal',
     heading: 'Website terms.',
     intro:
-      'Final terms will distinguish this website from the policies maintained by Booksy, GlossGenius, and future commerce providers.',
+      'Final terms will distinguish this website from the policies maintained by external booking and future commerce providers.',
     status: 'placeholder',
   },
 ];
