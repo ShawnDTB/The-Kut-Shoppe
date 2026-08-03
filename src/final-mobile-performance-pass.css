@@ -1,0 +1,520 @@
+/* Final mobile and performance pass. Loaded last. */
+
+/* The script experiment is retired. Keep the header fully solid and quiet. */
+.menu-signature,
+.header-navigation-surface::before,
+.header-navigation-surface::after,
+.menu-surface::before,
+.menu-surface::after {
+  display: none !important;
+  content: none !important;
+}
+
+.site-header,
+.header-navigation-surface,
+.menu-surface,
+.header-actions-direct {
+  background: #0b0b0b !important;
+  background-image: none !important;
+}
+
+.site-header {
+  backdrop-filter: none;
+}
+
+.header-navigation-surface {
+  overflow: visible;
+}
+
+/* Keep the selected-page scissors fully inside the shortened desktop header. */
+.nav-list-branded li,
+.nav-list-branded a {
+  position: relative;
+  overflow: visible;
+}
+
+.nav-list-branded a[aria-current='page']::before {
+  top: 0.42rem;
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+/* The original live slideshow interior receives the visual focus. */
+.hero-shop-floor img {
+  object-position: center center;
+  transform: scale(1.005);
+  filter: saturate(0.78) contrast(1.06) brightness(0.62);
+}
+
+.hero-glass-panel-hours {
+  width: min(45rem, 100%);
+}
+
+.hero-lead {
+  max-width: none;
+  margin-top: 0.9rem;
+  font-size: clamp(1.75rem, 2.45vw, 2.65rem);
+  line-height: 1.08;
+}
+
+.hero-hours-daily {
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1rem 1.4rem;
+  margin-block: 1.2rem;
+  padding-block: 1.15rem;
+}
+
+.hero-hours-daily .hero-hours-heading span {
+  font-size: 0.8rem;
+}
+
+.hero-hours-daily .hero-hours-heading small {
+  font-size: 0.68rem;
+}
+
+.hero-hours-daily dl {
+  gap: 0.55rem 1.6rem;
+}
+
+.hero-hours-daily dt,
+.hero-hours-daily dd {
+  font-size: 0.82rem;
+}
+
+.hero-hours-daily dl > div {
+  padding-bottom: 0.4rem;
+}
+
+/* The Visit route alone uses the normal Google Maps color treatment. */
+.location-map-color .location-map-frame iframe,
+@media (prefers-reduced-motion: reduce) {
+  .location-map-color .location-map-frame iframe {
+    filter: none !important;
+    opacity: 1;
+  }
+}
+
+.location-map-color .location-map-frame::after {
+  box-shadow: none;
+}
+
+/* Senior pricing is presented directly without internal source language. */
+.service-price-section-senior .service-price-section-heading span {
+  font-size: 0;
+}
+
+.service-price-section-senior .service-price-section-heading span::after {
+  content: 'Ages 65 and up';
+  font-size: 0.59rem;
+}
+
+.service-price-source-note {
+  display: none !important;
+}
+
+/* Stateful mobile drawer. */
+.mobile-navigation {
+  display: none;
+  margin-left: auto;
+}
+
+.mobile-nav-trigger {
+  display: inline-flex;
+  min-width: 4.5rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(244, 244, 244, 0.32);
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  font-family: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mobile-nav-trigger .mobile-menu-icon {
+  display: flex;
+  width: 1.05rem;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.mobile-nav-trigger .mobile-menu-icon i {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+
+.mobile-nav-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.mobile-nav-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  width: min(27rem, 100%);
+  height: 100dvh;
+  max-height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid rgba(244, 244, 244, 0.2);
+  background: #0b0b0b;
+  box-shadow: -1.5rem 0 4rem rgba(0, 0, 0, 0.5);
+  animation: mobile-drawer-in 180ms ease-out;
+}
+
+.mobile-drawer-header {
+  display: flex;
+  min-height: 5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--line);
+  padding: 0.8rem 1rem;
+}
+
+.mobile-drawer-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.mobile-drawer-brand img {
+  width: 3.1rem;
+  height: 3.1rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.mobile-drawer-brand > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.mobile-drawer-brand strong {
+  font-family: var(--display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.mobile-drawer-brand small {
+  color: var(--muted);
+  font-family: var(--accent);
+  font-size: 0.57rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mobile-nav-close {
+  position: relative;
+  width: 2.85rem;
+  height: 2.85rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(244, 244, 244, 0.3);
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.mobile-nav-close::before,
+.mobile-nav-close::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.15rem;
+  height: 1px;
+  background: currentColor;
+  content: '';
+}
+
+.mobile-nav-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.mobile-nav-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.mobile-drawer-content {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 244, 244, 0.3) transparent;
+}
+
+.mobile-primary-links,
+.mobile-secondary-links {
+  display: grid;
+  border: 1px solid var(--line);
+}
+
+.mobile-primary-links a,
+.mobile-secondary-links a {
+  display: flex;
+  min-height: 3.65rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--paper);
+  padding: 0.85rem 1rem;
+  font-family: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.mobile-primary-links a:last-child,
+.mobile-secondary-links a:last-child {
+  border-bottom: 0;
+}
+
+.mobile-primary-links a[aria-current='page'] {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.mobile-primary-links a > span,
+.mobile-secondary-links a > span {
+  font-size: 1.1rem;
+}
+
+.mobile-hours-card {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid var(--line);
+  background: #111;
+  padding: 1rem;
+}
+
+.mobile-hours-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mobile-hours-heading span,
+.mobile-booking-group > span {
+  color: var(--paper);
+  font-family: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.mobile-hours-heading small,
+.mobile-hours-card > small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.mobile-hours-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.mobile-hours-card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-bottom: 1px solid rgba(244, 244, 244, 0.08);
+  padding-bottom: 0.3rem;
+}
+
+.mobile-hours-card dt,
+.mobile-hours-card dd {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+.mobile-hours-card dt {
+  color: var(--muted);
+}
+
+.mobile-hours-card dd {
+  color: var(--paper);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.mobile-booking-group {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid var(--line);
+  padding: 1rem;
+}
+
+.mobile-booking-group .provider-booking-actions-mobile {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.mobile-booking-group .provider-booking-link {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 3.65rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(244, 244, 244, 0.34);
+  background: transparent;
+  color: var(--paper);
+  padding: 0.85rem 1rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.mobile-booking-group .provider-booking-barber {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.mobile-call-link {
+  display: flex;
+  min-height: 3.65rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(244, 244, 244, 0.42);
+  color: var(--paper);
+  padding: 0.85rem 1rem;
+  font-family: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+@keyframes mobile-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 1040px) {
+  .header-navigation-surface {
+    display: none !important;
+  }
+
+  .mobile-navigation {
+    display: block;
+  }
+
+  .header-inner-branded {
+    min-height: 4.8rem;
+  }
+
+  .brand-emblem,
+  .brand-lockup img {
+    width: 3.15rem;
+    height: 3.15rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .mobile-nav-backdrop {
+    backdrop-filter: none;
+  }
+
+  .mobile-nav-drawer {
+    width: 100%;
+    border-left: 0;
+  }
+
+  .mobile-hours-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-shop-floor img {
+    object-position: center;
+    transform: none;
+  }
+
+  .hero-glass-panel-hours {
+    width: 100%;
+    padding: 1.25rem;
+  }
+
+  .hero-lead {
+    font-size: clamp(1.65rem, 8vw, 2.2rem);
+  }
+
+  .hero-hours-daily {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .hero-hours-daily dl {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .hero-hours-daily > p {
+    grid-column: 1;
+  }
+
+  .services-menu-list-explicit,
+  .services-menu-list-three {
+    grid-template-columns: 1fr;
+  }
+
+  .services-menu-list-explicit li:nth-child(n),
+  .services-menu-list-three li:nth-child(n) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .services-menu-list-explicit li:last-child,
+  .services-menu-list-three li:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-drawer {
+    animation: none;
+  }
+
+  .hero-shop-floor img {
+    transform: none;
+  }
+}
