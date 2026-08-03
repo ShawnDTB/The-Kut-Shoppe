@@ -120,7 +120,7 @@ export const galleryItems = [
     alt: 'Kids fade from The Kut Shoppe gallery',
   },
   {
-    src: `${galleryRoot}/FirstCutCertificate-3.png`,
+    src: `${galleryRoot}/FirstCutCertificate-3.jpg`,
     category: 'First cuts',
     alt: 'First haircut certificate experience from The Kut Shoppe gallery',
   },
