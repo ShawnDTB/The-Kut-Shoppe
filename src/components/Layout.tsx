@@ -3,8 +3,8 @@ import { bookingPaths, business } from '../data/site';
 import { originalAssets } from '../data/visuals';
 
 const primaryNavigation = [
-  ['Services', '/#services'],
-  ['Work', '/#work'],
+  ['Services', '/services'],
+  ['Gallery', '/gallery'],
   ['About', '/#about'],
   ['Shop', '/shop'],
 ] as const;
@@ -211,8 +211,8 @@ function Footer() {
 
         <nav className="footer-link-group" aria-label="Explore The Kut Shoppe">
           <p className="footer-heading">Explore</p>
-          <a href="/#services">Services and pricing</a>
-          <a href="/#work">Our work</a>
+          <a href="/services">Services and pricing</a>
+          <a href="/gallery">Full gallery</a>
           <a href="/team">Meet the crew</a>
           <a href="/#about">About the shop</a>
           <a href="/shop">Shop</a>
