@@ -5,7 +5,7 @@ import { originalAssets } from '../data/visuals';
 const primaryNavigation = [
   ['Services', '/services'],
   ['Gallery', '/gallery'],
-  ['About', '/#about'],
+  ['About', '/team'],
   ['Shop', '/shop'],
 ] as const;
 
@@ -41,6 +41,10 @@ export function Arrow() {
   return <span aria-hidden="true">→</span>;
 }
 
+function getBookingLabel(type: 'barber' | 'styling') {
+  return type === 'barber' ? 'Book with Barber' : 'Book with Stylist';
+}
+
 function ProviderBookingActions({ mobile = false }: { mobile?: boolean }) {
   return (
     <div className={mobile ? 'provider-booking-actions provider-booking-actions-mobile' : 'provider-booking-actions'}>
@@ -52,8 +56,7 @@ function ProviderBookingActions({ mobile = false }: { mobile?: boolean }) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <span>{path.shortTitle}</span>
-          <small>{path.provider}</small>
+          <span>{getBookingLabel(path.type)}</span>
         </a>
       ))}
     </div>
@@ -190,11 +193,10 @@ function Footer() {
             <p className="footer-statement">Good cuts. Personal service. A chair you know on Main Street.</p>
           </div>
         </div>
-        <div className="footer-booking-links" aria-label="Booking providers">
+        <div className="footer-booking-links" aria-label="Booking options">
           {bookingPaths.map((path) => (
             <a key={path.id} href={path.href} target="_blank" rel="noopener noreferrer">
-              <span>{path.shortTitle}</span>
-              <small>{path.provider} ↗</small>
+              <span>{getBookingLabel(path.type)} ↗</span>
             </a>
           ))}
         </div>
@@ -214,7 +216,7 @@ function Footer() {
           <a href="/services">Services and pricing</a>
           <a href="/gallery">Full gallery</a>
           <a href="/team">Meet the crew</a>
-          <a href="/#about">About the shop</a>
+          <a href="/team">About the shop</a>
           <a href="/shop">Shop</a>
         </nav>
 
