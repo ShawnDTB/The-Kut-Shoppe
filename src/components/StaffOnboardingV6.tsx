@@ -99,7 +99,7 @@ function ManagementSetup({ account }: { account: PlatformAccount }) {
     <section className="section management-onboarding-v6 platform-pattern platform-pattern-staff">
       <div className="container route-wide">
         <header className="management-onboarding-v6-header">
-          <div><p className="eyebrow">{roleLabel(account)} onboarding</p><h1>{heading(account)}</h1><p>Connect this account to shop operations without publishing a bookable chair.</p></div>
+          <div><p className="eyebrow">{roleLabel(account)} onboarding</p><h1>{heading(account)}</h1><p>Connect this account to shop operations.</p></div>
           <a className="button button-secondary" href="/dashboard">Back to dashboard</a>
         </header>
 
