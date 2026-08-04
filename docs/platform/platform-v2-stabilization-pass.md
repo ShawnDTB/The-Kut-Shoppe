@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This pass converts the latest owner review into structural revisions that improve reliability, role accuracy, accessibility, navigation, and long-term maintainability without redesigning the approved homepage.
+This pass converts the latest owner review into structural revisions that improve booking accuracy, role clarity, account navigation, operational density, and maintainability without redesigning the approved homepage.
 
 ## Implemented revisions
 
@@ -26,36 +26,43 @@ This pass converts the latest owner review into structural revisions that improv
 ### Management and professional roles
 
 - Preserved the detailed five-stage onboarding flow for Barbers.
-- Added a separate three-stage onboarding flow for Manager, Owner, and Developer accounts.
-- Removed customer-facing chair, services, hours, and public-biography requirements from management onboarding.
-- Management setup now focuses on account contact information, approved capabilities, location, and review.
+- Added a separate single-screen setup for Manager, Owner, and Developer accounts.
+- Removed chair, services, hours, and public-biography requirements from management setup.
+- Management setup now collects only the operational display name, business phone, approved role, account email, and fixed shop location.
 - Management accounts return to the management dashboard rather than a chair dashboard.
 - Management staff pages receive role-appropriate headings.
-- Earnings and Payouts preview zeroes are hidden behind an explicit production-service boundary.
-- Management staff navigation hides unfinished Earnings and Payouts entries.
+- Unfinished Earnings and Payouts links are hidden for management accounts, and direct access returns to the operational dashboard rather than displaying preview zeroes.
 
-### Accessibility
+### Layout and navigation
 
-- Added one shared modal manager for the mobile navigation and cart drawer.
-- Focus is contained inside the active modal.
-- Background application content becomes inert while a modal is open.
-- Focus returns to the previously active control after the modal closes.
-- Existing Escape, close, and scroll-restoration behavior remains in place.
-
-### Layout and readability
-
-- Added an operational layout mode for Account, Dashboard, Booking, Cart, Checkout, Staff, and Administration routes.
+- Added an operational layout mode for Account, Dashboard, Booking, Staff, and Administration routes.
 - Operational routes use wider working containers than public editorial pages.
-- The large public footer collapses to its compact legal and platform row on operational routes.
-- Increased minimum metadata, helper, and label sizing on operational routes.
-- Added responsive account tabs, management onboarding layouts, staff navigation overflow handling, and mobile booking-calendar behavior.
+- The large public footer is removed from operational routes while its compact legal and platform row remains.
+- Added responsive customer-account tabs, management setup fields, and mobile booking-calendar behavior.
+- Existing mobile navigation and cart-drawer close, Escape, safe-area, and scroll-restoration behavior remains intact.
 - The approved homepage remains outside this stabilization layer.
 
 ### Performance and maintainability
 
-- Added route-level lazy loading for booking, account access, customer dashboard, storefront, cart, checkout, product detail, staff, and administration modules.
-- Public homepage, public route content, and reviews remain directly available for prerendering.
-- Added one final targeted stabilization stylesheet rather than modifying the approved homepage styles.
+- Reused the existing route and component structure instead of adding a second routing system.
+- Removed the unused modal-manager prototype after confirming it was not required by the final implementation.
+- Added one small stabilization stylesheet and removed duplicated declarations already supplied by the accepted round-six layer.
+- Kept the existing JavaScript and CSS bundle limits rather than weakening the budgets.
+
+## Validation
+
+The implementation passed the complete repository check:
+
+- TypeScript
+- ESLint
+- Production client build
+- SSR build and static prerendering
+- JavaScript and CSS bundle budgets
+
+Measured production output:
+
+- JavaScript: 119.99 KB gzip / 120 KB budget
+- CSS: 39.99 KB gzip / 40 KB budget
 
 ## Production boundaries that remain
 
@@ -72,14 +79,3 @@ This pass does not represent browser-backed state as production-ready business d
 - Audit logs for staff, role, appointment, inventory, and order changes
 - Browser end-to-end tests for critical customer and staff flows
 - Final privacy, terms, cancellation, refund, and accessibility review
-
-## Validation target
-
-The stabilization branch should pass:
-
-- TypeScript
-- ESLint
-- Production client build
-- SSR build and static prerendering
-- JavaScript and CSS bundle budgets
-- Existing D1 migration validation
