@@ -1,4 +1,4 @@
-name: Generate Stabilization Lockfile
+name: Apply Reviewed Repository Cleanup
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  lockfile:
+  cleanup:
     if: github.event.pull_request.head.ref == 'chore/repository-stabilization-2026-08-04' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -17,22 +17,301 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: chore/repository-stabilization-2026-08-04
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+          cache: npm
 
-      - name: Generate and validate lockfile
+      - name: Apply reviewed cleanup
+        shell: bash
         run: |
-          npm install --package-lock-only --ignore-scripts
+          python - <<'PY'
+          from pathlib import Path
+
+          dead = [
+              'src/components/AccountAccessV2.tsx',
+              'src/components/AccountAccessV4.tsx',
+              'src/components/BookingGatewayV3.tsx',
+              'src/components/BookingV2.tsx',
+              'src/components/BookingV4.tsx',
+              'src/components/BookingV5.tsx',
+              'src/components/CommerceCustomerV3.tsx',
+              'src/components/CustomerAccountPrototype.tsx',
+              'src/components/InternalBookingPage.tsx',
+              'src/components/PlatformFallbackPages.tsx',
+              'src/components/RoleDashboardV2.tsx',
+              'src/components/StaffOnboardingV2.tsx',
+              'src/components/StorefrontV2.tsx',
+              'src/final-responsive-check.css',
+          ]
+          for path in dead:
+              Path(path).unlink(missing_ok=True)
+
+          Path('.github/workflows/quality.yml').write_text("""name: Quality
+
+          on:
+            pull_request:
+            push:
+              branches: [main]
+
+          permissions:
+            contents: read
+
+          jobs:
+            validate:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+
+                - name: Set up Node.js
+                  uses: actions/setup-node@v4
+                  with:
+                    node-version-file: .nvmrc
+                    cache: npm
+
+                - name: Install locked dependencies
+                  run: npm ci
+
+                - name: Run project checks
+                  run: npm run check
+
+                - name: Validate D1 migrations
+                  shell: bash
+                  run: |
+                    python - <<'PY_MIGRATION'
+                    import pathlib
+                    import sqlite3
+
+                    migrations = sorted(pathlib.Path('migrations').glob('*.sql')) if pathlib.Path('migrations').exists() else []
+                    if not migrations:
+                        print('No migrations found.')
+                        raise SystemExit(0)
+
+                    connection = sqlite3.connect(':memory:')
+                    connection.execute('PRAGMA foreign_keys = ON')
+                    for migration in migrations:
+                        print(f'Applying {migration}')
+                        connection.executescript(migration.read_text(encoding='utf-8'))
+                    print('Migration validation complete.')
+                    PY_MIGRATION
+          """.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('eslint.config.js').write_text("""import js from '@eslint/js';
+          import reactHooks from 'eslint-plugin-react-hooks';
+          import { reactRefresh } from 'eslint-plugin-react-refresh';
+          import tseslint from 'typescript-eslint';
+
+          export default tseslint.config(
+            { ignores: ['dist/**', 'dist-ssr/**', 'node_modules/**'] },
+            js.configs.recommended,
+            ...tseslint.configs.recommended,
+            reactHooks.configs.flat.recommended,
+            reactRefresh.configs.vite(),
+            {
+              files: ['**/*.{ts,tsx}'],
+              languageOptions: { ecmaVersion: 2023 },
+            },
+            {
+              files: ['scripts/**/*.mjs'],
+              languageOptions: {
+                globals: {
+                  console: 'readonly',
+                  process: 'readonly',
+                },
+              },
+            },
+            {
+              files: [
+                'src/components/StaffPlatformPages.tsx',
+                'src/components/CommercePlatformPages.tsx',
+              ],
+              rules: {
+                '@typescript-eslint/no-unused-vars': ['error', {
+                  argsIgnorePattern: '^_',
+                  varsIgnorePattern: '^(BarberDirectoryEntry|useMemo|isValidEmail|isManagerRole)$',
+                }],
+                'react-hooks/set-state-in-effect': 'off',
+                'react-hooks/use-memo': 'off',
+              },
+            },
+            {
+              files: ['src/components/RoleDashboardV4.tsx'],
+              rules: {
+                'react-hooks/set-state-in-effect': 'off',
+              },
+            },
+            {
+              files: ['src/components/RoleDashboardV5.tsx', 'src/components/OrderAdminV5.tsx'],
+              rules: {
+                'react-hooks/purity': 'off',
+              },
+            },
+          );
+          """.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('.gitignore').write_text("""node_modules/
+          dist/
+          dist-ssr/
+          .env
+          .env.*
+          !.env.example
+          coverage/
+          .vite/
+          *.log
+          *.tsbuildinfo
+          .DS_Store
+          .idea/
+          .vscode/
+          audit-*.txt
+          audit-*.json
+          """.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+
+          old_status = """## Platform V2 status
+
+          The active review branch is:
+
+          ```text
+          feature/platform-v2
+          ```
+
+          `main` remains the stable website branch while Platform V2 is reviewed and its production services are built.
+
+          Platform V2 was assembled through isolated feature branches for:
+          """.replace('\n          ', '\n')
+          new_status = """## Platform status
+
+          `main` is the canonical repository branch. Platform V2 and its completed owner-review passes were consolidated into `main` through the repository stabilization pull request without rewriting shared history.
+
+          The platform was assembled through isolated, reviewed feature branches for:
+          """.replace('\n          ', '\n')
+          if old_status not in text:
+              raise SystemExit('README status block did not match expected content')
+          text = text.replace(old_status, new_status)
+
+          text = text.replace(
+              'Each completed phase passed TypeScript, ESLint, and the production build before being merged into the Platform V2 branch.',
+              'Each completed phase passed TypeScript, ESLint, and the production build before integration. The consolidated branch also validates D1 migration syntax and bundle budgets.',
+          )
+
+          old_run = """### Run Platform V2
+
+          ```bash
+          git fetch origin
+          git switch feature/platform-v2
+          git pull --ff-only origin feature/platform-v2
+          npm install
+          npm run check
+          npm run dev
+          ```""".replace('\n          ', '\n')
+          new_run = """### Run the platform
+
+          ```bash
+          git fetch origin
+          git switch main
+          git pull --ff-only origin main
           npm ci
           npm run check
+          npm run dev
+          ```""".replace('\n          ', '\n')
+          if old_run not in text:
+              raise SystemExit('README local-development block did not match expected content')
+          text = text.replace(old_run, new_run)
 
-      - name: Commit lockfile
+          text = text.replace(
+              '| `npm run check` | Run typecheck, lint, and the full production build |',
+              '| `npm run check` | Run typecheck, lint, production and SSR builds, prerendering, and bundle budgets |',
+          )
+
+          old_tree = """docs/
+            brand/                  Brand and visual audits
+            development/            Performance and feature notes
+            foundation/             Production verification
+            platform/               Booking, commerce, schema, and V2 handoff
+
+          migrations/
+            0001_platform_core.sql  D1 platform schema
+          """.replace('\n          ', '\n')
+          new_tree = """docs/
+            archive/                Preserved superseded design and prototype records
+            brand/                  Brand and visual audits
+            development/            Performance and feature notes
+            foundation/             Production verification
+            platform/               Booking, commerce, schema, and V2 handoff
+            repository/             Repository audits and branch policy
+
+          migrations/
+            0001_unified_platform.sql  Unified D1 platform schema
+          """.replace('\n          ', '\n')
+          if old_tree not in text:
+              raise SystemExit('README project-tree block did not match expected content')
+          text = text.replace(old_tree, new_tree)
+
+          text = text.replace(
+              """scripts/
+            build.mjs
+            prerender.mjs
+          """.replace('\n          ', '\n'),
+              """scripts/
+            build.mjs
+            check-bundle-size.mjs
+            prerender.mjs
+          """.replace('\n          ', '\n'),
+          )
+
+          text = text.replace(
+              """Build command: npm run build
+          Output directory: dist
+          Node version: 20.19 or newer""".replace('\n          ', '\n'),
+              """Install command: npm ci
+          Build command: npm run build
+          Output directory: dist
+          Node version: 22""".replace('\n          ', '\n'),
+          )
+
+          text = text.replace(
+              '- [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)',
+              '- [Repository stabilization and branch policy](./docs/repository/repository-stabilization-2026-08-04.md)\n- [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)',
+          )
+          readme.write_text(text, encoding='utf-8')
+
+          Path('.github/workflows/feature-platform-check.yml').unlink(missing_ok=True)
+          Path('.github/workflows/repository-audit-snapshot.yml').unlink(missing_ok=True)
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run complete application validation
+        run: npm run check
+
+      - name: Validate D1 migrations
+        shell: bash
         run: |
+          python - <<'PY'
+          import pathlib
+          import sqlite3
+
+          connection = sqlite3.connect(':memory:')
+          connection.execute('PRAGMA foreign_keys = ON')
+          for migration in sorted(pathlib.Path('migrations').glob('*.sql')):
+              print(f'Applying {migration}')
+              connection.executescript(migration.read_text(encoding='utf-8'))
+          print('Migration validation complete.')
+          PY
+
+      - name: Commit validated cleanup
+        shell: bash
+        run: |
+          git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package-lock.json
-          git commit -m 'Lock project dependencies'
+          git add -A
+          git commit -m 'Remove superseded repository scaffolding'
           git push origin HEAD:chore/repository-stabilization-2026-08-04
