@@ -39,12 +39,6 @@ function heading(account: PlatformAccount) {
   return 'Manage The Kut Shoppe.';
 }
 
-function accessSummary(account: PlatformAccount) {
-  if (account.role === 'manager') return 'Appointments, staff schedules, products, orders, and daily shop activity.';
-  if (account.role === 'developer') return 'Platform configuration, operations, roles, products, orders, and staff access.';
-  return 'Full shop operations, staff and role approvals, products, orders, and platform oversight.';
-}
-
 export function StaffOnboardingV6() {
   const account = getPlatformSessionAccount();
   const linked = account?.staffProfileId
@@ -66,8 +60,8 @@ function ManagementSetup({ account }: { account: PlatformAccount }) {
   const [error, setError] = useState('');
 
   const complete = () => {
-    if (name.trim().length < 2) return setError('Enter the display name used for shop operations.');
-    if (!isValidPhone(phone)) return setError('Enter a valid 10-digit business phone number.');
+    if (name.trim().length < 2) return setError('Enter a display name.');
+    if (!isValidPhone(phone)) return setError('Enter a valid 10-digit phone number.');
 
     const draft = createStaffProfileDraft();
     const completed: StaffProfile = {
@@ -105,14 +99,14 @@ function ManagementSetup({ account }: { account: PlatformAccount }) {
     <section className="section management-onboarding-v6 platform-pattern platform-pattern-staff">
       <div className="container route-wide">
         <header className="management-onboarding-v6-header">
-          <div><p className="eyebrow">{roleLabel(account)} onboarding</p><h1>{heading(account)}</h1><p>Connect this approved account to shop operations. It will not be published as a customer-bookable chair.</p></div>
+          <div><p className="eyebrow">{roleLabel(account)} onboarding</p><h1>{heading(account)}</h1><p>Connect this account to shop operations without publishing a bookable chair.</p></div>
           <a className="button button-secondary" href="/dashboard">Back to dashboard</a>
         </header>
 
         <div className="management-onboarding-v6-panel">
           <p className="eyebrow">Account and access</p>
           <h2>Finish account setup</h2>
-          <p>{accessSummary(account)}</p>
+          <p>The approved role controls the available shop tools.</p>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
           <div className="management-onboarding-v6-fields">
             <label><span className="v5-required-label">Display name <span aria-hidden="true">*</span></span><input autoComplete="name" value={name} onChange={(event) => { setName(event.target.value); setError(''); }} /></label>
