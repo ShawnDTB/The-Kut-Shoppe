@@ -42,13 +42,12 @@ jobs:
             --exclude=node_modules \
             --exclude=dist \
             --exclude=dist-ssr \
-            --exclude=repository-audit-snapshot.tgz \
-            -czf repository-audit-snapshot.tgz .
+            -czf /tmp/repository-audit-snapshot.tgz .
 
       - name: Upload repository audit snapshot
         uses: actions/upload-artifact@v4
         with:
           name: repository-audit-snapshot
-          path: repository-audit-snapshot.tgz
+          path: /tmp/repository-audit-snapshot.tgz
           if-no-files-found: error
           retention-days: 7
