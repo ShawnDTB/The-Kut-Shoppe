@@ -6,14 +6,18 @@ This pass consolidated the reviewed Platform V2 implementation into the canonica
 
 ## Recovery points
 
-- `backup/main-pre-platform-v2-2026-08-04` preserves the previous `main` at `c28de06eec94d7e5690b28a6234bae99245dcbbe`.
-- `backup/pre-stabilization-2026-08-04` preserves Platform V2 before cleanup at `e6efe48b37e1c6ead118de917537fd9dfdf966d3`.
+Two annotated tags preserve the pre-cleanup milestones:
 
-No history was rewritten and no force-push was used.
+- `pre-platform-v2-main-2026-08-04` points to the previous stable `main` at `c28de06eec94d7e5690b28a6234bae99245dcbbe`.
+- `pre-repository-stabilization-2026-08-04` points to Platform V2 immediately before cleanup at `e6efe48b37e1c6ead118de917537fd9dfdf966d3`.
+
+Temporary backup branches were created before destructive cleanup, converted to the annotated tags above, verified against their target commits, and then removed. No history was rewritten and no force-push was used.
+
+No preexisting tag references appeared in the full-history checkout used for the audit. No existing GitHub release object was surfaced by the repository data available to this pass.
 
 ## Branch findings
 
-Authentication, booking-flow, storefront, staff-onboarding, accessibility, handoff, polish, stabilization, owner-audit, booking-platform, and platform-integration branches were incorporated into Platform V2. Their branch names can be removed after `main` passes post-merge validation; their commits and pull requests remain.
+Authentication, booking-flow, storefront, staff-onboarding, accessibility, handoff, polish, stabilization, owner-audit, booking-platform, and platform-integration branches were incorporated into Platform V2. Their commits and pull requests remain in the merged history even though their branch references were removed.
 
 Superseded branches with unique records were preserved before branch cleanup:
 
@@ -21,7 +25,9 @@ Superseded branches with unique records were preserved before branch cleanup:
 - `feature/platform-core`: schema notes archived under `docs/archive/prototypes/`; the old migration was superseded by the unified migration.
 - `archive/route-identity-pass`: design reasoning archived under `docs/archive/design/`; its obsolete code and CSS were not merged.
 
-`agent/kut-shoppe-foundation` was merged through PR #1 into `staging`, then promoted through PR #2 into `main`. Those names are no longer required after consolidation.
+`agent/kut-shoppe-foundation` was merged through PR #1 into `staging`, then promoted through PR #2 into `main`. Both references were removed after consolidation.
+
+The final active branch set contains only `main`. There are no open pull requests.
 
 ## Source cleanup
 
@@ -36,17 +42,31 @@ Customer account creation was aligned with the approved account model: name, ema
 - Added and committed `package-lock.json`.
 - Replaced `npm install` with deterministic `npm ci`.
 - Consolidated frontend and D1 migration checks into `.github/workflows/quality.yml`.
-- Removed the obsolete feature workflow and all one-time audit workflows.
+- Removed the obsolete feature workflow and all one-time audit, cleanup, and tag workflows.
 - Continued to use Node 22 through `.nvmrc`.
 - The final clean install added 153 packages, audited 154 packages, and reported no vulnerabilities.
+
+The current GitHub Actions runner warns that `actions/checkout@v4` and `actions/setup-node@v4` target the deprecated Node 20 action runtime and are being forced onto Node 24. The repository build itself runs on Node 22 and passes. The action majors should be upgraded after their newer supported versions are reviewed.
 
 ## Deployment configuration
 
 The repository retains its Cloudflare Pages-compatible static build, `_headers`, `_redirects`, robots file, manifest, SSR and prerender scripts, and `dist` output contract. No Workers or Pages binding configuration is committed yet; protected APIs and D1 bindings remain production work.
 
+Repository settings observed during the audit:
+
+- public repository;
+- default branch `main`;
+- merge commits, squash merges, and rebase merges enabled;
+- auto-merge disabled.
+
 ## Validation baseline
 
-The final branch passed TypeScript, ESLint, client build, SSR build, static prerendering, bundle budgets, and in-memory application of `migrations/0001_unified_platform.sql`.
+The validated tree passed TypeScript, ESLint, client build, SSR build, static prerendering, bundle budgets, and in-memory application of `migrations/0001_unified_platform.sql`.
+
+Final measured bundle output:
+
+- JavaScript: 119.20 KB gzip of a 120 KB budget.
+- CSS: 39.99 KB gzip of a 40 KB budget.
 
 A temporary production-preview audit also:
 
@@ -58,12 +78,22 @@ A temporary production-preview audit also:
 
 The temporary audit workflow was removed after it passed. The repository still has no permanent unit or browser end-to-end test suite.
 
-GitHub Actions used a fresh checkout for these checks. The GitHub connector cannot inspect uncommitted or untracked files on an individual developer workstation; local working copies should be checked with `git status --short` before old branches are deleted locally.
+The final `main` tree after the self-removing cleanup and recovery-tag workflows was compared against the validated stabilization tree and contained no file differences.
+
+GitHub Actions used a fresh checkout for these checks. The GitHub connector cannot inspect uncommitted or untracked files on an individual developer workstation; local working copies should be checked with `git status --short` before deleting corresponding local branches.
+
+## Remaining risks
+
+- CSS has essentially no remaining bundle-budget headroom; future visual work should consolidate the long layered stylesheet chain rather than add more override files.
+- JavaScript has limited budget headroom.
+- Authentication, appointments, waitlists, commerce, and role workflows remain browser-backed owner-review implementations until protected services replace them.
+- There is no permanent unit, integration, or browser end-to-end test suite.
+- Cloudflare API, D1 binding, secure-session, transactional locking, delivery, payment, and audit-log work remains.
 
 ## Operating model
 
 - `main` is the canonical development and release line.
 - New work uses short-lived `feature/*`, `fix/*`, or `chore/*` branches and pull requests into `main`.
-- Recovery branches are not development branches.
-- Completed branches are deleted after merge and successful post-merge validation.
+- Completed branches are deleted after merge and successful validation.
+- Historical milestones use annotated tags.
 - Historical decisions live in Git history, pull requests, and `docs/archive/`, not permanent branch clutter.
