@@ -44,7 +44,7 @@ import { BookingV7, WalkInEntryV7 } from './components/BookingV7';
 import { StaffPlatformPageV6 } from './components/StaffPlatformPagesV6';
 import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
 import { StaffSettingsV7 } from './components/StaffSettingsV7';
-import { AccountAccessV5 } from './components/AccountAccessV5';
+import { AccountAccessV7 } from './components/AccountAccessV7';
 import { RoleDashboardV6 } from './components/RoleDashboardV6';
 import { CartPageV4 } from './components/CartPageV4';
 import { StorefrontV5 } from './components/StorefrontV5';
@@ -135,7 +135,7 @@ export function App({ url }: AppProps) {
         : productMatch ? <ClientPlatform label="this product"><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
         : normalizedUrl === '/cart' ? <ClientPlatform label="your cart"><CartPageV4 /></ClientPlatform>
         : normalizedUrl === '/checkout' ? <ClientPlatform label="checkout"><CheckoutPageV5 /></ClientPlatform>
-        : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV5 /></ClientPlatform>
+        : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV7 /></ClientPlatform>
         : normalizedUrl === '/dashboard' ? <ClientPlatform label="your dashboard"><RoleDashboardV6 /></ClientPlatform>
         : normalizedUrl === '/staff/setup' ? <ClientPlatform label="professional setup"><StaffOnboardingV6 /></ClientPlatform>
         : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV7 /></ClientPlatform>
