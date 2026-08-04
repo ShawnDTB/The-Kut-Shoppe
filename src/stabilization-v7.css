@@ -1,0 +1,439 @@
+/* Platform V2 stabilization layer
+   This file intentionally targets operational and account routes only.
+   The approved homepage remains unchanged. */
+
+.route-shell-v6.is-operational main > .section,
+.route-shell-v6.is-operational main > div > .section {
+  padding-top: clamp(1.25rem, 2.4vw, 2.5rem);
+}
+
+.route-shell-v6.is-operational .route-wide {
+  width: min(100% - 2rem, 1440px);
+  max-width: 1440px;
+}
+
+.route-shell-v6.is-operational .eyebrow,
+.route-shell-v6.is-operational dt,
+.route-shell-v6.is-operational label,
+.route-shell-v6.is-operational small,
+.route-shell-v6.is-operational .staff-status,
+.route-shell-v6.is-operational .address-suggestion-status {
+  font-size: max(0.8125rem, 13px);
+}
+
+.route-shell-v6.is-operational p,
+.route-shell-v6.is-operational dd,
+.route-shell-v6.is-operational input,
+.route-shell-v6.is-operational select,
+.route-shell-v6.is-operational textarea,
+.route-shell-v6.is-operational button,
+.route-shell-v6.is-operational a {
+  line-height: 1.45;
+}
+
+.route-shell-v6.is-operational .footer-v6-primary {
+  display: none;
+}
+
+.route-shell-v6.is-operational .site-footer.footer-v6 {
+  padding-block: 0;
+}
+
+.route-shell-v6.is-operational .footer-v6-bottom {
+  min-height: 64px;
+  padding-block: 1rem;
+}
+
+.customer-action-account {
+  max-width: 10.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Customer account task navigation */
+.account-v6-shell {
+  position: relative;
+}
+
+.account-v6-tabs {
+  width: min(100% - 2rem, 1440px);
+  margin: clamp(1rem, 2vw, 1.75rem) auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(20, 20, 20, 0.94);
+  position: sticky;
+  top: 0;
+  z-index: 12;
+}
+
+.account-v6-tabs button {
+  min-height: 48px;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.76);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.account-v6-tabs button:last-child {
+  border-right: 0;
+}
+
+.account-v6-tabs button:hover,
+.account-v6-tabs button:focus-visible,
+.account-v6-tabs button.is-active {
+  background: #ecebea;
+  color: #181818;
+}
+
+.account-v6-shell .v5-customer-account {
+  padding-top: clamp(0.85rem, 1.6vw, 1.5rem);
+}
+
+.account-v6-shell .v5-account-header {
+  margin-bottom: 1rem;
+}
+
+.account-v6-shell .v5-account-header h1 {
+  font-size: clamp(2rem, 4vw, 4.5rem);
+  text-wrap: balance;
+}
+
+.account-v6-view-appointments .v5-account-grid,
+.account-v6-view-appointments .v5-account-order-detail,
+.account-v6-view-appointments .v5-security-panel,
+.account-v6-view-orders .v5-appointments,
+.account-v6-view-orders .v5-profile-section,
+.account-v6-view-orders .v5-security-panel,
+.account-v6-view-profile .v5-appointments,
+.account-v6-view-profile .v5-account-grid > .v5-account-section:not(.v5-profile-section),
+.account-v6-view-profile .v5-account-order-detail,
+.account-v6-view-profile .v5-security-panel,
+.account-v6-view-security .v5-appointments,
+.account-v6-view-security .v5-account-grid,
+.account-v6-view-security .v5-account-order-detail {
+  display: none !important;
+}
+
+.account-v6-view-orders .v5-account-grid,
+.account-v6-view-profile .v5-account-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.account-v6-view-orders .v5-account-grid > .v5-account-section:first-child,
+.account-v6-view-profile .v5-profile-section,
+.account-v6-view-security .v5-security-panel {
+  display: block;
+  width: 100%;
+}
+
+.account-v6-view-profile .v5-profile-section {
+  max-width: 1120px;
+}
+
+.account-v6-view-security .v5-security-panel {
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.v5-profile-fields-v6,
+.v5-contact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.v5-profile-fields-v6 input,
+.v5-contact-grid input,
+.v5-password-fields input {
+  width: 100%;
+  min-width: 0;
+}
+
+.v5-appointment-list article dl {
+  grid-template-columns: repeat(3, minmax(8rem, 1fr));
+  gap: 0.75rem;
+}
+
+.v5-appointment-list article dl > div {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.v5-appointment-list article dd {
+  overflow-wrap: anywhere;
+}
+
+/* Role-aware management onboarding */
+.management-onboarding-v6 .route-wide {
+  max-width: 1280px;
+}
+
+.management-onboarding-v6-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.management-onboarding-v6-header > div {
+  max-width: 850px;
+}
+
+.management-onboarding-v6-header h1,
+.staff-finance-hold-v6 h1 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: clamp(2.5rem, 5.5vw, 5.75rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.management-onboarding-v6-progress {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.management-onboarding-v6-panel {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(24, 24, 24, 0.94);
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.management-onboarding-v6-panel h2 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.management-onboarding-v6-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.management-onboarding-v6-fields label {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.management-onboarding-v6-fields input {
+  width: 100%;
+  min-width: 0;
+}
+
+.management-onboarding-v6-location {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.management-onboarding-v6-access {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.management-onboarding-v6-access article {
+  min-height: 150px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.management-onboarding-v6-access strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1.15rem;
+}
+
+.management-onboarding-v6-review {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.management-onboarding-v6-review > div {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.management-onboarding-v6-review > div:nth-child(2n) {
+  border-right: 0;
+}
+
+.management-onboarding-v6-actions {
+  margin-top: 1.25rem;
+}
+
+/* Staff role corrections */
+.staff-role-management-v6 .staff-platform-nav a[href="/staff/earnings"],
+.staff-role-management-v6 .staff-platform-nav a[href="/staff/payouts"],
+.staff-role-management-v6 .staff-session-actions a[href="/account"] {
+  display: none !important;
+}
+
+.staff-role-management-v6 .staff-platform-header {
+  align-items: end;
+}
+
+.staff-role-management-v6 .staff-platform-header h1 {
+  max-width: 900px;
+  font-size: clamp(2.5rem, 5vw, 5.5rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.staff-platform-nav {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.staff-platform-nav a {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.staff-finance-hold-v6-card {
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(24, 24, 24, 0.96);
+}
+
+.staff-finance-hold-v6-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Booking stabilization */
+.booking-v6-page .booking-v4-progress {
+  margin-top: 0;
+}
+
+.booking-v6-page .booking-v4-panel,
+.booking-v6-page .booking-v5-confirmation {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.booking-v6-page .booking-v2-panel-heading h2,
+.booking-v6-page .booking-v5-confirmation h2 {
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.booking-v6-timezone {
+  display: block;
+  max-width: 760px;
+  margin-top: 0.6rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.booking-v4-week button {
+  min-width: 0;
+}
+
+.booking-v4-week button em {
+  font-style: normal;
+}
+
+/* Keep overlays above every shell while allowing their own scrolling. */
+.mobile-nav-overlay,
+.commerce-cart-overlay {
+  z-index: 1000;
+}
+
+[role="dialog"][aria-modal="true"]:focus {
+  outline: none;
+}
+
+@media (max-width: 980px) {
+  .route-shell-v6.is-operational .route-wide,
+  .account-v6-tabs {
+    width: min(100% - 1rem, 1440px);
+  }
+
+  .account-v6-tabs {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-v6-tabs button:nth-child(2) {
+    border-right: 0;
+  }
+
+  .account-v6-tabs button:nth-child(-n + 2) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .management-onboarding-v6-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .management-onboarding-v6-access {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v5-appointment-list article dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .route-shell-v6.is-operational main > .section,
+  .route-shell-v6.is-operational main > div > .section {
+    padding-top: 1rem;
+  }
+
+  .management-onboarding-v6-fields,
+  .management-onboarding-v6-access,
+  .management-onboarding-v6-review,
+  .v5-profile-fields-v6,
+  .v5-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-onboarding-v6-review > div,
+  .management-onboarding-v6-review > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .management-onboarding-v6-header h1,
+  .staff-finance-hold-v6 h1,
+  .staff-role-management-v6 .staff-platform-header h1 {
+    font-size: clamp(2.35rem, 13vw, 4rem);
+  }
+
+  .booking-v4-week {
+    overflow-x: auto;
+    grid-template-columns: repeat(7, minmax(82px, 1fr));
+    scrollbar-width: thin;
+  }
+
+  .route-shell-v6.is-operational .footer-v6-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
