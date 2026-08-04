@@ -35,11 +35,12 @@ import './polish-round-5.css';
 import './polish-round-6.css';
 import './stabilization-v7.css';
 import { findRoute } from './data/site';
+import { getPlatformSessionAccount } from './data/auth-v2';
 import { HomePage } from './components/HomePage';
 import { SiteLayoutV6 } from './components/LayoutV6';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
-import { BookingV6 } from './components/BookingV6';
+import { BookingV7, WalkInEntryV7 } from './components/BookingV7';
 import { StaffPlatformPageV6 } from './components/StaffPlatformPagesV6';
 import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
 import { StaffSettingsV5 } from './components/StaffSettingsV5';
@@ -59,7 +60,6 @@ const legacyRedirects: Record<string, string> = {
   '/products': '/shop',
   '/login': '/account',
   '/booking': '/book',
-  '/book/walk-in': '/book',
   '/staff/login': '/account',
   '/admin/access': '/account',
 };
@@ -68,23 +68,13 @@ const subscribeToHydration = () => () => undefined;
 const getHydratedSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-function PlatformLoading({ label }: { label: string }) {
-  return (
-    <section className="section platform-loading-state platform-pattern platform-pattern-tools">
-      <div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening {label}.</h1></div></div>
-    </section>
-  );
-}
-
-function ClientPlatform({ children, label }: { children: ReactNode; label: string }) {
-  const hydrated = useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot);
-  if (!hydrated) return <PlatformLoading label={label} />;
-  return children;
+function ClientPlatform({ children }: { children: ReactNode }) {
+  return useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot) ? children : null;
 }
 
 function ClientRedirect({ to }: { to: string }) {
   useEffect(() => { window.location.replace(to); }, [to]);
-  return <section className="section page-hero ornament-section ornament-bg-3"><div className="container narrow-container"><p className="eyebrow">Redirecting</p><h1>This content has moved.</h1><a className="button" href={to}>Continue</a></div></section>;
+  return <a href={to}>Continue</a>;
 }
 
 function useHomepageHashNavigation(url: string) {
@@ -124,24 +114,21 @@ export function App({ url }: AppProps) {
         ? '/shop'
         : route.path;
 
-  return (
-    <SiteLayoutV6 currentPath={layoutPath}>
-      {redirect ? <ClientRedirect to={redirect} />
-        : normalizedUrl === '/' ? <HomePage />
-        : normalizedUrl === '/book' ? <ClientPlatform label="booking"><BookingV6 /></ClientPlatform>
-        : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
-        : normalizedUrl === '/shop' ? <ClientPlatform label="the Shop"><StorefrontV5 /></ClientPlatform>
-        : productMatch ? <ClientPlatform label="this product"><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
-        : normalizedUrl === '/cart' ? <ClientPlatform label="your cart"><CartPageV4 /></ClientPlatform>
-        : normalizedUrl === '/checkout' ? <ClientPlatform label="checkout"><CheckoutPageV5 /></ClientPlatform>
-        : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV5 /></ClientPlatform>
-        : normalizedUrl === '/dashboard' ? <ClientPlatform label="your dashboard"><RoleDashboardV6 /></ClientPlatform>
-        : normalizedUrl === '/staff/setup' ? <ClientPlatform label="professional setup"><StaffOnboardingV6 /></ClientPlatform>
-        : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV5 /></ClientPlatform>
-        : normalizedUrl === '/admin/products' ? <ClientPlatform label="product administration"><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
-        : normalizedUrl === '/admin/orders' ? <ClientPlatform label="order administration"><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
-        : isStaffRoute ? <ClientPlatform label="the staff portal"><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
-        : <RoutePage url={url} />}
-    </SiteLayoutV6>
-  );
+  return <SiteLayoutV6 currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
+    : normalizedUrl === '/' ? <HomePage />
+    : normalizedUrl === '/book/walk-in' ? <ClientPlatform><WalkInEntryV7 /></ClientPlatform>
+    : normalizedUrl === '/book' ? <ClientPlatform><BookingV7 /></ClientPlatform>
+    : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
+    : normalizedUrl === '/shop' ? <ClientPlatform><StorefrontV5 /></ClientPlatform>
+    : productMatch ? <ClientPlatform><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
+    : normalizedUrl === '/cart' ? <ClientPlatform><CartPageV4 /></ClientPlatform>
+    : normalizedUrl === '/checkout' ? <ClientPlatform><CheckoutPageV5 /></ClientPlatform>
+    : normalizedUrl === '/account' ? <ClientPlatform>{getPlatformSessionAccount() ? <RoleDashboardV6 /> : <AccountAccessV5 />}</ClientPlatform>
+    : normalizedUrl === '/dashboard' ? <ClientPlatform><RoleDashboardV6 /></ClientPlatform>
+    : normalizedUrl === '/staff/setup' ? <ClientPlatform><StaffOnboardingV6 /></ClientPlatform>
+    : normalizedUrl === '/staff/settings' ? <ClientPlatform><StaffSettingsV5 /></ClientPlatform>
+    : normalizedUrl === '/admin/products' ? <ClientPlatform><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
+    : normalizedUrl === '/admin/orders' ? <ClientPlatform><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
+    : isStaffRoute ? <ClientPlatform><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
+    : <RoutePage url={url} />}</SiteLayoutV6>;
 }
