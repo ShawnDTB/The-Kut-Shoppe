@@ -16,6 +16,5 @@
 .management-onboarding-v6-fields input{width:100%;min-width:0}
 .management-onboarding-v6-location{display:grid;gap:.25rem;margin-top:1.25rem;padding:1rem;border:1px solid #ffffff24}
 .staff-role-management-v6 .staff-platform-nav a[href$="earnings"],.staff-role-management-v6 .staff-platform-nav a[href$="payouts"],.staff-role-management-v6 .staff-session-actions a[href="/account"]{display:none!important}
-.booking-v6-timezone{display:block;margin-top:.6rem;color:#ffffffad}
 @media(max-width:980px){.route-shell-v6.is-operational .route-wide,.account-v6-tabs{width:min(100% - 1rem,1440px)}.account-v6-tabs{position:static;grid-template-columns:repeat(2,1fr)}.account-v6-tabs button:nth-child(2){border-right:0}.account-v6-tabs button:nth-child(-n+2){border-bottom:1px solid #ffffff24}.management-onboarding-v6-header{align-items:start;flex-direction:column}}
 @media(max-width:700px){.management-onboarding-v6-fields{grid-template-columns:1fr}.booking-v4-week{overflow-x:auto;grid-template-columns:repeat(7,minmax(82px,1fr))}}
