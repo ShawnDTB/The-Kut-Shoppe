@@ -1,4 +1,4 @@
-name: Apply Reviewed Repository Cleanup
+name: Apply Reviewed Source Cleanup
 
 on:
   pull_request:
@@ -25,7 +25,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Apply reviewed cleanup
+      - name: Apply reviewed source cleanup
         shell: bash
         run: |
           python - <<'PY'
@@ -49,56 +49,6 @@ jobs:
           ]
           for path in dead:
               Path(path).unlink(missing_ok=True)
-
-          Path('.github/workflows/quality.yml').write_text("""name: Quality
-
-          on:
-            pull_request:
-            push:
-              branches: [main]
-
-          permissions:
-            contents: read
-
-          jobs:
-            validate:
-              runs-on: ubuntu-latest
-              steps:
-                - name: Check out repository
-                  uses: actions/checkout@v4
-
-                - name: Set up Node.js
-                  uses: actions/setup-node@v4
-                  with:
-                    node-version-file: .nvmrc
-                    cache: npm
-
-                - name: Install locked dependencies
-                  run: npm ci
-
-                - name: Run project checks
-                  run: npm run check
-
-                - name: Validate D1 migrations
-                  shell: bash
-                  run: |
-                    python - <<'PY_MIGRATION'
-                    import pathlib
-                    import sqlite3
-
-                    migrations = sorted(pathlib.Path('migrations').glob('*.sql')) if pathlib.Path('migrations').exists() else []
-                    if not migrations:
-                        print('No migrations found.')
-                        raise SystemExit(0)
-
-                    connection = sqlite3.connect(':memory:')
-                    connection.execute('PRAGMA foreign_keys = ON')
-                    for migration in migrations:
-                        print(f'Applying {migration}')
-                        connection.executescript(migration.read_text(encoding='utf-8'))
-                    print('Migration validation complete.')
-                    PY_MIGRATION
-          """.replace('\n          ', '\n').lstrip(), encoding='utf-8')
 
           Path('eslint.config.js').write_text("""import js from '@eslint/js';
           import reactHooks from 'eslint-plugin-react-hooks';
@@ -280,9 +230,6 @@ jobs:
               '- [Repository stabilization and branch policy](./docs/repository/repository-stabilization-2026-08-04.md)\n- [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)',
           )
           readme.write_text(text, encoding='utf-8')
-
-          Path('.github/workflows/feature-platform-check.yml').unlink(missing_ok=True)
-          Path('.github/workflows/repository-audit-snapshot.yml').unlink(missing_ok=True)
           PY
 
       - name: Install locked dependencies
@@ -306,12 +253,12 @@ jobs:
           print('Migration validation complete.')
           PY
 
-      - name: Commit validated cleanup
+      - name: Commit validated source cleanup
         shell: bash
         run: |
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add README.md .gitignore eslint.config.js src
           git commit -m 'Remove superseded repository scaffolding'
           git push origin HEAD:chore/repository-stabilization-2026-08-04
