@@ -74,7 +74,7 @@ function ClientPlatform({ children }: { children: ReactNode }) {
 
 function ClientRedirect({ to }: { to: string }) {
   useEffect(() => { window.location.replace(to); }, [to]);
-  return <section className="section page-hero ornament-section ornament-bg-3"><div className="container narrow-container"><p className="eyebrow">Redirecting</p><h1>This content has moved.</h1><a className="button" href={to}>Continue</a></div></section>;
+  return <a href={to}>Continue</a>;
 }
 
 function useHomepageHashNavigation(url: string) {
