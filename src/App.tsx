@@ -34,15 +34,16 @@ import './polish-round-4.css';
 import './polish-round-5.css';
 import './polish-round-6.css';
 import './stabilization-v7.css';
+import './owner-audit-v8.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayoutV6 } from './components/LayoutV6';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
-import { BookingV6 } from './components/BookingV6';
+import { BookingV7, WalkInEntryV7 } from './components/BookingV7';
 import { StaffPlatformPageV6 } from './components/StaffPlatformPagesV6';
 import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
-import { StaffSettingsV5 } from './components/StaffSettingsV5';
+import { StaffSettingsV7 } from './components/StaffSettingsV7';
 import { AccountAccessV5 } from './components/AccountAccessV5';
 import { RoleDashboardV6 } from './components/RoleDashboardV6';
 import { CartPageV4 } from './components/CartPageV4';
@@ -59,7 +60,6 @@ const legacyRedirects: Record<string, string> = {
   '/products': '/shop',
   '/login': '/account',
   '/booking': '/book',
-  '/book/walk-in': '/book',
   '/staff/login': '/account',
   '/admin/access': '/account',
 };
@@ -128,7 +128,8 @@ export function App({ url }: AppProps) {
     <SiteLayoutV6 currentPath={layoutPath}>
       {redirect ? <ClientRedirect to={redirect} />
         : normalizedUrl === '/' ? <HomePage />
-        : normalizedUrl === '/book' ? <ClientPlatform label="booking"><BookingV6 /></ClientPlatform>
+        : normalizedUrl === '/book/walk-in' ? <ClientPlatform label="the staff waitlist"><WalkInEntryV7 /></ClientPlatform>
+        : normalizedUrl === '/book' ? <ClientPlatform label="booking"><BookingV7 /></ClientPlatform>
         : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
         : normalizedUrl === '/shop' ? <ClientPlatform label="the Shop"><StorefrontV5 /></ClientPlatform>
         : productMatch ? <ClientPlatform label="this product"><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
@@ -137,7 +138,7 @@ export function App({ url }: AppProps) {
         : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV5 /></ClientPlatform>
         : normalizedUrl === '/dashboard' ? <ClientPlatform label="your dashboard"><RoleDashboardV6 /></ClientPlatform>
         : normalizedUrl === '/staff/setup' ? <ClientPlatform label="professional setup"><StaffOnboardingV6 /></ClientPlatform>
-        : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV5 /></ClientPlatform>
+        : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV7 /></ClientPlatform>
         : normalizedUrl === '/admin/products' ? <ClientPlatform label="product administration"><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
         : normalizedUrl === '/admin/orders' ? <ClientPlatform label="order administration"><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
         : isStaffRoute ? <ClientPlatform label="the staff portal"><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
