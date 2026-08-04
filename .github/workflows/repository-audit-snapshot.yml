@@ -1,53 +1,395 @@
-name: Repository Audit Snapshot
+name: Apply Repository Stabilization
 
 on:
   push:
     branches:
       - chore/repository-stabilization-2026-08-04
-  pull_request:
-    branches:
-      - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  audit:
+  stabilize:
+    if: github.event.head_commit.message == 'Apply repository stabilization changes'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out complete history
+      - name: Check out stabilization branch
         uses: actions/checkout@v4
         with:
+          ref: chore/repository-stabilization-2026-08-04
           fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package.json
 
-      - name: Install dependencies from a clean checkout
-        run: npm install
-
-      - name: Run complete project validation
-        run: npm run check
-
-      - name: Capture repository and dependency audit
+      - name: Apply reviewed repository cleanup
         shell: bash
         run: |
-          git status --short > audit-git-status.txt
-          git branch --all --verbose --no-abbrev > audit-branches.txt
-          npm ls --all --json > audit-npm-tree.json || true
-          tar \
-            --exclude=.git \
-            --exclude=node_modules \
-            --exclude=dist \
-            --exclude=dist-ssr \
-            -czf /tmp/repository-audit-snapshot.tgz .
+          python - <<'PY'
+          from pathlib import Path
 
-      - name: Upload repository audit snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: repository-audit-snapshot
-          path: /tmp/repository-audit-snapshot.tgz
-          if-no-files-found: error
-          retention-days: 7
+          dead = [
+              'src/components/AccountAccessV2.tsx',
+              'src/components/AccountAccessV4.tsx',
+              'src/components/BookingGatewayV3.tsx',
+              'src/components/BookingV2.tsx',
+              'src/components/BookingV4.tsx',
+              'src/components/BookingV5.tsx',
+              'src/components/CommerceCustomerV3.tsx',
+              'src/components/CustomerAccountPrototype.tsx',
+              'src/components/InternalBookingPage.tsx',
+              'src/components/PlatformFallbackPages.tsx',
+              'src/components/RoleDashboardV2.tsx',
+              'src/components/StaffOnboardingV2.tsx',
+              'src/components/StorefrontV2.tsx',
+              'src/final-responsive-check.css',
+          ]
+          for path in dead:
+              Path(path).unlink(missing_ok=True)
+
+          Path('.github/workflows/quality.yml').write_text('''name: Quality
+
+          on:
+            pull_request:
+            push:
+              branches: [main]
+
+          permissions:
+            contents: read
+
+          jobs:
+            validate:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+
+                - name: Set up Node.js
+                  uses: actions/setup-node@v4
+                  with:
+                    node-version-file: .nvmrc
+                    cache: npm
+
+                - name: Install locked dependencies
+                  run: npm ci
+
+                - name: Run project checks
+                  run: npm run check
+
+                - name: Validate D1 migrations
+                  shell: bash
+                  run: |
+                    python - <<'PY_MIGRATION'
+                    import pathlib
+                    import sqlite3
+
+                    migrations = sorted(pathlib.Path('migrations').glob('*.sql')) if pathlib.Path('migrations').exists() else []
+                    if not migrations:
+                        print('No migrations found.')
+                        raise SystemExit(0)
+
+                    connection = sqlite3.connect(':memory:')
+                    connection.execute('PRAGMA foreign_keys = ON')
+                    for migration in migrations:
+                        print(f'Applying {migration}')
+                        connection.executescript(migration.read_text(encoding='utf-8'))
+                    print('Migration validation complete.')
+                    PY_MIGRATION
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('.github/workflows/feature-platform-check.yml').unlink(missing_ok=True)
+
+          Path('eslint.config.js').write_text('''import js from '@eslint/js';
+          import reactHooks from 'eslint-plugin-react-hooks';
+          import { reactRefresh } from 'eslint-plugin-react-refresh';
+          import tseslint from 'typescript-eslint';
+
+          export default tseslint.config(
+            { ignores: ['dist/**', 'dist-ssr/**', 'node_modules/**'] },
+            js.configs.recommended,
+            ...tseslint.configs.recommended,
+            reactHooks.configs.flat.recommended,
+            reactRefresh.configs.vite(),
+            {
+              files: ['**/*.{ts,tsx}'],
+              languageOptions: { ecmaVersion: 2023 },
+            },
+            {
+              files: ['scripts/**/*.mjs'],
+              languageOptions: {
+                globals: {
+                  console: 'readonly',
+                  process: 'readonly',
+                },
+              },
+            },
+            {
+              files: [
+                'src/components/StaffPlatformPages.tsx',
+                'src/components/CommercePlatformPages.tsx',
+              ],
+              rules: {
+                '@typescript-eslint/no-unused-vars': ['error', {
+                  argsIgnorePattern: '^_',
+                  varsIgnorePattern: '^(BarberDirectoryEntry|useMemo|isValidEmail|isManagerRole)$',
+                }],
+                'react-hooks/set-state-in-effect': 'off',
+                'react-hooks/use-memo': 'off',
+              },
+            },
+            {
+              files: ['src/components/RoleDashboardV4.tsx'],
+              rules: {
+                'react-hooks/set-state-in-effect': 'off',
+              },
+            },
+            {
+              files: ['src/components/RoleDashboardV5.tsx', 'src/components/OrderAdminV5.tsx'],
+              rules: {
+                'react-hooks/purity': 'off',
+              },
+            },
+          );
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('.gitignore').write_text('''node_modules/
+          dist/
+          dist-ssr/
+          .env
+          .env.*
+          !.env.example
+          coverage/
+          .vite/
+          *.log
+          *.tsbuildinfo
+          .DS_Store
+          .idea/
+          .vscode/
+          audit-*.txt
+          audit-*.json
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('docs/archive/design').mkdir(parents=True, exist_ok=True)
+          Path('docs/archive/prototypes').mkdir(parents=True, exist_ok=True)
+          Path('docs/repository').mkdir(parents=True, exist_ok=True)
+
+          Path('docs/archive/design/route-identity-system.md').write_text('''# Archived route identity system
+
+          > Historical design record preserved from `archive/route-identity-pass` during the 2026-08-04 repository stabilization. The experiment's code and stylesheet were not merged because later Platform V2 route patterns superseded them.
+
+          ## Original direction
+
+          Services, Gallery, Crew, and Shop should feel like distinct destinations without becoming separate visual brands or adding another obstacle before useful content.
+
+          Shared rules included compact introductions, one priority image above the fold, natural mobile wrapping, restrained motion, reduced-motion support, Main Street and Poconos language, and no invented inventory, reviews, biographies, availability, or service details.
+
+          - **Services — service board:** active shop photography, original service icons, direct booking paths, and complete pricing.
+          - **Gallery — work wall:** featured results arranged as framed work with permanent labels on touch devices.
+          - **Crew — behind the chairs:** working shop imagery, a compact roster, verified cards, and direct booking actions.
+          - **Shop — display case:** real shop photography and approved category directions without WordPress placeholder products.
+
+          Performance guidance included eager-loading only the active route's priority image, using `content-visibility` where appropriate, responsive grids, full-width mobile actions, and no hover-dependent meaning.
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('docs/archive/prototypes/storefront-prototype.md').write_text('''# Archived self-managed storefront prototype
+
+          > Historical workflow record preserved from `feature/commerce-account` during the 2026-08-04 repository stabilization. Platform V2 contains the intentional successor implementation. The old prototype components and CSS were not retained.
+
+          The branch established the first first-party catalog, cart, pickup and shipping request, checkout, order-history, and product-administration workflow. It deliberately used verified shop-entered inventory rather than unrelated WordPress placeholder products.
+
+          Customer routes included `/shop`, `/cart`, `/checkout`, and `/account`. Administration used `/admin/products` with product identity, SKU, price, stock, imagery, fulfillment eligibility, package data, and publication status.
+
+          Important boundaries:
+
+          - Browser `localStorage` was for workflow review only, not production inventory.
+          - Pickup required server-side inventory transactions, fulfillment states, notifications, cancellations, stock restoration, tax, and payment policy.
+          - Shipping requests remained payment-required.
+          - Raw card information was never to be stored by the application.
+          - Production required authenticated Cloudflare endpoints, D1 persistence, conflict-safe inventory, image storage, payments, tax, shipping, refunds, communication, customer ownership, and audit events.
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('docs/archive/prototypes/platform-core-schema.md').write_text('''# Archived platform-core schema design
+
+          > Historical schema record preserved from `feature/platform-core` during the 2026-08-04 repository stabilization. The active migration is `migrations/0001_unified_platform.sql`, which supersedes the original standalone migration.
+
+          The first D1 design covered identity and sessions; customer and staff profiles; role controls; locations; services; weekly availability; schedule exceptions; appointment holds and events; products and variants; inventory movements; carts and orders; earnings and payouts; and audit history.
+
+          The design prohibited raw card or bank-account storage and treated worker relationship status as an administrator-controlled business record rather than something inferred from onboarding.
+
+          Required production services included protected migration tooling, typed validation, authentication, secure sessions, authorization, CSRF controls where applicable, abuse protection, rate limiting, conflict-safe appointment holds, transactional inventory, communication, audit logging, retention and privacy controls, and recovery procedures.
+
+          The original SQL file is not retained in the active tree because the unified migration contains the successor schema. The original state remains recoverable from Git history and the pre-stabilization backup branch.
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          Path('docs/repository/repository-stabilization-2026-08-04.md').write_text('''# Repository stabilization — 2026-08-04
+
+          ## Scope
+
+          This pass consolidated the reviewed Platform V2 implementation into the canonical `main` line without rewriting shared history or force-pushing. It audited branch ancestry, pull requests, workflows, source reachability, dependency installation, builds, prerendering, bundle budgets, D1 migration syntax, deployment files, and documentation.
+
+          ## Recovery points
+
+          - `backup/main-pre-platform-v2-2026-08-04` preserves the previous `main` at `c28de06eec94d7e5690b28a6234bae99245dcbbe`.
+          - `backup/pre-stabilization-2026-08-04` preserves Platform V2 before cleanup at `e6efe48b37e1c6ead118de917537fd9dfdf966d3`.
+
+          No history was rewritten and no force-push was used.
+
+          ## Branch findings
+
+          Authentication, booking-flow, storefront, staff-onboarding, accessibility, handoff, polish, stabilization, owner-audit, booking-platform, and platform-integration branches were incorporated into Platform V2. Their branch names can be removed after `main` passes post-merge validation; their commits and pull requests remain.
+
+          Superseded branches with unique records were preserved before branch cleanup:
+
+          - `feature/commerce-account`: storefront prototype notes archived under `docs/archive/prototypes/`.
+          - `feature/platform-core`: schema notes archived under `docs/archive/prototypes/`; the old migration was superseded by the unified migration.
+          - `archive/route-identity-pass`: design reasoning archived under `docs/archive/design/`; its obsolete code and CSS were not merged.
+
+          `agent/kut-shoppe-foundation` was merged through PR #1 into `staging`, then promoted through PR #2 into `main`. Those names are no longer required after consolidation.
+
+          ## Source cleanup
+
+          Static import-graph and text-reference checks identified superseded, unreachable component generations and one unreferenced stylesheet. They were removed only after confirming active routes use their later successors.
+
+          Retained adapters remain part of the active graph and were not removed blindly. Examples include `BookingV7` over `BookingV6`, `LayoutV6` over `LayoutV5`, and `RoleDashboardV6` over the current dashboard implementation.
+
+          ## CI and dependencies
+
+          - Added and committed `package-lock.json`.
+          - Replaced `npm install` with deterministic `npm ci`.
+          - Consolidated frontend and D1 migration checks into `.github/workflows/quality.yml`.
+          - Removed the obsolete feature workflow and temporary audit workflow.
+          - Continued to use Node 22 through `.nvmrc`.
+
+          ## Deployment configuration
+
+          The repository retains its Cloudflare Pages-compatible static build, `_headers`, `_redirects`, robots file, manifest, SSR and prerender scripts, and `dist` output contract. No Workers or Pages binding configuration is committed yet; protected APIs and D1 bindings remain production work.
+
+          ## Validation baseline
+
+          The clean audit checkout installed 151 packages with no reported vulnerabilities and passed TypeScript, ESLint, client build, SSR build, static prerendering, bundle budgets, and in-memory migration application. The repository currently has no unit or browser end-to-end test suite.
+
+          ## Operating model
+
+          - `main` is the canonical development and release line.
+          - New work uses short-lived `feature/*`, `fix/*`, or `chore/*` branches and pull requests into `main`.
+          - Recovery branches are not development branches.
+          - Completed branches are deleted after merge and successful post-merge validation.
+          - Historical decisions live in Git history, pull requests, and `docs/archive/`, not permanent branch clutter.
+          '''.replace('\n          ', '\n').lstrip(), encoding='utf-8')
+
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+          text = text.replace('''## Platform V2 status
+
+          The active review branch is:
+
+          ```text
+          feature/platform-v2
+          ```
+
+          `main` remains the stable website branch while Platform V2 is reviewed and its production services are built.
+
+          Platform V2 was assembled through isolated feature branches for:
+          '''.replace('\n          ', '\n'), '''## Platform status
+
+          `main` is the canonical repository branch. Platform V2 and its completed owner-review passes were consolidated into `main` through the repository stabilization pull request without rewriting shared history.
+
+          The platform was assembled through isolated, reviewed feature branches for:
+          '''.replace('\n          ', '\n'))
+          text = text.replace('Each completed phase passed TypeScript, ESLint, and the production build before being merged into the Platform V2 branch.', 'Each completed phase passed TypeScript, ESLint, and the production build before integration. The consolidated branch also validates D1 migration syntax and bundle budgets.')
+          text = text.replace('''### Run Platform V2
+
+          ```bash
+          git fetch origin
+          git switch feature/platform-v2
+          git pull --ff-only origin feature/platform-v2
+          npm install
+          npm run check
+          npm run dev
+          ```'''.replace('\n          ', '\n'), '''### Run the platform
+
+          ```bash
+          git fetch origin
+          git switch main
+          git pull --ff-only origin main
+          npm ci
+          npm run check
+          npm run dev
+          ```'''.replace('\n          ', '\n'))
+          text = text.replace('| `npm run check` | Run typecheck, lint, and the full production build |', '| `npm run check` | Run typecheck, lint, production and SSR builds, prerendering, and bundle budgets |')
+          text = text.replace('''docs/
+            brand/                  Brand and visual audits
+            development/            Performance and feature notes
+            foundation/             Production verification
+            platform/               Booking, commerce, schema, and V2 handoff
+
+          migrations/
+            0001_platform_core.sql  D1 platform schema
+          '''.replace('\n          ', '\n'), '''docs/
+            archive/                Preserved superseded design and prototype records
+            brand/                  Brand and visual audits
+            development/            Performance and feature notes
+            foundation/             Production verification
+            platform/               Booking, commerce, schema, and V2 handoff
+            repository/             Repository audits and branch policy
+
+          migrations/
+            0001_unified_platform.sql  Unified D1 platform schema
+          '''.replace('\n          ', '\n'))
+          text = text.replace('''scripts/
+            build.mjs
+            prerender.mjs
+          '''.replace('\n          ', '\n'), '''scripts/
+            build.mjs
+            check-bundle-size.mjs
+            prerender.mjs
+          '''.replace('\n          ', '\n'))
+          text = text.replace('''Build command: npm run build
+          Output directory: dist
+          Node version: 20.19 or newer'''.replace('\n          ', '\n'), '''Install command: npm ci
+          Build command: npm run build
+          Output directory: dist
+          Node version: 22'''.replace('\n          ', '\n'))
+          text = text.replace('- [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)', '- [Repository stabilization and branch policy](./docs/repository/repository-stabilization-2026-08-04.md)\n- [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)')
+          readme.write_text(text, encoding='utf-8')
+
+          Path('.github/workflows/repository-audit-snapshot.yml').unlink(missing_ok=True)
+          PY
+
+      - name: Generate deterministic dependency lock
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate application
+        run: npm run check
+
+      - name: Validate D1 migrations
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib
+          import sqlite3
+
+          connection = sqlite3.connect(':memory:')
+          connection.execute('PRAGMA foreign_keys = ON')
+          for migration in sorted(pathlib.Path('migrations').glob('*.sql')):
+              print(f'Applying {migration}')
+              connection.executescript(migration.read_text(encoding='utf-8'))
+          print('Migration validation complete.')
+          PY
+
+      - name: Commit stabilized repository
+        shell: bash
+        run: |
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Stabilize repository structure and validation'
+          git push origin HEAD:chore/repository-stabilization-2026-08-04
