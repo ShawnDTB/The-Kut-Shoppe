@@ -30,15 +30,18 @@ import './visual-accessibility-v2.css';
 import './polish-round-2.css';
 import './polish-round-3.css';
 import './polish-round-3-fixes.css';
+import './polish-round-4.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
-import { BookingGatewayV3 } from './components/BookingGatewayV3';
+import { BookingV4 } from './components/BookingV4';
 import { StaffPlatformPage } from './components/StaffPlatformPages';
 import { StaffOnboardingV2 } from './components/StaffOnboardingV2';
-import { AccountAccessV2 } from './components/AccountAccessV2';
-import { RoleDashboardV2 } from './components/RoleDashboardV2';
+import { AccountAccessV4 } from './components/AccountAccessV4';
+import { RoleDashboardV4 } from './components/RoleDashboardV4';
+import { ReviewsPageV4 } from './components/ReviewsPageV4';
+import { CartPageV4 } from './components/CartPageV4';
 import { StorefrontV2 } from './components/StorefrontV2';
 import { AdminGuard } from './components/AdminAccess';
 import {
@@ -46,7 +49,6 @@ import {
   OrderAdminPage,
 } from './components/CommercePlatformPages';
 import {
-  CartPageV3,
   CheckoutPageV3,
   ProductDetailPageV3,
 } from './components/CommerceCustomerV3';
@@ -149,19 +151,21 @@ export function App({ url }: AppProps) {
       ) : normalizedUrl === '/' ? (
         <HomePage />
       ) : normalizedUrl === '/book' ? (
-        <ClientPlatform label="booking"><BookingGatewayV3 /></ClientPlatform>
+        <ClientPlatform label="booking"><BookingV4 /></ClientPlatform>
+      ) : normalizedUrl === '/reviews' ? (
+        <ReviewsPageV4 />
       ) : normalizedUrl === '/shop' ? (
         <ClientPlatform label="the Shop"><StorefrontV2 /></ClientPlatform>
       ) : productMatch ? (
         <ClientPlatform label="this product"><ProductDetailPageV3 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
       ) : normalizedUrl === '/cart' ? (
-        <ClientPlatform label="your cart"><CartPageV3 /></ClientPlatform>
+        <ClientPlatform label="your cart"><CartPageV4 /></ClientPlatform>
       ) : normalizedUrl === '/checkout' ? (
         <ClientPlatform label="checkout"><CheckoutPageV3 /></ClientPlatform>
       ) : normalizedUrl === '/account' ? (
-        <ClientPlatform label="your Account"><AccountAccessV2 /></ClientPlatform>
+        <ClientPlatform label="your Account"><AccountAccessV4 /></ClientPlatform>
       ) : normalizedUrl === '/dashboard' ? (
-        <ClientPlatform label="your dashboard"><RoleDashboardV2 /></ClientPlatform>
+        <ClientPlatform label="your dashboard"><RoleDashboardV4 /></ClientPlatform>
       ) : normalizedUrl === '/staff/setup' ? (
         <ClientPlatform label="professional setup"><StaffOnboardingV2 /></ClientPlatform>
       ) : normalizedUrl === '/admin/products' ? (
