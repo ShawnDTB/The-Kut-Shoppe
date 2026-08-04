@@ -78,11 +78,17 @@ It also connects appointments, shopping, staff operations, and customer history 
 
 The frontend workflows are now reviewable together. Production launch still requires the protected backend described in the [production boundary](#production-boundary).
 
-## Platform status
+## Platform V2 status
 
-`main` is the canonical repository branch. Platform V2 and its completed owner-review passes were consolidated into `main` through the repository stabilization pull request without rewriting shared history.
+The active review branch is:
 
-The platform was assembled through isolated, reviewed feature branches for:
+```text
+feature/platform-v2
+```
+
+`main` remains the stable website branch while Platform V2 is reviewed and its production services are built.
+
+Platform V2 was assembled through isolated feature branches for:
 
 - Email and password authentication
 - Role-based access
@@ -92,7 +98,7 @@ The platform was assembled through isolated, reviewed feature branches for:
 - Account-linked professional onboarding
 - Crew, route, mobile, and accessibility refinement
 
-Each completed phase passed TypeScript, ESLint, and the production build before integration. The consolidated branch also validates D1 migration syntax and bundle budgets.
+Each completed phase passed TypeScript, ESLint, and the production build before being merged into the Platform V2 branch.
 
 ## Customer experience
 
@@ -291,13 +297,13 @@ Low-contrast pattern families bring more life to Services, Crew, Gallery, Visit,
 - npm `10.0.0` or newer
 - Git
 
-### Run the platform
+### Run Platform V2
 
 ```bash
 git fetch origin
-git switch main
-git pull --ff-only origin main
-npm ci
+git switch feature/platform-v2
+git pull --ff-only origin feature/platform-v2
+npm install
 npm run check
 npm run dev
 ```
@@ -357,7 +363,7 @@ The complete review sequence is documented in [Platform V2 Review](./docs/platfo
 | `npm run typecheck` | Validate TypeScript without writing output files |
 | `npm run lint` | Run ESLint across the repository |
 | `npm run build` | Build and prerender the production website |
-| `npm run check` | Run typecheck, lint, production and SSR builds, prerendering, and bundle budgets |
+| `npm run check` | Run typecheck, lint, and the full production build |
 | `npm run preview` | Preview the generated production build |
 
 Production files are generated in `dist/`.
@@ -381,15 +387,13 @@ Production files are generated in `dist/`.
   workflows/              Repository validation
 
 docs/
-  archive/                Preserved superseded design and prototype records
   brand/                  Brand and visual audits
   development/            Performance and feature notes
   foundation/             Production verification
   platform/               Booking, commerce, schema, and V2 handoff
-  repository/             Repository audits and branch policy
 
 migrations/
-  0001_unified_platform.sql  Unified D1 platform schema
+  0001_platform_core.sql  D1 platform schema
 
 public/
   favicon.svg
@@ -398,7 +402,6 @@ public/
 
 scripts/
   build.mjs
-  check-bundle-size.mjs
   prerender.mjs
 
 src/
@@ -479,17 +482,15 @@ Individual professional schedules are configured separately.
 The planned production target is Cloudflare Pages with Workers and D1 for protected platform services.
 
 ```text
-Install command: npm ci
 Build command: npm run build
 Output directory: dist
-Node version: 22
+Node version: 20.19 or newer
 ```
 
 The existing public site should remain available until Platform V2 is approved and its protected backend is production-ready.
 
 ## Documentation
 
-- [Repository stabilization and branch policy](./docs/repository/repository-stabilization-2026-08-04.md)
 - [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)
 - [Platform integration audit](./docs/platform/platform-integration-audit.md)
 - [Production cutover checklist](./docs/platform/production-cutover-checklist.md)
