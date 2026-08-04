@@ -154,7 +154,7 @@ export function BookingV4() {
 
   const [step, setStep] = useState<BookingStep>(editingAppointment ? 'schedule' : 'service');
   const [serviceId, setServiceId] = useState(editingAppointment?.serviceId ?? '');
-  const [selectedBarberId, setSelectedBarberId] = useState(editingAppointment?.requestedBarberId ?? requestedBarber || 'any');
+  const [selectedBarberId, setSelectedBarberId] = useState((editingAppointment?.requestedBarberId ?? requestedBarber) || 'any');
   const [dateKey, setDateKey] = useState(editingAppointment?.date ?? '');
   const [slot, setSlot] = useState<TimeSlot | null>(null);
   const [waitlist, setWaitlist] = useState(false);
