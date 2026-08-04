@@ -1,0 +1,67 @@
+name: One-time Remote Branch Cleanup
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.head_commit.message == 'Run one-time remote branch cleanup'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Delete reviewed obsolete remote branches
+        shell: bash
+        run: |
+          branches=(
+            'agent/kut-shoppe-foundation'
+            'archive/route-identity-pass'
+            'chore/repository-stabilization-2026-08-04'
+            'feature/auth-rbac-v2'
+            'feature/booking-flow-v2'
+            'feature/booking-platform'
+            'feature/commerce-account'
+            'feature/platform-core'
+            'feature/platform-integration'
+            'feature/platform-v2-handoff'
+            'feature/platform-v2-owner-audit-2'
+            'feature/platform-v2-polish-round-2'
+            'feature/platform-v2-polish-round-3'
+            'feature/platform-v2-polish-round-4'
+            'feature/platform-v2-polish-round-5'
+            'feature/platform-v2-polish-round-6'
+            'feature/platform-v2-stabilization'
+            'feature/platform-v2'
+            'feature/staff-onboarding-v2'
+            'feature/storefront-ux-v2'
+            'feature/visual-accessibility-v2'
+            'staging'
+          )
+
+          for branch in "${branches[@]}"; do
+            if git ls-remote --exit-code --heads origin "refs/heads/${branch}" > /dev/null; then
+              echo "Deleting ${branch}"
+              git push origin --delete "${branch}"
+            else
+              echo "Already absent: ${branch}"
+            fi
+          done
+
+      - name: Remove one-time workflow
+        shell: bash
+        run: |
+          rm .github/workflows/cleanup-branches.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/cleanup-branches.yml
+          git commit -m 'Remove one-time remote branch cleanup workflow'
+          git push origin HEAD:main
