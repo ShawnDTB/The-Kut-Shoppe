@@ -7,4 +7,9 @@ dist-ssr/
 coverage/
 .vite/
 *.log
+*.tsbuildinfo
 .DS_Store
+.idea/
+.vscode/
+audit-*.txt
+audit-*.json
