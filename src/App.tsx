@@ -70,7 +70,7 @@ const getServerSnapshot = () => false;
 
 function ClientPlatform({ children }: { children: ReactNode }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot);
-  return hydrated ? children : <section className="section platform-loading-state platform-pattern platform-pattern-tools"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening the platform.</h1></div></div></section>;
+  return hydrated ? children : <p className="section" role="status">Opening…</p>;
 }
 
 function ClientRedirect({ to }: { to: string }) {
