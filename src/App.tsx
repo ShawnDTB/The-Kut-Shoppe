@@ -67,13 +67,9 @@ const subscribeToHydration = () => () => undefined;
 const getHydratedSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-function PlatformLoading({ label }: { label: string }) {
-  return <section className="section platform-loading-state platform-pattern platform-pattern-tools"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening {label}.</h1></div></div></section>;
-}
-
-function ClientPlatform({ children, label }: { children: ReactNode; label: string }) {
+function ClientPlatform({ children }: { children: ReactNode }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot);
-  return hydrated ? children : <PlatformLoading label={label} />;
+  return hydrated ? children : <section className="section platform-loading-state platform-pattern platform-pattern-tools"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening the platform.</h1></div></div></section>;
 }
 
 function ClientRedirect({ to }: { to: string }) {
@@ -120,19 +116,19 @@ export function App({ url }: AppProps) {
 
   return <SiteLayoutV6 currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
     : normalizedUrl === '/' ? <HomePage />
-    : normalizedUrl === '/book/walk-in' ? <ClientPlatform label="the staff waitlist"><WalkInEntryV7 /></ClientPlatform>
-    : normalizedUrl === '/book' ? <ClientPlatform label="booking"><BookingV7 /></ClientPlatform>
+    : normalizedUrl === '/book/walk-in' ? <ClientPlatform><WalkInEntryV7 /></ClientPlatform>
+    : normalizedUrl === '/book' ? <ClientPlatform><BookingV7 /></ClientPlatform>
     : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
-    : normalizedUrl === '/shop' ? <ClientPlatform label="the Shop"><StorefrontV5 /></ClientPlatform>
-    : productMatch ? <ClientPlatform label="this product"><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
-    : normalizedUrl === '/cart' ? <ClientPlatform label="your cart"><CartPageV4 /></ClientPlatform>
-    : normalizedUrl === '/checkout' ? <ClientPlatform label="checkout"><CheckoutPageV5 /></ClientPlatform>
-    : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV7 /></ClientPlatform>
-    : normalizedUrl === '/dashboard' ? <ClientPlatform label="your dashboard"><RoleDashboardV6 /></ClientPlatform>
-    : normalizedUrl === '/staff/setup' ? <ClientPlatform label="professional setup"><StaffOnboardingV6 /></ClientPlatform>
-    : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV5 /></ClientPlatform>
-    : normalizedUrl === '/admin/products' ? <ClientPlatform label="product administration"><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
-    : normalizedUrl === '/admin/orders' ? <ClientPlatform label="order administration"><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
-    : isStaffRoute ? <ClientPlatform label="the staff portal"><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
+    : normalizedUrl === '/shop' ? <ClientPlatform><StorefrontV5 /></ClientPlatform>
+    : productMatch ? <ClientPlatform><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
+    : normalizedUrl === '/cart' ? <ClientPlatform><CartPageV4 /></ClientPlatform>
+    : normalizedUrl === '/checkout' ? <ClientPlatform><CheckoutPageV5 /></ClientPlatform>
+    : normalizedUrl === '/account' ? <ClientPlatform><AccountAccessV7 /></ClientPlatform>
+    : normalizedUrl === '/dashboard' ? <ClientPlatform><RoleDashboardV6 /></ClientPlatform>
+    : normalizedUrl === '/staff/setup' ? <ClientPlatform><StaffOnboardingV6 /></ClientPlatform>
+    : normalizedUrl === '/staff/settings' ? <ClientPlatform><StaffSettingsV5 /></ClientPlatform>
+    : normalizedUrl === '/admin/products' ? <ClientPlatform><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
+    : normalizedUrl === '/admin/orders' ? <ClientPlatform><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
+    : isStaffRoute ? <ClientPlatform><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
     : <RoutePage url={url} />}</SiteLayoutV6>;
 }
