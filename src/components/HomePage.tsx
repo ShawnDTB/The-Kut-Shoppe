@@ -128,8 +128,6 @@ export function HomePage() {
               compact
               context="Barber appointments · same-day waitlist · Loctician direction"
               title="Choose Barber or Loctician."
-              secondaryHref={business.phoneHref}
-              secondaryLabel={`Call ${business.phone}`}
             />
           </div>
         </div>
