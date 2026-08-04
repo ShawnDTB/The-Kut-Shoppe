@@ -19,7 +19,7 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Restore exact pre-stabilization tree
+      - name: Restore pre-stabilization application tree
         shell: bash
         run: |
           set -euo pipefail
@@ -27,12 +27,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          mkdir -p /tmp/recovery-workflows
+          cp -a .github/workflows/. /tmp/recovery-workflows/
+
           git rm -r --ignore-unmatch .
           git checkout pre-repository-stabilization-2026-08-04 -- .
+
+          rm -rf .github/workflows
+          mkdir -p .github/workflows
+          cp -a /tmp/recovery-workflows/. .github/workflows/
 
           npm install --no-package-lock
           npm run check
 
           git add -A
+          if git diff --cached --quiet; then
+            echo "Recovery application tree is already restored."
+            exit 0
+          fi
+
           git commit -m "Restore pre-stabilization Platform V2 snapshot"
           git push origin "HEAD:${{ github.head_ref }}"
