@@ -35,6 +35,7 @@ import './polish-round-5.css';
 import './polish-round-6.css';
 import './stabilization-v7.css';
 import { findRoute } from './data/site';
+import { getPlatformSessionAccount } from './data/auth-v2';
 import { HomePage } from './components/HomePage';
 import { SiteLayoutV6 } from './components/LayoutV6';
 import { RoutePage } from './components/Pages';
@@ -43,7 +44,7 @@ import { BookingV7, WalkInEntryV7 } from './components/BookingV7';
 import { StaffPlatformPageV6 } from './components/StaffPlatformPagesV6';
 import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
 import { StaffSettingsV5 } from './components/StaffSettingsV5';
-import { AccountAccessV7 } from './components/AccountAccessV7';
+import { AccountAccessV5 } from './components/AccountAccessV5';
 import { RoleDashboardV6 } from './components/RoleDashboardV6';
 import { CartPageV4 } from './components/CartPageV4';
 import { StorefrontV5 } from './components/StorefrontV5';
@@ -123,7 +124,7 @@ export function App({ url }: AppProps) {
     : productMatch ? <ClientPlatform><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
     : normalizedUrl === '/cart' ? <ClientPlatform><CartPageV4 /></ClientPlatform>
     : normalizedUrl === '/checkout' ? <ClientPlatform><CheckoutPageV5 /></ClientPlatform>
-    : normalizedUrl === '/account' ? <ClientPlatform><AccountAccessV7 /></ClientPlatform>
+    : normalizedUrl === '/account' ? <ClientPlatform>{getPlatformSessionAccount() ? <RoleDashboardV6 /> : <AccountAccessV5 />}</ClientPlatform>
     : normalizedUrl === '/dashboard' ? <ClientPlatform><RoleDashboardV6 /></ClientPlatform>
     : normalizedUrl === '/staff/setup' ? <ClientPlatform><StaffOnboardingV6 /></ClientPlatform>
     : normalizedUrl === '/staff/settings' ? <ClientPlatform><StaffSettingsV5 /></ClientPlatform>
