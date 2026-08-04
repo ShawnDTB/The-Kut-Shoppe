@@ -1,0 +1,51 @@
+name: Repository Audit Snapshot
+
+on:
+  push:
+    branches:
+      - chore/repository-stabilization-2026-08-04
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies from a clean checkout
+        run: npm install
+
+      - name: Run complete project validation
+        run: npm run check
+
+      - name: Capture repository and dependency audit
+        shell: bash
+        run: |
+          git status --short > audit-git-status.txt
+          git branch --all --verbose --no-abbrev > audit-branches.txt
+          npm ls --all --json > audit-npm-tree.json || true
+          tar \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude=dist \
+            --exclude=dist-ssr \
+            --exclude=repository-audit-snapshot.tgz \
+            -czf repository-audit-snapshot.tgz .
+
+      - name: Upload repository audit snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-audit-snapshot
+          path: repository-audit-snapshot.tgz
+          if-no-files-found: error
+          retention-days: 7
