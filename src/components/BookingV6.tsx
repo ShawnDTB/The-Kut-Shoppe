@@ -241,7 +241,8 @@ export function BookingV6() {
     [selectedBarberId, serviceId, staffProfiles],
   );
   const calendarDays = useMemo(() => buildCalendarDays(calendarWindowDays), [calendarWindowDays]);
-  const visibleDays = calendarDays.slice(weekStart, weekStart + 7);
+  const effectiveWeekStart = Math.min(weekStart, Math.max(0, calendarDays.length - 7));
+  const visibleDays = calendarDays.slice(effectiveWeekStart, effectiveWeekStart + 7);
 
   const slotsForDate = (value: string) => {
     if (!service) return [];
@@ -270,10 +271,6 @@ export function BookingV6() {
     setStaffProfiles(readStaffProfiles());
     setAppointments(readAppointments());
   }), []);
-
-  useEffect(() => {
-    setWeekStart((current) => Math.min(current, Math.max(0, calendarDays.length - 7)));
-  }, [calendarDays.length]);
 
   if (!params.toString()) return <BookingGateway />;
 
@@ -352,8 +349,10 @@ export function BookingV6() {
   const back = () => {
     if (step === 'service') window.location.assign('/book');
     else if (step === 'barber') setStep('service');
-    else if (step === 'schedule') editingAppointment ? window.location.assign('/account') : setStep('barber');
-    else if (step === 'details') setStep('schedule');
+    else if (step === 'schedule') {
+      if (editingAppointment) window.location.assign('/account');
+      else setStep('barber');
+    } else if (step === 'details') setStep('schedule');
     else window.location.assign('/account');
   };
 
@@ -463,9 +462,9 @@ export function BookingV6() {
             <div className="booking-v2-panel-heading"><h2>Choose a date and time</h2><p>{service.name} with {selectedBarber?.name.replace(/\.$/, '') ?? 'any available Barber'}.</p><small className="booking-v6-timezone">Times are shown in Eastern Time. Each Barber’s booking window and minimum notice are applied automatically.</small></div>
             <div className="booking-v4-calendar">
               <div className="booking-v4-calendar-toolbar">
-                <button type="button" disabled={weekStart === 0} onClick={() => setWeekStart((value) => Math.max(0, value - 7))} aria-label="Previous week">←</button>
+                <button type="button" disabled={effectiveWeekStart === 0} onClick={() => setWeekStart(Math.max(0, effectiveWeekStart - 7))} aria-label="Previous week">←</button>
                 <strong>{formatWeekRange(visibleDays)}</strong>
-                <button type="button" disabled={weekStart + 7 >= calendarDays.length} onClick={() => setWeekStart((value) => Math.min(Math.max(0, calendarDays.length - 7), value + 7))} aria-label="Next week">→</button>
+                <button type="button" disabled={effectiveWeekStart + 7 >= calendarDays.length} onClick={() => setWeekStart(Math.min(Math.max(0, calendarDays.length - 7), effectiveWeekStart + 7))} aria-label="Next week">→</button>
               </div>
               <div className="booking-v4-week" role="group" aria-label={formatWeekRange(visibleDays)}>
                 {visibleDays.map((day) => {
