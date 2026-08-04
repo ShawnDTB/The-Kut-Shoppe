@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { Suspense, lazy, useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import './styles.css';
 import './refinement.css';
 import './route-refinement.css';
@@ -33,23 +33,26 @@ import './polish-round-3-fixes.css';
 import './polish-round-4.css';
 import './polish-round-5.css';
 import './polish-round-6.css';
+import './stabilization-v7.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
-import { SiteLayoutV5 } from './components/LayoutV5';
+import { SiteLayoutV6 } from './components/LayoutV6';
 import { RoutePage } from './components/Pages';
-import { BookingV5 } from './components/BookingV5';
-import { StaffPlatformPage } from './components/StaffPlatformPages';
-import { StaffOnboardingV5 } from './components/StaffOnboardingV5';
-import { StaffSettingsV5 } from './components/StaffSettingsV5';
-import { AccountAccessV5 } from './components/AccountAccessV5';
-import { RoleDashboardV5 } from './components/RoleDashboardV5';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
-import { CartPageV4 } from './components/CartPageV4';
-import { StorefrontV5 } from './components/StorefrontV5';
 import { AdminGuard } from './components/AdminAccess';
-import { ProductAdminHubV5 } from './components/ProductAdminHubV5';
-import { OrderAdminV5 } from './components/OrderAdminV5';
-import { CheckoutPageV5, ProductDetailPageV5 } from './components/CommerceCustomerV5';
+
+const BookingV6 = lazy(() => import('./components/BookingV6').then((module) => ({ default: module.BookingV6 })));
+const StaffPlatformPageV6 = lazy(() => import('./components/StaffPlatformPagesV6').then((module) => ({ default: module.StaffPlatformPageV6 })));
+const StaffOnboardingV6 = lazy(() => import('./components/StaffOnboardingV6').then((module) => ({ default: module.StaffOnboardingV6 })));
+const StaffSettingsV5 = lazy(() => import('./components/StaffSettingsV5').then((module) => ({ default: module.StaffSettingsV5 })));
+const AccountAccessV5 = lazy(() => import('./components/AccountAccessV5').then((module) => ({ default: module.AccountAccessV5 })));
+const RoleDashboardV6 = lazy(() => import('./components/RoleDashboardV6').then((module) => ({ default: module.RoleDashboardV6 })));
+const CartPageV4 = lazy(() => import('./components/CartPageV4').then((module) => ({ default: module.CartPageV4 })));
+const StorefrontV5 = lazy(() => import('./components/StorefrontV5').then((module) => ({ default: module.StorefrontV5 })));
+const ProductAdminHubV5 = lazy(() => import('./components/ProductAdminHubV5').then((module) => ({ default: module.ProductAdminHubV5 })));
+const OrderAdminV5 = lazy(() => import('./components/OrderAdminV5').then((module) => ({ default: module.OrderAdminV5 })));
+const CheckoutPageV5 = lazy(() => import('./components/CommerceCustomerV5').then((module) => ({ default: module.CheckoutPageV5 })));
+const ProductDetailPageV5 = lazy(() => import('./components/CommerceCustomerV5').then((module) => ({ default: module.ProductDetailPageV5 })));
 
 interface AppProps { url: string }
 
@@ -67,10 +70,18 @@ const subscribeToHydration = () => () => undefined;
 const getHydratedSnapshot = () => true;
 const getServerSnapshot = () => false;
 
+function PlatformLoading({ label }: { label: string }) {
+  return (
+    <section className="section platform-loading-state platform-pattern platform-pattern-tools">
+      <div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening {label}.</h1></div></div>
+    </section>
+  );
+}
+
 function ClientPlatform({ children, label }: { children: ReactNode; label: string }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot);
-  if (!hydrated) return <section className="section platform-loading-state platform-pattern platform-pattern-tools"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">The Kut Shoppe platform</p><h1>Opening {label}.</h1></div></div></section>;
-  return children;
+  if (!hydrated) return <PlatformLoading label={label} />;
+  return <Suspense fallback={<PlatformLoading label={label} />}>{children}</Suspense>;
 }
 
 function ClientRedirect({ to }: { to: string }) {
@@ -81,7 +92,10 @@ function ClientRedirect({ to }: { to: string }) {
 function useHomepageHashNavigation(url: string) {
   useEffect(() => {
     if (url !== '/') return;
-    const scrollToHash = () => { const id = window.location.hash.slice(1); if (id) window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })); };
+    const scrollToHash = () => {
+      const id = window.location.hash.slice(1);
+      if (id) window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    };
     scrollToHash();
     window.addEventListener('hashchange', scrollToHash);
     return () => window.removeEventListener('hashchange', scrollToHash);
@@ -104,24 +118,32 @@ export function App({ url }: AppProps) {
   const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
   const isAdminRoute = normalizedUrl.startsWith('/admin/');
   const productMatch = normalizedUrl.match(/^\/shop\/([^/]+)$/);
-  const layoutPath = normalizedUrl === '/dashboard' || normalizedUrl === '/account' ? '/account' : isStaffRoute ? '/account' : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch ? '/shop' : route.path;
+  const layoutPath = normalizedUrl === '/dashboard' || normalizedUrl === '/account'
+    ? '/account'
+    : isStaffRoute
+      ? '/account'
+      : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
+        ? '/shop'
+        : route.path;
 
-  return <SiteLayoutV5 currentPath={layoutPath}>
-    {redirect ? <ClientRedirect to={redirect} />
-      : normalizedUrl === '/' ? <HomePage />
-      : normalizedUrl === '/book' ? <ClientPlatform label="booking"><BookingV5 /></ClientPlatform>
-      : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
-      : normalizedUrl === '/shop' ? <ClientPlatform label="the Shop"><StorefrontV5 /></ClientPlatform>
-      : productMatch ? <ClientPlatform label="this product"><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
-      : normalizedUrl === '/cart' ? <ClientPlatform label="your cart"><CartPageV4 /></ClientPlatform>
-      : normalizedUrl === '/checkout' ? <ClientPlatform label="checkout"><CheckoutPageV5 /></ClientPlatform>
-      : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV5 /></ClientPlatform>
-      : normalizedUrl === '/dashboard' ? <ClientPlatform label="your dashboard"><RoleDashboardV5 /></ClientPlatform>
-      : normalizedUrl === '/staff/setup' ? <ClientPlatform label="professional setup"><StaffOnboardingV5 /></ClientPlatform>
-      : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV5 /></ClientPlatform>
-      : normalizedUrl === '/admin/products' ? <ClientPlatform label="product administration"><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
-      : normalizedUrl === '/admin/orders' ? <ClientPlatform label="order administration"><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
-      : isStaffRoute ? <ClientPlatform label="the staff portal"><StaffPlatformPage path={normalizedUrl} /></ClientPlatform>
-      : <RoutePage url={url} />}
-  </SiteLayoutV5>;
+  return (
+    <SiteLayoutV6 currentPath={layoutPath}>
+      {redirect ? <ClientRedirect to={redirect} />
+        : normalizedUrl === '/' ? <HomePage />
+        : normalizedUrl === '/book' ? <ClientPlatform label="booking"><BookingV6 /></ClientPlatform>
+        : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
+        : normalizedUrl === '/shop' ? <ClientPlatform label="the Shop"><StorefrontV5 /></ClientPlatform>
+        : productMatch ? <ClientPlatform label="this product"><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
+        : normalizedUrl === '/cart' ? <ClientPlatform label="your cart"><CartPageV4 /></ClientPlatform>
+        : normalizedUrl === '/checkout' ? <ClientPlatform label="checkout"><CheckoutPageV5 /></ClientPlatform>
+        : normalizedUrl === '/account' ? <ClientPlatform label="your Account"><AccountAccessV5 /></ClientPlatform>
+        : normalizedUrl === '/dashboard' ? <ClientPlatform label="your dashboard"><RoleDashboardV6 /></ClientPlatform>
+        : normalizedUrl === '/staff/setup' ? <ClientPlatform label="professional setup"><StaffOnboardingV6 /></ClientPlatform>
+        : normalizedUrl === '/staff/settings' ? <ClientPlatform label="staff settings"><StaffSettingsV5 /></ClientPlatform>
+        : normalizedUrl === '/admin/products' ? <ClientPlatform label="product administration"><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
+        : normalizedUrl === '/admin/orders' ? <ClientPlatform label="order administration"><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
+        : isStaffRoute ? <ClientPlatform label="the staff portal"><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
+        : <RoutePage url={url} />}
+    </SiteLayoutV6>
+  );
 }
