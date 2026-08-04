@@ -1,0 +1,889 @@
+/* Platform V2 owner review round four. Loaded last for controlled overrides. */
+
+/* Header hierarchy: utilities together, primary booking action isolated at the far right. */
+.customer-header-actions {
+  align-items: stretch;
+  gap: 0.45rem;
+}
+
+.customer-header-actions:not(.customer-header-actions-mobile) .customer-action-book {
+  margin-left: 0.35rem;
+}
+
+.customer-action-book {
+  order: 3;
+}
+
+.customer-action-cart {
+  order: 1;
+}
+
+.customer-action-account {
+  order: 2;
+}
+
+.nav-list-branded {
+  gap: clamp(0.8rem, 1.35vw, 1.45rem);
+}
+
+.nav-list-branded a {
+  white-space: nowrap;
+}
+
+/* Homepage hero booking rail. */
+.hero-glass-panel-hours .home-booking-rail {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 5.4rem;
+}
+
+.hero-glass-panel-hours .home-booking-rail-actions {
+  display: flex;
+}
+
+.hero-glass-panel-hours .home-booking-primary {
+  min-width: 9.8rem;
+}
+
+/* Booking gateway and flow. */
+.booking-gateway-v4-heading {
+  width: 100%;
+  max-width: none;
+}
+
+.booking-gateway-v4-heading h1 {
+  max-width: none;
+  white-space: nowrap;
+}
+
+.booking-v4-page {
+  min-height: 76vh;
+}
+
+.booking-v4-top-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.booking-v4-top-back {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.55rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--paper);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  text-underline-offset: 0.3rem;
+  cursor: pointer;
+}
+
+.booking-v4-top-back:hover,
+.booking-v4-top-back:focus-visible {
+  text-decoration: underline;
+}
+
+.booking-v4-header {
+  margin-bottom: 1.25rem;
+}
+
+.booking-v4-header h1 {
+  max-width: none;
+  font-size: clamp(3rem, 5vw, 5.7rem);
+  line-height: 0.96;
+}
+
+.booking-v4-progress {
+  margin-bottom: 1.2rem;
+}
+
+.booking-v4-panel {
+  padding: clamp(1.35rem, 3vw, 2.6rem);
+}
+
+.booking-v4-panel .booking-v2-panel-heading {
+  margin-bottom: 1.4rem;
+}
+
+.booking-v4-panel .booking-v2-panel-heading h2 {
+  max-width: none;
+  margin-bottom: 0.45rem;
+  font-size: clamp(2.35rem, 4.1vw, 4.4rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.booking-v4-schedule .booking-v2-panel-heading h2 {
+  white-space: nowrap;
+}
+
+.booking-v4-calendar {
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 8, 8, 0.72);
+}
+
+.booking-v4-calendar-toolbar {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.booking-v4-calendar-toolbar strong {
+  padding: 0.9rem;
+  text-align: center;
+  font-family: var(--heading-sans);
+  font-size: 1.05rem;
+}
+
+.booking-v4-calendar-toolbar button {
+  min-height: 3.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--paper);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.booking-v4-calendar-toolbar button:first-child {
+  border-right: 1px solid var(--line);
+}
+
+.booking-v4-calendar-toolbar button:last-child {
+  border-left: 1px solid var(--line);
+}
+
+.booking-v4-calendar-toolbar button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.booking-v4-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.booking-v4-week > button {
+  display: grid;
+  min-width: 0;
+  min-height: 8.6rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.15rem;
+  border: 0;
+  border-right: 1px solid var(--line);
+  padding: 0.75rem 0.35rem;
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.booking-v4-week > button:last-child {
+  border-right: 0;
+}
+
+.booking-v4-week > button:hover,
+.booking-v4-week > button:focus-visible {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.booking-v4-week > button.is-selected {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.booking-v4-week > button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.booking-v4-week small,
+.booking-v4-week span,
+.booking-v4-week em {
+  font-style: normal;
+  line-height: 1.2;
+}
+
+.booking-v4-week small,
+.booking-v4-week span {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.booking-v4-week strong {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.booking-v4-week em {
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.booking-v4-week > button.is-selected em {
+  color: var(--ink);
+}
+
+.booking-v4-times {
+  margin-top: 1.25rem;
+  border: 1px solid var(--line);
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.booking-v4-times h3 {
+  margin-bottom: 1rem;
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+}
+
+.booking-v4-times > div:first-of-type {
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+}
+
+.booking-v4-fields label > span:first-child,
+.v4-field-label,
+.v4-profile-fields label > span,
+.v4-security-fields label > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.booking-v4-fields label > span small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Centered account access. */
+.v4-auth-page {
+  min-height: calc(100dvh - 13rem);
+  display: grid;
+  align-items: center;
+}
+
+.v4-auth-container {
+  display: grid;
+  width: 100%;
+  place-items: center;
+}
+
+.v4-auth-card {
+  width: min(42rem, 100%);
+  margin-inline: auto;
+}
+
+.v4-auth-form {
+  gap: 1rem;
+}
+
+.v4-auth-fields label {
+  gap: 0.45rem;
+}
+
+.v4-field-label > span {
+  color: #ffb4b4;
+}
+
+/* Dashboard hierarchy. */
+.v4-dashboard-page {
+  min-height: 72vh;
+}
+
+.v4-dashboard-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  margin-bottom: 1.2rem;
+}
+
+.v4-dashboard-header h1 {
+  max-width: none;
+  font-size: clamp(2.7rem, 4.5vw, 5rem);
+  line-height: 0.98;
+}
+
+.v4-logout {
+  align-self: start;
+  white-space: nowrap;
+}
+
+.v4-customer-dashboard,
+.v4-staff-dashboard {
+  display: grid;
+  gap: 1rem;
+}
+
+.v4-panel-heading h2 {
+  max-width: none;
+  margin-bottom: 0;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1;
+}
+
+.v4-appointments-panel {
+  min-height: auto;
+}
+
+.v4-appointment-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.v4-appointment-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.v4-appointment-main h3 {
+  margin-bottom: 0.65rem;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+}
+
+.v4-appointment-main dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.25rem;
+  margin: 0;
+}
+
+.v4-appointment-main dl div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.v4-appointment-main dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v4-appointment-main dd {
+  margin: 0;
+}
+
+.v4-appointment-actions {
+  display: grid;
+  min-width: min(18rem, 100%);
+  justify-items: stretch;
+  gap: 0.55rem;
+}
+
+.v4-appointment-actions .button {
+  justify-content: center;
+}
+
+.v4-appointment-actions > p {
+  max-width: 26rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.v4-cancel-confirm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.45rem;
+  align-items: center;
+  border: 1px solid rgba(255, 100, 100, 0.4);
+  padding: 0.65rem;
+  background: rgba(150, 30, 30, 0.08);
+}
+
+.v4-cancel-confirm button {
+  border: 1px solid var(--line-strong);
+  padding: 0.5rem 0.65rem;
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.v4-proposal {
+  display: grid;
+  gap: 0.4rem;
+  border-left: 2px solid var(--paper);
+  padding-left: 1rem;
+}
+
+.v4-proposal > div {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.v4-proposal .button {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.v4-customer-secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.v4-account-recommendations {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.v4-account-recommendations > div {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.v4-account-recommendations a {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  padding: 0.8rem;
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.v4-profile-panel,
+.v4-security-panel {
+  align-content: start;
+}
+
+.v4-profile-fields,
+.v4-security-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.v4-profile-fields label,
+.v4-security-fields label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.v4-profile-fields input,
+.v4-security-fields input {
+  width: 100%;
+  min-height: 3.15rem;
+  border: 1px solid var(--line-strong);
+  padding: 0.7rem;
+  background: #080808;
+  color: var(--paper);
+  font: inherit;
+}
+
+.v4-profile-panel > .button {
+  margin-top: 0.85rem;
+}
+
+.v4-security-panel {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.45fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.v4-security-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+}
+
+.v4-form-message {
+  margin: 0.75rem 0 0;
+  color: #d9d9d9;
+}
+
+.v4-setup-callout,
+.v4-operations-card,
+.v4-store-management {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.v4-setup-callout h2,
+.v4-operations-card h2,
+.v4-store-management h2 {
+  max-width: none;
+  margin-bottom: 0.4rem;
+  font-size: clamp(2rem, 3.4vw, 3.6rem);
+  line-height: 1;
+}
+
+.v4-setup-callout p,
+.v4-operations-card p,
+.v4-store-management p {
+  max-width: 70ch;
+}
+
+.v4-operations-card .v2-action-grid {
+  grid-column: 1 / -1;
+}
+
+.v4-store-management .v2-management-actions {
+  min-width: 14rem;
+}
+
+.v4-access-manager {
+  margin-top: 1rem;
+}
+
+/* Exact-review page without the redundant gallery follow-up. */
+.v4-reviews-intro h1 {
+  max-width: none;
+}
+
+.v4-reviews-showcase {
+  margin-top: 1.5rem;
+}
+
+.v4-reviews-rating-band {
+  grid-template-columns: minmax(12rem, 0.34fr) minmax(0, 1fr) auto;
+}
+
+.v4-review-grid article {
+  min-height: 15rem;
+}
+
+.v4-review-grid blockquote {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.5vw, 2.35rem);
+  line-height: 1.15;
+}
+
+/* Cart page keeps the familiar back-to-Shop pattern. */
+.v4-cart-back {
+  margin-bottom: 1rem;
+}
+
+.v4-cart-heading {
+  display: block;
+  margin-bottom: 1.4rem;
+}
+
+.v4-cart-heading h1 {
+  max-width: none;
+  margin-bottom: 0.35rem;
+}
+
+/* Product-detail cart drawer must remain entirely inside the viewport. */
+.cart-drawer-v3 {
+  position: fixed;
+  z-index: 3000;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.cart-drawer-v3-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cart-drawer-v3 > aside {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(32rem, 100vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #151515;
+}
+
+.cart-drawer-v3 > aside > header {
+  min-height: 7rem;
+  align-items: flex-start;
+  padding: 1.1rem 1rem 1rem;
+}
+
+.cart-drawer-v3 > aside > header h2 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  line-height: 0.95;
+}
+
+.cart-drawer-v3-lines {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1rem 1rem;
+}
+
+.cart-drawer-v3 > aside > footer {
+  position: relative;
+  bottom: auto;
+  padding: 1rem;
+  background: #151515;
+}
+
+/* Mobile drawer: fixed to the viewport, reduced first-glance information. */
+.mobile-nav-overlay {
+  position: fixed;
+  z-index: 3200;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.mobile-nav-drawer-v4 {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(34rem, 100vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-nav-drawer-v4 .mobile-drawer-header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: #171717;
+}
+
+.mobile-drawer-content-v4 {
+  gap: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+.mobile-primary-links-v4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mobile-primary-links-v4 a {
+  min-height: 4.25rem;
+}
+
+.mobile-booking-group-v4 {
+  border: 0;
+  padding: 0;
+}
+
+.customer-header-actions-mobile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "book book"
+    "cart account";
+  gap: 0.5rem;
+}
+
+.customer-header-actions-mobile .customer-action-book {
+  grid-area: book;
+  order: initial;
+}
+
+.customer-header-actions-mobile .customer-action-cart {
+  grid-area: cart;
+  order: initial;
+}
+
+.customer-header-actions-mobile .customer-action-account {
+  grid-area: account;
+  order: initial;
+  max-width: none;
+}
+
+.mobile-visit-details {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.mobile-visit-details summary {
+  display: flex;
+  min-height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  color: var(--paper);
+  font-weight: 650;
+  list-style: none;
+  cursor: pointer;
+}
+
+.mobile-visit-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-visit-details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-visit-details .mobile-hours-card {
+  border: 0;
+}
+
+@media (max-width: 1320px) {
+  .header-call {
+    display: none;
+  }
+
+  .customer-action {
+    padding-inline: 0.75rem;
+  }
+
+  .nav-list-branded {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 1120px) and (min-width: 981px) {
+  .brand-copy small {
+    display: none;
+  }
+
+  .brand-lockup {
+    min-width: 11rem;
+  }
+
+  .nav-list-branded a,
+  .customer-action {
+    font-size: 0.66rem;
+  }
+
+  .customer-action-account {
+    max-width: 8.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .booking-gateway-v4-heading h1,
+  .booking-v4-schedule .booking-v2-panel-heading h2 {
+    white-space: normal;
+  }
+
+  .booking-v4-week {
+    grid-template-columns: repeat(7, minmax(5.1rem, 1fr));
+    overflow-x: auto;
+  }
+
+  .booking-v4-calendar {
+    overflow: hidden;
+  }
+
+  .v4-appointment-card,
+  .v4-setup-callout,
+  .v4-operations-card,
+  .v4-store-management,
+  .v4-security-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .v4-customer-secondary-grid,
+  .v4-profile-fields,
+  .v4-security-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .v4-appointment-actions {
+    min-width: 0;
+  }
+
+  .v4-reviews-rating-band {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .booking-v4-top-row {
+    align-items: flex-start;
+  }
+
+  .booking-v4-top-row > .text-link {
+    max-width: 10rem;
+    text-align: right;
+  }
+
+  .booking-v4-header h1 {
+    font-size: clamp(2.7rem, 13vw, 4.2rem);
+  }
+
+  .booking-v4-progress small {
+    font-size: 0.62rem;
+  }
+
+  .booking-v4-week {
+    grid-template-columns: repeat(7, minmax(4.45rem, 1fr));
+  }
+
+  .booking-v4-week > button {
+    min-height: 7.5rem;
+  }
+
+  .booking-v4-week strong {
+    font-size: 1.9rem;
+  }
+
+  .v4-dashboard-header {
+    grid-template-columns: 1fr;
+  }
+
+  .v4-logout {
+    justify-self: start;
+  }
+
+  .v4-appointment-card {
+    padding: 0.85rem;
+  }
+
+  .v4-cancel-confirm {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .v4-cancel-confirm span {
+    grid-column: 1 / -1;
+  }
+
+  .mobile-primary-links-v4 {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-drawer-v3 > aside {
+    width: 100vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-drawer-v4,
+  .cart-drawer-v3 > aside {
+    scroll-behavior: auto;
+  }
+}

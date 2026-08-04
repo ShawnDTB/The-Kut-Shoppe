@@ -1,0 +1,239 @@
+.account-app-page {
+  min-height: 72vh;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(158, 27, 43, 0.13), transparent 26rem),
+    var(--surface);
+}
+
+.account-app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.34fr);
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.account-app-header h1 {
+  max-width: 12ch;
+}
+
+.account-app-profile-card,
+.account-app-panel,
+.account-app-sidebar section {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.028);
+}
+
+.account-app-profile-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1.25rem;
+}
+
+.account-app-profile-card img {
+  grid-row: 1 / span 2;
+  border-radius: 50%;
+}
+
+.account-app-profile-card div {
+  display: grid;
+}
+
+.account-app-profile-card small,
+.account-app-profile-card > span {
+  color: var(--muted);
+}
+
+.account-app-profile-card > span {
+  grid-column: 2;
+  font-size: 0.85rem;
+}
+
+.account-app-nav {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.account-app-nav a {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem;
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.account-app-nav a:hover,
+.account-app-nav a:focus-visible {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.account-app-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.3fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.account-app-grid main {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-app-panel,
+.account-app-sidebar section {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.account-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.account-panel-heading h2,
+.account-app-sidebar h2 {
+  margin-bottom: 0;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+}
+
+.account-appointment-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.account-appointment-list article {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.32fr) minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--line);
+}
+
+.account-appointment-list time {
+  display: grid;
+}
+
+.account-appointment-list time span,
+.account-appointment-list p,
+.account-empty-state p,
+.account-external-appointments p,
+.account-detail-grid p {
+  color: var(--muted);
+}
+
+.account-appointment-list h3,
+.account-appointment-list p {
+  margin-bottom: 0.25rem;
+}
+
+.account-status {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  color: var(--paper);
+  font-family: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.account-empty-state {
+  padding: 1.25rem;
+  border: 1px dashed var(--line-strong);
+}
+
+.account-empty-state h3,
+.account-empty-state p {
+  margin-bottom: 0.35rem;
+}
+
+.account-external-appointments {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-left: 3px solid var(--red);
+  background: rgba(158, 27, 43, 0.08);
+}
+
+.account-external-appointments h3,
+.account-external-appointments p {
+  margin-bottom: 0.3rem;
+}
+
+.account-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.account-detail-grid article {
+  min-height: 11rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+}
+
+.account-detail-grid article {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+}
+
+.account-detail-grid small {
+  color: var(--muted);
+  font-family: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.account-app-sidebar {
+  position: sticky;
+  top: 8rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.account-app-sidebar button {
+  width: 100%;
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .account-app-header,
+  .account-app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-app-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .account-panel-heading,
+  .account-external-appointments {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-panel-heading .button,
+  .account-external-appointments .button {
+    width: 100%;
+  }
+
+  .account-appointment-list article,
+  .account-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

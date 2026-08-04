@@ -1,219 +1,366 @@
 <div align="center">
   <img src="https://www.thekutshoppe.com/wp-content/uploads/2023/11/a2e8fdecb672406ba74a28a19b4063-the-kut-shoppe-llc-logo-5175fdd512c54b42b4da939b84353a-booksy.png" alt="The Kut Shoppe logo" width="112" height="112" />
-  <h1>The Kut Shoppe Website Transformation</h1>
+  <h1>The Kut Shoppe Platform</h1>
   <p><strong>Fresh cuts. Great conversations. Right here on Main Street.</strong></p>
-  <p>A Designed to Breakthrough case study in moving a local business beyond WordPress and into a modern, accessible, GitHub-managed platform.</p>
+  <p>A Designed to Breakthrough transformation from a restricted WordPress website into an accessible, GitHub-managed business platform.</p>
 </div>
 
 ## Project overview
 
-The Kut Shoppe is an established Main Street barbershop serving downtown Stroudsburg and the wider Poconos community.
+The Kut Shoppe is a Main Street barbershop serving downtown Stroudsburg and the wider Poconos community.
 
-Its original WordPress website created the first digital home for the business, but the platform eventually became too restrictive for the experience the shop needed next. Page-builder limitations, plugin dependence, duplicated business information, inconsistent booking paths, placeholder commerce, and limited control over accessibility and performance made continued growth harder than it needed to be.
+The original WordPress website gave the business an important digital home, but the next stage required more than another page-builder revision. The shop needed clearer booking, stronger mobile usability, direct ownership of its data and code, a verified product catalog, customer accounts, staff access, appointment management, and room for future business systems.
 
-Designed to Breakthrough rebuilt the project around a more durable philosophy:
+Designed to Breakthrough rebuilt the project around a simple operating philosophy:
 
 > **Designed for the business. Transform the experience. Breakthrough into what comes next.**
 
-This repository is the result of that process. It preserves the identity and community presence of The Kut Shoppe while replacing the WordPress runtime with a maintainable React, TypeScript, Vite, and GitHub-based platform.
+The result is no longer limited to a collection of pages. It is becoming a self-owned customer and staff platform built with React, TypeScript, Vite, GitHub, and a Cloudflare-ready architecture.
 
-The existing WordPress website remains public while the replacement is reviewed, verified, and prepared for production.
+## Designed
 
-## The DTB philosophy
+The platform begins with how The Kut Shoppe and its customers actually operate.
 
-### Designed
+The customer journey is organized around the decisions that matter:
 
-The work begins with the business, not the framework.
+- Find the shop and its hours
+- Review services and pricing
+- Choose a Barber or the Loctician
+- Request a barber appointment without creating an account
+- Join a same-day waitlist only when the selected schedule is full
+- Meet the Crew and preselect a professional
+- Browse verified products
+- Purchase for pickup or shipping
+- Manage appointments and orders through one account
 
-The redesign was shaped around how The Kut Shoppe actually operates and how customers move through the experience:
+The operational journey is designed around equally practical needs:
 
-- Finding the shop on Main Street
-- Checking hours before visiting
-- Understanding the difference between barber and Loctician services
-- Reviewing prices before booking
-- Choosing the correct booking path
-- Seeing real work from the shop
-- Meeting the Crew
-- Calling when guidance is needed
-- Returning later for products, accounts, and future customer features
+- Approve customer accounts for professional access
+- Restrict access by role
+- Publish barber services and work hours
+- Review and confirm appointment requests
+- Propose another time when needed
+- Manage a same-day waitlist
+- Create real products and variants
+- Track inventory and fulfillment states
+- Separate earnings records from payout rules
 
-The visual system also preserves the strongest parts of the existing brand rather than replacing them with a generic template:
+## Transform
 
-- Near-black backgrounds
-- White and soft-gray typography
-- Editorial serif headings
-- Restrained barber-red accents
-- Original illustrated service icons
-- Authentic shop, gallery, and professional photography
-- A classic barbershop feel with a modern presentation
+The transformation replaces WordPress and disconnected booking or commerce plugins with a version-controlled software platform.
 
-The result is designed around the business identity, the customer journey, and the Poconos community the shop serves.
+The codebase now owns:
 
-### Transform
-
-The transformation goes beyond a visual reskin.
-
-The project moves The Kut Shoppe from a confined WordPress and page-builder environment into a version-controlled software platform with direct ownership over:
-
-- Page structure
+- Page structure and navigation
 - Responsive behavior
-- Accessibility
-- Performance
-- Search metadata
-- Booking navigation
+- Accessibility patterns
 - Business information
 - Service pricing
-- Mobile interaction
-- Static rendering
-- Deployment
-- Future feature development
+- Barber booking flow
+- Contextual waitlist logic
+- Customer accounts
+- Staff roles and permissions
+- Professional onboarding
+- Product catalog and variants
+- Cart and checkout workflow
+- Order management
+- Static prerendering
+- Deployment configuration
+- Future backend development
 
-Business data is centralized instead of repeated across pages. Every major change can be reviewed, tested, committed, documented, and restored through GitHub.
+Changes can be reviewed, tested, committed, compared, restored, and deployed through GitHub instead of being buried inside a page builder.
 
-The current transformation includes:
+## Breakthrough
 
-- A condensed homepage focused on booking, hours, location, services, real work, Crew, products, and directions
-- Direct barber and Loctician booking paths
-- Structured adult, senior, and kids barber pricing
-- A responsive gallery using real Kut Shoppe work
-- A dedicated Crew page
-- A Visit page with hours, phone, directions, and Google Maps
-- A mobile navigation drawer designed around touch use
-- Static prerendering for meaningful content before JavaScript loads
-- Reduced-motion support and accessibility-focused behavior
-- A custom favicon, route metadata, redirects, and production foundations
-- A Shop structure that does not carry forward unrelated WordPress placeholder products
-- An Account structure prepared for future customer tools
+Platform V2 creates a path toward replacing Booksy for barber appointments while keeping Crowned by Steph as the Loctician booking destination.
 
-The transformed platform is faster to maintain, easier to extend, and far less dependent on third-party page-builder behavior.
+It also connects appointments, shopping, staff operations, and customer history through one application rather than several unrelated services.
 
-### Breakthrough
+The frontend workflows are now reviewable together. Production launch still requires the protected backend described in the [production boundary](#production-boundary).
 
-The purpose of the rebuild is not only to improve the current website. It is to create room for the business to keep growing.
+## Platform status
 
-The platform is being prepared for future development that would have been difficult to manage cleanly through the former WordPress setup.
+`main` is the canonical repository branch. Platform V2 and its completed owner-review passes were consolidated into `main` through the repository stabilization pull request without rewriting shared history.
 
-#### Booking
+The platform was assembled through isolated, reviewed feature branches for:
 
-The current website routes customers to the appropriate external booking destination:
+- Email and password authentication
+- Role-based access
+- Simplified booking
+- Contextual same-day waitlist
+- Product-first storefront
+- Account-linked professional onboarding
+- Crew, route, mobile, and accessibility refinement
 
-- **Book with Barber**
-- **Book with Loctician**
+Each completed phase passed TypeScript, ESLint, and the production build before integration. The consolidated branch also validates D1 migration syntax and bundle budgets.
 
-The next phase will continue developing the Booking page into a guided experience that can help customers choose by service type, professional, appointment need, and new-client questions before continuing to the correct schedule.
+## Customer experience
 
-#### Shop
+### Booking
 
-The Shop page will become the verified home for approved Kut Shoppe products, potentially including:
+`/book` begins with two clear choices:
 
-- Grooming products
-- Hair-care products
-- Accessories
-- Kut Shoppe merchandise
-- Approved collections
+- **Book with a Barber**
+- **Book with the Loctician**
 
-The unrelated placeholder products from the former WordPress and WooCommerce setup will not be migrated.
+The Loctician path continues to Crowned by Steph.
 
-Before checkout is enabled, the business will need approved inventory, pricing, product photography, fulfillment rules, taxes, returns, and payment processing.
+The internal Barber flow asks the customer to:
 
-#### Account
+1. Choose a service
+2. Choose a specific barber or Any Available Barber
+3. Choose a date
+4. Choose an available time
+5. Enter name, email, phone, and an optional note
+6. Review the request
+7. Submit for shop confirmation
 
-The Account page is reserved for future customer functionality such as:
+Customers can book as guests. An account is not required.
 
-- Order history
-- Saved customer details
-- Saved addresses
-- Product preferences
-- Account-based checkout
-- Future loyalty and customer tools
+A submitted appointment begins as `requested`. It is not presented as confirmed until the shop acknowledges it.
 
-These features can now be developed inside one controlled platform instead of being added through disconnected plugins.
+The same-day waitlist is only offered after the customer selects today and no matching appointment time remains. It is not shown as a separate first-step booking type.
 
-## Current customer experience
+### Account
 
-### Homepage
+`/account` is the single login entry for every role.
 
-The homepage brings the most important customer information together without forcing visitors through a long sequence of oversized sections.
+Customer accounts use:
 
-Customers can quickly find:
+- Name
+- Email
+- Password
 
-- Daily shop hours
-- 518 Main Street
-- The shop phone number
-- Barber booking
-- Loctician booking
-- Service categories
-- Real work from the gallery
-- The Crew
-- Product information
-- Directions and visit details
+Phone is collected only when an appointment or order needs it.
 
-### Services
+After sign-in, the account role determines the dashboard:
 
-The Services page provides a structured menu with clear sections for:
+- Customer
+- Barber
+- Manager
+- Owner
+- Developer
 
-- Adult and teen barber services
-- Senior barber services
-- Kids barber services
-- Loc care, braids, twists, retwists, and related appointments
+Customers see appointments before product orders. The same account is intended to manage both parts of the business.
 
-The website helps customers understand the available service paths while the booking providers remain responsible for current availability, schedules, policies, and checkout.
+### Shop
 
-### Gallery
+`/shop` is product-first.
 
-The Gallery uses labeled work from The Kut Shoppe instead of generic stock examples. It is responsive, readable on touch devices, and organized around cuts, styling, beard work, designs, kids services, and first-cut experiences.
+The page displays published catalog items without a long platform explanation. Customers can:
+
+- Filter by category
+- View images
+- See price or price range
+- See variant count
+- See pickup and shipping availability
+- Select product options
+- Add items to cart
+- Receive visible cart confirmation
+- Open a mini-cart
+- Continue to cart and checkout
+
+Products support multiple variants, so different colors or editions do not need separate catalog listings.
+
+Only products explicitly published by the shop appear to customers.
 
 ### Crew
 
-The Crew page gives customers a direct path to the professionals behind the business. Public names, roles, photos, and booking destinations are centralized without inventing biographies, credentials, or specialties that have not been approved.
+`/team` uses uniform professional cards and direct booking links.
 
-### Visit
+Crew actions preselect the appropriate booking path:
 
-The Visit page includes:
+- Kash
+- Mr. Glen
+- Kris-P
+- Crowned by Steph
 
-- 518 Main Street, Stroudsburg, Pennsylvania
-- Daily walk-in reference hours
-- A full-color Google Map
-- Direct phone access
-- Directions
-- Guidance to confirm individual professional availability
+The portrait system uses consistent rectangular frames without inherited circular masks or gray radial overlays.
 
-## Accessibility and usability
+## Staff and business operations
 
-Accessibility is treated as part of the platform architecture, not a final visual patch.
+### Role hierarchy
+
+| Role | Intended access |
+|---|---|
+| Customer | Their appointments, orders, and essential account details |
+| Barber | Their chair, services, schedule, assigned appointments, and eligible waitlist requests |
+| Manager | Shop-wide appointments, staff approval, products, inventory, and orders |
+| Owner | Full business access, roles, storefront, operations, and platform settings |
+| Developer | Audited platform support, migrations, diagnostics, and controlled technical access |
+
+Customers create ordinary accounts.
+
+Owner, Developer, or Manager accounts can approve an account as a Barber or Manager. Only Owner or Developer access can assign the highest platform roles.
+
+Professional type and authorization role are separate concepts. A Manager or Owner is not automatically published as an available barber.
+
+### Professional onboarding
+
+Approved accounts complete `/staff/setup` after signing in.
+
+Barber onboarding includes:
+
+- Professional display name
+- Business phone
+- Main Street location
+- Public introduction
+- Services
+- Weekly availability
+- Appointment buffer
+- Minimum booking notice
+- Booking window
+- New-client participation
+- Any Available Barber participation
+- Same-day waitlist participation
+
+No SMS verification is required during setup.
+
+### Appointment operations
+
+The current staff workflow includes:
+
+- Pending requests
+- Staff confirmation
+- Decline
+- Proposed alternate time
+- Customer acceptance or rejection
+- Appointment editing
+- Open waitlist claims
+- Day view
+- Week view
+- Month view
+- Status filtering
+- Barber filtering for elevated roles
+
+### Catalog and order operations
+
+Product administration supports:
+
+- Alphabetical categories
+- Generated and editable SKUs
+- Product variants
+- Variant pricing
+- Variant inventory
+- Product images and alt text
+- Product templates
+- Saved presets
+- Pickup and shipping settings
+- Draft and published states
+
+Order administration supports:
+
+- Submitted
+- Payment required
+- Accepted
+- Preparing
+- Ready for pickup
+- Shipped
+- Completed
+- Declined
+- Cancelled
+
+## Accessibility and mobile usability
 
 The current implementation includes:
 
 - Semantic page structure
-- Logical heading hierarchy
-- Keyboard-accessible navigation
-- Escape-key and backdrop closing for the mobile menu
-- Body scroll locking while the navigation drawer is open
-- Large touch targets
+- Logical headings
+- Keyboard-visible focus
+- Escape and backdrop closing for the mobile menu
+- Body scroll locking while the drawer is open
+- Drawer scroll reset when opened
+- At least 44-pixel touch targets
+- Form controls sized to reduce mobile zoom
 - Visible labels that do not depend on hover
 - Reduced-motion support
-- Fixed image dimensions to reduce layout movement
-- Responsive typography and layouts
-- Meaningful content available in prerendered HTML
-- Clear booking, calling, and direction links
+- Fixed image dimensions
+- Responsive booking, account, storefront, cart, checkout, staff, and administration layouts
+- Compact mobile shop-hours information
+- One visible Book Now action
+- One visible Account/Login action
+- No separate public Staff Portal button
 
-Accessibility review will continue as the Booking, Shop, Account, and checkout experiences are completed.
+Low-contrast pattern families bring more life to Services, Crew, Gallery, Visit, Account, Booking, Staff, and Shop pages without adding unnecessary content blocks.
 
-## Performance and technical ownership
+## Local development
 
-The production build creates static, prerendered HTML for every supported route. Customers and search engines receive meaningful page content before JavaScript finishes loading.
+### Requirements
 
-The build process:
+- Node.js `20.19.0` or newer
+- npm `10.0.0` or newer
+- Git
 
-1. Creates the browser bundle with Vite.
-2. Creates a temporary server-rendering bundle.
-3. Renders each supported route into static HTML.
-4. Generates a production `404.html` page.
-5. Removes temporary server-rendering files.
+### Run the platform
 
-This approach keeps the maintainability of React while producing output suitable for a fast static host such as Cloudflare Pages.
+```bash
+git fetch origin
+git switch main
+git pull --ff-only origin main
+npm ci
+npm run check
+npm run dev
+```
 
-Secondary images are lazy-loaded, the primary homepage image receives loading priority, responsive behavior is handled directly in the project, and no WordPress runtime or page-builder code is required in production.
+The local Vite server normally opens at:
+
+```text
+http://localhost:5173/
+```
+
+### Development Owner account
+
+A disposable Owner preview account is created only in local Vite development:
+
+```text
+Email: owner@thekutshoppe.local
+Password: KutShoppeOwner!2026
+```
+
+Override the local values with:
+
+```text
+VITE_DEV_MASTER_EMAIL=
+VITE_DEV_MASTER_PASSWORD=
+```
+
+The development seed is disabled in production builds and must not be used as a production credential.
+
+## Recommended review routes
+
+```text
+/account
+/dashboard
+/staff/setup
+/staff
+/staff/calendar
+/staff/requests
+/staff/waitlist
+/book
+/services
+/team
+/shop
+/admin/products
+/cart
+/checkout
+/admin/orders
+/visit
+```
+
+The complete review sequence is documented in [Platform V2 Review](./docs/platform/platform-v2-review.md).
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the local development server |
+| `npm run typecheck` | Validate TypeScript without writing output files |
+| `npm run lint` | Run ESLint across the repository |
+| `npm run build` | Build and prerender the production website |
+| `npm run check` | Run typecheck, lint, production and SSR builds, prerendering, and bundle budgets |
+| `npm run preview` | Preview the generated production build |
+
+Production files are generated in `dist/`.
 
 ## Technology
 
@@ -221,14 +368,92 @@ Secondary images are lazy-loaded, the primary homepage image receives loading pr
 - TypeScript 5.9
 - Vite 8
 - ESLint 10
-- Node.js 20.19 or newer
-- npm 10 or newer
 - Build-time server rendering
 - Static route prerendering
 - GitHub version control
-- Cloudflare Pages compatible output
+- Cloudflare Pages-compatible output
+- Cloudflare D1-ready schema
 
-## Business information currently displayed
+## Project structure
+
+```text
+.github/
+  workflows/              Repository validation
+
+docs/
+  archive/                Preserved superseded design and prototype records
+  brand/                  Brand and visual audits
+  development/            Performance and feature notes
+  foundation/             Production verification
+  platform/               Booking, commerce, schema, and V2 handoff
+  repository/             Repository audits and branch policy
+
+migrations/
+  0001_unified_platform.sql  Unified D1 platform schema
+
+public/
+  favicon.svg
+  _headers
+  site.webmanifest
+
+scripts/
+  build.mjs
+  check-bundle-size.mjs
+  prerender.mjs
+
+src/
+  components/             Public, account, booking, staff, and commerce UI
+  data/                   Business and browser-adapter data models
+  App.tsx                 Route composition
+  entry-client.tsx
+  entry-server.tsx
+  *.css                    Shared and route-specific styles
+```
+
+## Current local persistence
+
+Platform V2 currently uses browser adapters for local review of:
+
+- Accounts and sessions
+- Staff profiles
+- Appointment requests
+- Waitlist requests
+- Product catalog
+- Cart
+- Orders
+- Notification outbox
+
+This makes the complete workflow testable on one device. It is not production multi-user persistence.
+
+## Production boundary
+
+The repository includes a D1-ready schema, but production still requires:
+
+- Protected Cloudflare APIs
+- D1 bindings
+- Server-side Argon2id password hashing
+- Secure HttpOnly sessions
+- Verified email delivery
+- Password reset and recovery
+- Rate limiting
+- Authorization checks on every API request
+- Audit logging
+- Transactional appointment holds
+- Multi-device inventory reservations
+- Object storage and image processing
+- Transactional email
+- Optional SMS reminders
+- Card payment processing
+- Tax calculation
+- Shipping rates, labels, and tracking
+- Refund and return workflows
+- Regulated payout onboarding
+- Privacy, retention, export, and deletion procedures
+- Browser end-to-end tests
+
+Raw card numbers and raw bank-account numbers must never be stored by this application.
+
+## Business information displayed
 
 **The Kut Shoppe**  
 518 Main Street  
@@ -247,180 +472,42 @@ Stroudsburg, PA 18360
 | Saturday | 10:00 AM - 6:00 PM |
 | Sunday | Closed |
 
-These hours are presented as walk-in reference hours. Individual schedules may differ and should be confirmed through the appropriate booking destination.
-
-## Booking destinations
-
-- **Barber appointments:** [The Kut Shoppe booking profile](https://booksy.com/en-us/71309_the-kut-shoppe_braids-locs_34196_stroudsburg)
-- **Loctician appointments:** [Crowned by Steph](https://crownedbysteph.glossgenius.com/)
-
-## Routes
-
-| Route | Purpose |
-|---|---|
-| `/` | Homepage and primary customer journey |
-| `/services` | Barber pricing and Loctician service access |
-| `/services/haircuts` | Adult and teen haircut details |
-| `/services/beards-shaves` | Beard and line-up combinations |
-| `/services/kids-cuts` | Kids services for ages 3 through 12 |
-| `/services/locs-braids` | Locs, braids, twists, and retwists |
-| `/services/color-scalp-care` | Color, washing, scalp care, and related services |
-| `/gallery` | The Kut Shoppe work gallery |
-| `/team` | Crew profiles and booking paths |
-| `/book` | Booking router and future guided booking experience |
-| `/visit` | Hours, phone, map, and directions |
-| `/reviews` | Verified client review destination |
-| `/shop` | Current Shop foundation and future verified catalog |
-| `/account` | Future customer account experience |
-| `/contact` | Direct contact guidance |
-| `/privacy` | Future production privacy policy |
-| `/terms` | Future production website terms |
-
-Legacy routes are redirected to their current destination:
-
-- `/about` redirects to `/team`
-- `/products` redirects to `/shop`
-
-## Local development
-
-### Requirements
-
-- Node.js `20.19.0` or newer
-- npm `10.0.0` or newer
-- Git
-
-### Clone and run
-
-```bash
-git clone https://github.com/ShawnDTB/The-Kut-Shoppe.git
-cd The-Kut-Shoppe
-npm install
-npm run dev
-```
-
-The local Vite server normally opens at:
-
-```text
-http://localhost:5173/
-```
-
-### Pull the latest integrated version
-
-```bash
-git switch main
-git pull --ff-only origin main
-npm install
-npm run dev
-```
-
-## Commands
-
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Start the local development server |
-| `npm run typecheck` | Validate TypeScript without writing output files |
-| `npm run lint` | Run ESLint across the repository |
-| `npm run build` | Build and prerender the production website |
-| `npm run check` | Run typecheck, lint, and the full production build |
-| `npm run preview` | Preview the generated production build |
-
-Production files are generated in `dist/`.
-
-## Project structure
-
-```text
-.github/
-  workflows/          Repository automation
-
-docs/
-  brand/              Design, visual, and customer-flow audits
-  development/        Performance, booking, mobile, and commerce notes
-  foundation/         Production verification requirements
-
-public/
-  favicon.svg         Browser and manifest icon
-  _headers            Cloudflare security and content headers
-  site.webmanifest    Web application metadata
-
-scripts/
-  build.mjs           Production build coordinator
-  prerender.mjs       Static route renderer
-
-src/
-  components/         Layout, homepage, route, and map components
-  data/               Business, hours, services, Crew, visual, and commerce data
-  App.tsx              Route composition and legacy redirects
-  entry-client.tsx     Browser entry
-  entry-server.tsx     Server-rendering entry
-  *.css                Shared, page, mobile, and accessibility styles
-```
-
-## Content control and verification
-
-Business information is centralized and documented instead of being repeated across page-builder sections.
-
-Primary data files include:
-
-- `src/data/site.ts`
-- `src/data/hours.ts`
-- `src/data/senior-services.ts`
-- `src/data/visuals.ts`
-- `src/data/commerce.ts`
-
-Prices, services, Crew details, credentials, testimonials, product inventory, accessibility claims, and business policies must be supported or approved before launch.
-
-Open verification items are tracked in [`docs/foundation/verification-required.md`](./docs/foundation/verification-required.md).
-
-Some approved images are still served from the existing WordPress media library. Before WordPress is retired, those assets must be downloaded, ownership-confirmed, optimized, and moved into this platform or an approved asset service.
+Individual professional schedules are configured separately.
 
 ## Deployment target
 
-The planned production target is Cloudflare Pages.
+The planned production target is Cloudflare Pages with Workers and D1 for protected platform services.
 
 ```text
+Install command: npm ci
 Build command: npm run build
 Output directory: dist
-Node version: 20.19 or newer
+Node version: 22
 ```
 
-Before production cutover, the final review includes:
-
-- Business hours
-- Launch Crew
-- Senior pricing and age requirements
-- Barber and Loctician booking destinations
-- Image ownership and usage
-- Mobile and desktop layouts
-- Accessibility behavior
-- Search metadata
-- Redirects
-- Privacy and terms
-- Shop and Account requirements
-- Production domain configuration
-
-The current WordPress website remains available until the replacement is approved and ready to take over.
+The existing public site should remain available until Platform V2 is approved and its protected backend is production-ready.
 
 ## Documentation
 
+- [Repository stabilization and branch policy](./docs/repository/repository-stabilization-2026-08-04.md)
+- [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)
+- [Platform integration audit](./docs/platform/platform-integration-audit.md)
+- [Production cutover checklist](./docs/platform/production-cutover-checklist.md)
 - [Live-site style audit](./docs/brand/live-site-style-audit.md)
-- [Homepage condensation and route strategy](./docs/brand/homepage-condensation-audit.md)
-- [Performance, booking, mobile, and commerce pass](./docs/development/performance-booking-commerce-pass.md)
 - [Verification required before production](./docs/foundation/verification-required.md)
 
 ## Designed to Breakthrough
 
 Designed to Breakthrough LLC builds practical digital systems for small businesses, creators, and service brands.
 
-The work connects business discovery, solution design, interface development, hosting, automation, infrastructure, documentation, and long-term support. The objective is technology that is clear, usable, credible, growth-oriented, and able to evolve with the business.
-
-The Kut Shoppe transformation demonstrates that philosophy in practice:
+The Kut Shoppe transformation applies that philosophy directly:
 
 - **Designed** around the business and its customers
-- **Transform** the platform and customer experience
-- **Breakthrough** into a foundation ready for future growth
+- **Transform** the platform, operations, and customer experience
+- **Breakthrough** into a foundation the business can continue building on
 
 ## Ownership
 
-Website strategy, design, and technical implementation by **Designed to Breakthrough LLC**, led by **Shawn Dullen, Founder**, for **The Kut Shoppe LLC**.
+Website strategy, design, platform architecture, and technical implementation by **Designed to Breakthrough LLC**, led by **Shawn Dullen, Founder**, for **The Kut Shoppe LLC**.
 
 This repository contains proprietary project code and business assets. Unless a separate license is added, it should not be treated as an open-source project.
