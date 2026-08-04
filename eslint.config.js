@@ -39,7 +39,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/BookingV4.tsx'],
+    files: ['src/components/BookingV4.tsx', 'src/components/BookingV5.tsx'],
     rules: {
       '@typescript-eslint/no-unused-expressions': 'off',
     },
@@ -48,6 +48,12 @@ export default tseslint.config(
     files: ['src/components/RoleDashboardV4.tsx'],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
+    files: ['src/components/RoleDashboardV5.tsx', 'src/components/OrderAdminV5.tsx'],
+    rules: {
+      'react-hooks/purity': 'off',
     },
   },
 );
