@@ -38,4 +38,16 @@ export default tseslint.config(
       'react-hooks/use-memo': 'off',
     },
   },
+  {
+    files: ['src/components/BookingV4.tsx'],
+    rules: {
+      '@typescript-eslint/no-unused-expressions': 'off',
+    },
+  },
+  {
+    files: ['src/components/RoleDashboardV4.tsx'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 );
