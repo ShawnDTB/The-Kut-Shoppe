@@ -1,0 +1,117 @@
+name: Runtime Audit
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Start production preview
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 > /tmp/kut-shoppe-preview.log 2>&1 &
+          echo $! > /tmp/kut-shoppe-preview.pid
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/kut-shoppe-preview.log
+          exit 1
+
+      - name: Verify production routes and assets
+        shell: bash
+        run: |
+          routes=(
+            / /services /gallery /team /book /book/walk-in /visit /reviews
+            /shop /cart /checkout /account /dashboard
+            /staff /staff/setup /staff/settings /staff/calendar /staff/requests
+            /staff/waitlist /staff/earnings /staff/payouts /staff/notifications
+            /admin/products /admin/orders /privacy /terms /accessibility /404
+          )
+          for route in "${routes[@]}"; do
+            echo "Checking ${route}"
+            curl -fsS "http://127.0.0.1:4173${route}" | grep -q '<title>'
+          done
+
+          curl -fsS http://127.0.0.1:4173/ > /tmp/home.html
+          grep -oE '(src|href)="/assets/[^"]+' /tmp/home.html | cut -d'"' -f2 | sort -u | while read -r asset; do
+            echo "Checking asset ${asset}"
+            curl -fsS "http://127.0.0.1:4173${asset}" > /dev/null
+          done
+
+      - name: Hydrate and capture key customer pages
+        shell: bash
+        run: |
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$browser" ]; then
+            echo 'A Chromium browser is required for the runtime audit.'
+            exit 1
+          fi
+          "$browser" --version
+          mkdir -p runtime-audit/dom runtime-audit/screenshots
+
+          capture() {
+            route="$1"
+            slug="$2"
+            width="$3"
+            height="$4"
+            "$browser" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+              --run-all-compositor-stages-before-draw --virtual-time-budget=5000 \
+              --window-size="${width},${height}" \
+              --screenshot="runtime-audit/screenshots/${slug}-${width}x${height}.png" \
+              "http://127.0.0.1:4173${route}"
+          }
+
+          dump_page() {
+            route="$1"
+            slug="$2"
+            "$browser" --headless=new --no-sandbox --disable-gpu \
+              --run-all-compositor-stages-before-draw --virtual-time-budget=5000 \
+              --dump-dom "http://127.0.0.1:4173${route}" > "runtime-audit/dom/${slug}.html"
+          }
+
+          for item in '/:home' '/book:book' '/account:account' '/team:team' '/shop:shop'; do
+            route="${item%%:*}"
+            slug="${item##*:}"
+            capture "$route" "$slug" 390 844
+            capture "$route" "$slug" 1440 1200
+            dump_page "$route" "$slug"
+          done
+
+          grep -q 'Fresh cuts' runtime-audit/dom/home.html
+          grep -q 'Book with a Barber' runtime-audit/dom/book.html
+          grep -q 'Book with the Loctician' runtime-audit/dom/book.html
+          grep -q 'Sign in' runtime-audit/dom/account.html
+          grep -q 'Create account' runtime-audit/dom/account.html
+          grep -q 'Kash' runtime-audit/dom/team.html
+          grep -q 'Shop' runtime-audit/dom/shop.html
+
+      - name: Upload runtime audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-audit
+          path: runtime-audit
+          if-no-files-found: error
+          retention-days: 7
