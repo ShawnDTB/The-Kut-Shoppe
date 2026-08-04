@@ -131,7 +131,7 @@ jobs:
           expect_text runtime-audit/dom/account.html 'Sign in' 'Account sign-in tab rendered'
           expect_text runtime-audit/dom/account.html 'Create account' 'Account creation tab rendered'
           reject_text runtime-audit/dom/account.html 'Mobile phone' 'Phone is not required during signup'
-          expect_text runtime-audit/dom/team.html 'Kash' 'Crew route rendered'
+          expect_text runtime-audit/dom/team.html 'KasH' 'Crew route rendered'
           expect_text runtime-audit/dom/shop.html 'Products' 'Storefront route rendered'
 
           if [ "$failures" -ne 0 ]; then
