@@ -17,13 +17,9 @@ import { readCart, subscribeToStorefrontChanges } from '../data/storefront';
 const primaryNavigation = [
   ['Services', '/services'],
   ['Gallery', '/gallery'],
+  ['Reviews', '/reviews'],
   ['Crew', '/team'],
   ['Shop', '/shop'],
-] as const;
-
-const secondaryNavigation = [
-  ['Visit', '/visit'],
-  ['Reviews', '/reviews'],
 ] as const;
 
 const socialLinks = [
@@ -59,9 +55,9 @@ function CustomerActions({
   const accountHref = account && account.role !== 'customer' ? '/dashboard' : '/account';
   return (
     <div className={mobile ? 'customer-header-actions customer-header-actions-mobile' : 'customer-header-actions'}>
-      <a className="customer-action customer-action-book" href="/book" onClick={onNavigate}>Book now</a>
       <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a>
       <a className="customer-action customer-action-account" href={accountHref} onClick={onNavigate}>{accountLabel(account)}</a>
+      <a className="customer-action customer-action-book" href="/book" onClick={onNavigate}>Book now</a>
     </div>
   );
 }
@@ -78,21 +74,39 @@ function MobileNavigation({
   const [open, setOpen] = useState(false);
   const drawerId = useId();
   const drawerRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 981px)');
+    const closeAtDesktop = () => {
+      if (media.matches) setOpen(false);
+    };
+    media.addEventListener('change', closeAtDesktop);
+    window.addEventListener('resize', closeAtDesktop);
+    return () => {
+      media.removeEventListener('change', closeAtDesktop);
+      window.removeEventListener('resize', closeAtDesktop);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return undefined;
 
-    const previousOverflow = document.body.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
     };
 
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     drawerRef.current?.scrollTo({ top: 0 });
+    closeButtonRef.current?.focus();
     window.addEventListener('keydown', closeOnEscape);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       window.removeEventListener('keydown', closeOnEscape);
     };
   }, [open]);
@@ -115,30 +129,35 @@ function MobileNavigation({
       {open ? (
         <div className="mobile-nav-overlay">
           <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" onClick={close} />
-          <aside ref={drawerRef} className="mobile-nav-drawer" id={drawerId} aria-modal="true" aria-label="Site navigation">
+          <aside ref={drawerRef} className="mobile-nav-drawer mobile-nav-drawer-v4" id={drawerId} role="dialog" aria-modal="true" aria-label="Site navigation">
             <div className="mobile-drawer-header">
               <a className="mobile-drawer-brand" href="/" onClick={close}>
                 <img src={originalAssets.logo} alt="" width="58" height="58" />
                 <span><strong>The Kut Shoppe</strong><small>Downtown Stroudsburg</small></span>
               </a>
-              <button className="mobile-nav-close" type="button" aria-label="Close navigation" onClick={close}><span aria-hidden="true" /></button>
+              <button ref={closeButtonRef} className="mobile-nav-close" type="button" aria-label="Close navigation" onClick={close}><span aria-hidden="true" /></button>
             </div>
 
-            <nav className="mobile-drawer-content" aria-label="Mobile navigation">
-              <div className="mobile-primary-links">
+            <nav className="mobile-drawer-content mobile-drawer-content-v4" aria-label="Mobile navigation">
+              <div className="mobile-primary-links mobile-primary-links-v4">
                 {primaryNavigation.map(([label, href]) => {
                   const current = isCurrentRoute(currentPath, href);
                   return <a key={href} href={href} aria-current={current ? 'page' : undefined} onClick={close}>{label}<Arrow /></a>;
                 })}
               </div>
-              <div className="mobile-secondary-links">{secondaryNavigation.map(([label, href]) => <a key={href} href={href} onClick={close}>{label}<Arrow /></a>)}</div>
-              <div className="mobile-booking-group"><span>Book, shop, and manage</span><CustomerActions account={account} cartCount={cartCount} mobile onNavigate={close} /></div>
-              <div className="mobile-hours-card mobile-hours-card-detailed">
-                <div className="mobile-hours-heading"><span>Shop hours</span><small>Walk-in reference</small></div>
-                <dl>{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl>
-                <small>{shopHoursNote}</small>
-                <a href="/visit" onClick={close}>Directions and visit details <Arrow /></a>
-              </div>
+
+              <div className="mobile-booking-group mobile-booking-group-v4"><CustomerActions account={account} cartCount={cartCount} mobile onNavigate={close} /></div>
+
+              <details className="mobile-visit-details">
+                <summary>Hours and visit information <Arrow /></summary>
+                <div className="mobile-hours-card mobile-hours-card-detailed">
+                  <div className="mobile-hours-heading"><span>Shop hours</span><small>Walk-in reference</small></div>
+                  <dl>{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl>
+                  <small>{shopHoursNote}</small>
+                  <a href="/visit" onClick={close}>Directions and visit details <Arrow /></a>
+                </div>
+              </details>
+
               <a className="mobile-call-link" href={business.phoneHref} onClick={close}>Call {business.phone}</a>
             </nav>
           </aside>
@@ -213,8 +232,8 @@ function Footer() {
       <div className="container footer-main-grid">
         <div className="footer-visit-block"><p className="footer-heading">Visit</p><strong>518 Main Street</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and visit details <Arrow /></a></div>
         <div className="footer-hours-block"><p className="footer-heading">Hours</p><strong>{shopHoursSummary}</strong><strong>{shopClosedSummary}</strong><small>{shopHoursNote}</small></div>
-        <nav className="footer-link-group" aria-label="Explore The Kut Shoppe"><p className="footer-heading">Explore</p><a href="/services">Services and pricing</a><a href="/gallery">Full gallery</a><a href="/team">Meet the crew</a><a href="/shop">Shop</a><a href="/account">Account / Login</a></nav>
-        <div className="footer-link-group"><p className="footer-heading">Connect</p><a href="/reviews">Client reviews</a>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</div>
+        <nav className="footer-link-group" aria-label="Explore The Kut Shoppe"><p className="footer-heading">Explore</p><a href="/services">Services and pricing</a><a href="/gallery">Full gallery</a><a href="/reviews">Client reviews</a><a href="/team">Meet the crew</a><a href="/shop">Shop</a><a href="/account">Account / Login</a></nav>
+        <div className="footer-link-group"><p className="footer-heading">Connect</p>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</div>
       </div>
 
       <div className="container footer-bottom footer-bottom-refined"><span>© {new Date().getFullYear()} The Kut Shoppe LLC</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Platform by Designed to Breakthrough LLC</span></div></div>
