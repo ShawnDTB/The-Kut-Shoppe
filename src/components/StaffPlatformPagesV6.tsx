@@ -16,9 +16,7 @@ export function StaffPlatformPageV6({ path }: { path: string }) {
   useEffect(() => {
     if (!management || !account) return;
     const title = document.querySelector<HTMLElement>('.staff-role-management-v6 .staff-platform-header h1');
-    const label = document.querySelector<HTMLElement>('.staff-role-management-v6 .staff-platform-header .eyebrow');
     if (title) title.textContent = heading(account.role);
-    if (label) label.textContent = 'The Kut Shoppe operations platform';
   }, [account, management, path]);
 
   if (management && (path === '/staff' || path === '/staff/earnings' || path === '/staff/payouts')) return <RoleDashboardV6 />;
