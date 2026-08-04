@@ -3,23 +3,14 @@ import { getPlatformSessionAccount } from '../data/auth-v2';
 import { StaffPlatformPage } from './StaffPlatformPages';
 import { RoleDashboardV6 } from './RoleDashboardV6';
 
-function heading(role: string) {
-  if (role === 'manager') return 'Manage shop operations.';
-  if (role === 'developer') return 'Configure the platform.';
-  return 'Manage The Kut Shoppe.';
-}
-
 export function StaffPlatformPageV6({ path }: { path: string }) {
   const account = getPlatformSessionAccount();
   const management = Boolean(account && account.role !== 'customer' && account.role !== 'barber');
-  const shellRef = useRef<HTMLDivElement>(null);
-
+  const shell = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    if (!management || !account) return;
-    const title = shellRef.current?.querySelector<HTMLElement>('.staff-platform-header h1');
-    if (title) title.textContent = heading(account.role);
-  }, [account, management, path]);
-
+    const title = management ? shell.current?.querySelector<HTMLElement>('.staff-platform-header h1') : null;
+    if (title) title.textContent = 'Manage shop operations.';
+  }, [management, path]);
   if (management && (path === '/staff' || path === '/staff/earnings' || path === '/staff/payouts')) return <RoleDashboardV6 />;
-  return <div ref={shellRef} className={management ? 'staff-role-management-v6' : 'staff-role-barber-v6'}><StaffPlatformPage path={path} /></div>;
+  return <div ref={shell} className={management ? 'staff-role-management-v6' : 'staff-role-barber-v6'}><StaffPlatformPage path={path} /></div>;
 }
