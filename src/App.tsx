@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import './styles.css';
 import './refinement.css';
 import './route-refinement.css';
@@ -39,20 +39,18 @@ import { HomePage } from './components/HomePage';
 import { SiteLayoutV6 } from './components/LayoutV6';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
+import { BookingV6 } from './components/BookingV6';
+import { StaffPlatformPageV6 } from './components/StaffPlatformPagesV6';
+import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
+import { StaffSettingsV5 } from './components/StaffSettingsV5';
+import { AccountAccessV5 } from './components/AccountAccessV5';
+import { RoleDashboardV6 } from './components/RoleDashboardV6';
+import { CartPageV4 } from './components/CartPageV4';
+import { StorefrontV5 } from './components/StorefrontV5';
 import { AdminGuard } from './components/AdminAccess';
-
-const BookingV6 = lazy(() => import('./components/BookingV6').then((module) => ({ default: module.BookingV6 })));
-const StaffPlatformPageV6 = lazy(() => import('./components/StaffPlatformPagesV6').then((module) => ({ default: module.StaffPlatformPageV6 })));
-const StaffOnboardingV6 = lazy(() => import('./components/StaffOnboardingV6').then((module) => ({ default: module.StaffOnboardingV6 })));
-const StaffSettingsV5 = lazy(() => import('./components/StaffSettingsV5').then((module) => ({ default: module.StaffSettingsV5 })));
-const AccountAccessV5 = lazy(() => import('./components/AccountAccessV5').then((module) => ({ default: module.AccountAccessV5 })));
-const RoleDashboardV6 = lazy(() => import('./components/RoleDashboardV6').then((module) => ({ default: module.RoleDashboardV6 })));
-const CartPageV4 = lazy(() => import('./components/CartPageV4').then((module) => ({ default: module.CartPageV4 })));
-const StorefrontV5 = lazy(() => import('./components/StorefrontV5').then((module) => ({ default: module.StorefrontV5 })));
-const ProductAdminHubV5 = lazy(() => import('./components/ProductAdminHubV5').then((module) => ({ default: module.ProductAdminHubV5 })));
-const OrderAdminV5 = lazy(() => import('./components/OrderAdminV5').then((module) => ({ default: module.OrderAdminV5 })));
-const CheckoutPageV5 = lazy(() => import('./components/CommerceCustomerV5').then((module) => ({ default: module.CheckoutPageV5 })));
-const ProductDetailPageV5 = lazy(() => import('./components/CommerceCustomerV5').then((module) => ({ default: module.ProductDetailPageV5 })));
+import { ProductAdminHubV5 } from './components/ProductAdminHubV5';
+import { OrderAdminV5 } from './components/OrderAdminV5';
+import { CheckoutPageV5, ProductDetailPageV5 } from './components/CommerceCustomerV5';
 
 interface AppProps { url: string }
 
@@ -81,7 +79,7 @@ function PlatformLoading({ label }: { label: string }) {
 function ClientPlatform({ children, label }: { children: ReactNode; label: string }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot);
   if (!hydrated) return <PlatformLoading label={label} />;
-  return <Suspense fallback={<PlatformLoading label={label} />}>{children}</Suspense>;
+  return children;
 }
 
 function ClientRedirect({ to }: { to: string }) {
