@@ -32,6 +32,7 @@ import './polish-round-3.css';
 import './polish-round-3-fixes.css';
 import './polish-round-4.css';
 import './polish-round-5.css';
+import './polish-round-6.css';
 import { findRoute } from './data/site';
 import { HomePage } from './components/HomePage';
 import { SiteLayoutV5 } from './components/LayoutV5';

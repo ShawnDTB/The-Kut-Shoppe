@@ -186,10 +186,17 @@ function Header({ currentPath }: { currentPath: string }) {
 
 function Footer() {
   return (
-    <footer className="site-footer footer-refined">
-      <div className="container footer-topline"><div className="footer-brand-refined"><img src={originalAssets.logo} alt="The Kut Shoppe" width="112" height="112" loading="lazy" decoding="async" /><div><p className="eyebrow">The Kut Shoppe</p><p className="footer-statement">Good cuts. Personal service. A chair you know on Main Street.</p></div></div><div className="footer-booking-links" aria-label="Customer actions"><a href="/book"><span>Book now →</span></a><a href="/account"><span>Account / Login →</span></a></div></div>
-      <div className="container footer-main-grid"><div className="footer-visit-block"><p className="footer-heading">Visit</p><strong>518 Main Street</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and visit details <ArrowV5 /></a></div><div className="footer-hours-block"><p className="footer-heading">Hours</p><strong>{shopHoursSummary}</strong><strong>{shopClosedSummary}</strong><small>{shopHoursNote}</small></div><nav className="footer-link-group" aria-label="Explore The Kut Shoppe"><p className="footer-heading">Explore</p><a href="/services">Services and pricing</a><a href="/gallery">Full gallery</a><a href="/team">Meet the crew</a><a href="/shop">Shop</a><a href="/reviews">Client reviews</a><a href="/account">Account / Login</a></nav><div className="footer-link-group"><p className="footer-heading">Connect</p>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</div></div>
-      <div className="container footer-bottom footer-bottom-refined"><span>© {new Date().getFullYear()} The Kut Shoppe LLC</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Platform by Designed to Breakthrough LLC</span></div></div>
+    <footer className="site-footer footer-v6">
+      <div className="container footer-v6-primary">
+        <section className="footer-v6-brand">
+          <img src={originalAssets.logo} alt="The Kut Shoppe" width="88" height="88" loading="lazy" decoding="async" />
+          <div><p className="eyebrow">The Kut Shoppe</p><h2>A familiar chair on Main Street.</h2><p>Classic barbering, modern styling, and personal service in downtown Stroudsburg.</p><div className="footer-v6-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href="/account">Account</a></div></div>
+        </section>
+        <section className="footer-v6-column"><h3>Visit</h3><strong>518 Main Street</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and hours <ArrowV5 /></a></section>
+        <nav className="footer-v6-column" aria-label="Explore The Kut Shoppe"><h3>Explore</h3><a href="/services">Services</a><a href="/gallery">Gallery</a><a href="/team">Crew</a><a href="/shop">Shop</a><a href="/reviews">Reviews</a></nav>
+        <section className="footer-v6-column"><h3>Connect</h3>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}<span>{shopHoursSummary}</span><span>{shopClosedSummary}</span></section>
+      </div>
+      <div className="container footer-v6-bottom"><span>© {new Date().getFullYear()} The Kut Shoppe LLC</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Platform by Designed to Breakthrough LLC</span></div></div>
     </footer>
   );
 }

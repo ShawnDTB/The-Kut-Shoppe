@@ -21,16 +21,16 @@ const effectiveDate = 'August 3, 2026';
 
 const routePresentation: Partial<Record<string, { heading: string; intro: string }>> = {
   '/services': {
-    heading: 'Services and pricing.',
-    intro: 'Find the service you need, then start one clear booking process.',
+    heading: '',
+    intro: '',
   },
   '/team': {
-    heading: 'Meet the professionals behind the shop.',
-    intro: 'Choose a professional or begin with any available barber.',
+    heading: 'Meet the Crew.',
+    intro: '',
   },
   '/gallery': {
-    heading: 'Cuts and styles from the shop.',
-    intro: 'Browse fades, tapers, scissor cuts, beard work, locs, braids, kids cuts, and designs.',
+    heading: 'Discover the talent behind every finish.',
+    intro: '',
   },
   '/reviews': {
     heading: 'The work speaks. Clients confirm it.',
@@ -282,6 +282,7 @@ export function RoutePage({ url }: { url: string }) {
   const presentation = routePresentation[route.path];
   const hasServiceRoute = services.some((item) => item.route === route.path);
   const isWideRoute = ['/team', '/gallery', '/services', '/reviews'].includes(route.path);
+  const showIntro = route.path !== '/services';
   const pageClass = route.path === '/services'
     ? 'route-services-page route-pattern-tools'
     : route.path === '/gallery'
@@ -301,7 +302,7 @@ export function RoutePage({ url }: { url: string }) {
   return (
     <section className={`section page-hero ${pageClass}`}>
       <div className={`container ${isWideRoute ? 'route-wide' : 'narrow-container'}`}>
-        <header className="route-page-intro"><p className="eyebrow">{route.eyebrow}</p><h1>{presentation?.heading ?? route.heading}</h1><p className="lede">{presentation?.intro ?? route.intro}</p></header>
+        {showIntro ? <header className="route-page-intro"><p className="eyebrow">{route.eyebrow}</p><h1>{presentation?.heading ?? route.heading}</h1>{presentation?.intro || route.intro ? <p className="lede">{presentation?.intro ?? route.intro}</p> : null}</header> : null}
         {route.path === '/services' ? <ServicesRoute /> : null}
         {hasServiceRoute ? <ServiceRoute path={route.path} /> : null}
         {route.path === '/team' ? <TeamRoute /> : null}
