@@ -1,0 +1,38 @@
+name: Recover Platform V2 Snapshot
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: github.head_ref == 'recovery/restore-platform-v2-2026-08-04'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Restore exact pre-stabilization tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --tags origin
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git rm -r --ignore-unmatch .
+          git checkout pre-repository-stabilization-2026-08-04 -- .
+
+          npm install --no-package-lock
+          npm run check
+
+          git add -A
+          git commit -m "Restore pre-stabilization Platform V2 snapshot"
+          git push origin "HEAD:${{ github.head_ref }}"
