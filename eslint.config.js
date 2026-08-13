@@ -37,7 +37,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/RoleDashboardV4.tsx'],
+    files: ['src/components/RoleDashboardV4.tsx', 'src/components/LayoutV5.tsx'],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
     },

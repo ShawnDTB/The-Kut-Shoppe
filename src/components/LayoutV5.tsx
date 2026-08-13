@@ -163,10 +163,21 @@ function MobileNavigation({
 }
 
 function Header({ currentPath }: { currentPath: string }) {
-  const [account, setAccount] = useState<PlatformAccount | null>(() => getPlatformSessionAccount());
-  const [cartCount, setCartCount] = useState(() => readCart().reduce((total, item) => total + item.quantity, 0));
+  // Header renders on every route, outside any ClientPlatform hydration
+  // gate, so its initial state must match what the server rendered
+  // (nobody signed in, empty cart) — the server never has access to this
+  // visitor's localStorage. Reading account/cart synchronously via a
+  // useState lazy initializer here would make the very first client
+  // render diverge from the server render for any returning customer with
+  // a session or cart items, throwing a hydration-mismatch error site-wide.
+  // Start from the SSR-safe defaults and pick up the real values in an
+  // effect, same as the rest of the app's client-only data reads.
+  const [account, setAccount] = useState<PlatformAccount | null>(null);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
+    setAccount(getPlatformSessionAccount());
+    setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));
     const unsubscribeAuth = subscribeToPlatformAuth(() => setAccount(getPlatformSessionAccount()));
     const unsubscribeStore = subscribeToStorefrontChanges(() => setCartCount(readCart().reduce((total, item) => total + item.quantity, 0)));
     return () => { unsubscribeAuth(); unsubscribeStore(); };
