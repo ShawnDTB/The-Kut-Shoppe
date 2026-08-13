@@ -29,3 +29,20 @@ await writeFile(
     .replace('<!--app-html-->', notFound.html),
   'utf8',
 );
+
+// robots.txt points crawlers at /sitemap.xml, so keep this file's inclusion
+// rule identical to the per-route robots meta logic above ('placeholder'
+// routes are noindex and are therefore left out of the sitemap too).
+const sitemapUrls = serverEntry.staticRoutes
+  .filter((route) => route.status !== 'placeholder')
+  .map((route) => `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`);
+
+const sitemap = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  ...sitemapUrls.map((url) => `  <url><loc>${url}</loc></url>`),
+  '</urlset>',
+  '',
+].join('\n');
+
+await writeFile(path.join(root, 'dist', 'sitemap.xml'), sitemap, 'utf8');

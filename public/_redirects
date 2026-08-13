@@ -1,10 +1,11 @@
-/about /#about 301
-/about/ /#about 301
-/aboutus/ /#about 301
+/about /team 301
+/about/ /team 301
+/aboutus /team 301
+/aboutus/ /team 301
 /products /shop 301
 /products/ /shop 301
 /services/ /services 301
 /gallery/ /gallery 301
-/cart/ /shop 302
-/checkout/ /shop 302
+/cart/ /cart 301
+/checkout/ /checkout 301
 /my-account/ /account 302
