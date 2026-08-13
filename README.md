@@ -494,6 +494,7 @@ The existing public site should remain available until Platform V2 is approved a
 - [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)
 - [Platform integration audit](./docs/platform/platform-integration-audit.md)
 - [Production cutover checklist](./docs/platform/production-cutover-checklist.md)
+- [Backend architecture proposal](./docs/platform/backend-architecture-proposal.md) — not implemented, pending owner review
 - [Live-site style audit](./docs/brand/live-site-style-audit.md)
 - [Verification required before production](./docs/foundation/verification-required.md)
 
