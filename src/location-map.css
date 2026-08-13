@@ -153,11 +153,6 @@
   text-decoration-color: rgba(244, 244, 244, 0.28);
 }
 
-.services-finished-cut img {
-  aspect-ratio: 1 / 1;
-  object-position: center;
-}
-
 @media (max-width: 980px) {
   .location-conversion-grid {
     grid-template-columns: 1fr;

@@ -366,74 +366,6 @@
   color: var(--paper);
 }
 
-/* Shared product-detail drawer. */
-.cart-drawer-v3 {
-  position: fixed;
-  inset: 0;
-  z-index: 2100;
-}
-
-.cart-drawer-v3-backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  border: 0;
-  background: rgba(0, 0, 0, 0.72);
-}
-
-.cart-drawer-v3 > aside {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  width: min(32rem, 100vw);
-  height: 100dvh;
-  overflow: hidden;
-  border-left: 1px solid var(--line-strong);
-  background: #121212;
-  box-shadow: -2rem 0 6rem rgba(0, 0, 0, 0.48);
-}
-
-.cart-drawer-v3 header,
-.cart-drawer-v3 footer {
-  padding: 1.25rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.cart-drawer-v3 footer {
-  display: grid;
-  gap: 0.7rem;
-  border-top: 1px solid var(--line);
-  border-bottom: 0;
-}
-
-.cart-drawer-v3 footer > div {
-  display: flex;
-  justify-content: space-between;
-}
-
-.cart-drawer-v3-lines {
-  min-height: 0;
-  overflow-y: auto;
-  padding: 1.25rem;
-}
-
-.cart-drawer-v3-lines article {
-  display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
-  gap: 0.85rem;
-  align-items: start;
-  padding-block: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.cart-drawer-v3-image {
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: #0b0b0b;
-}
-
 .cart-drawer-v3-image img,
 .cart-drawer-v3-image .commerce-product-placeholder {
   width: 100%;
@@ -501,26 +433,6 @@
   max-width: 22rem;
 }
 
-.commerce-checkout-form-v3 {
-  min-width: 0;
-}
-
-.commerce-checkout-form-v3 > section {
-  padding: 1.25rem;
-  border: 1px solid var(--line);
-  background: rgba(13, 13, 13, 0.72);
-}
-
-.commerce-checkout-form-v3 > section + section {
-  margin-top: 1rem;
-}
-
-.commerce-checkout-form-v3 h2 {
-  margin: 0 0 1rem;
-  font-family: var(--heading-sans);
-  font-size: 1.35rem;
-}
-
 .checkout-method-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -555,17 +467,6 @@
   margin-block: 1rem;
   color: var(--muted);
   font-size: 0.82rem;
-}
-
-/* Account and dashboard collisions. */
-.v2-auth-layout-compact {
-  grid-template-columns: minmax(15rem, 0.68fr) minmax(0, 1fr);
-  align-items: start;
-}
-
-.v2-auth-intro h1 {
-  max-width: none;
-  font-size: clamp(2.7rem, 5vw, 4.8rem);
 }
 
 .v2-auth-card,
@@ -752,14 +653,6 @@
   border-top: 0 !important;
 }
 
-.mobile-secondary-links {
-  gap: 0.65rem;
-}
-
-.mobile-secondary-links a {
-  border: 1px solid var(--line);
-}
-
 .mobile-hours-card-detailed dl {
   display: grid;
   margin: 0.85rem 0;
@@ -929,14 +822,6 @@
     border-top: 1px solid var(--line-strong);
     border-left: 0;
     padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .cart-drawer-v3-lines article {
-    grid-template-columns: 3.8rem minmax(0, 1fr);
-  }
-
-  .cart-drawer-v3-lines article > strong {
-    grid-column: 2;
   }
 
   .commerce-page-heading-compact {

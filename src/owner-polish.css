@@ -64,22 +64,6 @@
   text-transform: uppercase;
 }
 
-.compact-final .parallax-shade-gradient {
-  background: linear-gradient(
-    90deg,
-    rgba(6, 6, 6, 0.95) 0%,
-    rgba(6, 6, 6, 0.88) 42%,
-    rgba(6, 6, 6, 0.78) 100%
-  );
-}
-
-.compact-final .visit-card {
-  border-color: rgba(244, 244, 244, 0.34);
-  background: rgba(7, 7, 7, 0.84);
-  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.34);
-  backdrop-filter: none;
-}
-
 .compact-final .conversion-copy > p:not(.eyebrow) {
   color: rgba(244, 244, 244, 0.82);
 }
@@ -253,10 +237,6 @@
     right: 1rem;
     bottom: 0.9rem;
     left: 1rem;
-  }
-
-  .compact-final .parallax-shade-gradient {
-    background: rgba(6, 6, 6, 0.86);
   }
 
   .footer-main-grid {

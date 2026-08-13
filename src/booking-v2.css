@@ -4,52 +4,12 @@
   padding-block: clamp(3.5rem, 7vw, 6.5rem);
 }
 
-.booking-v2-entry-header {
-  max-width: 58rem;
-  margin-bottom: clamp(2rem, 5vw, 4rem);
-}
-
-.booking-v2-entry-header h1,
-.booking-v2-header h1 {
-  max-width: 13ch;
-  margin-bottom: 0.75rem;
-  text-wrap: pretty;
-}
-
 .booking-v2-entry-header > p:last-child,
 .booking-v2-panel-heading > p:last-child,
 .booking-v2-header p,
 .booking-v2-disclaimer,
 .booking-v2-prompt {
   color: var(--muted);
-}
-
-.booking-v2-choice-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.booking-v2-choice-grid article {
-  display: flex;
-  min-height: 24rem;
-  justify-content: space-between;
-  flex-direction: column;
-  gap: 2rem;
-  border: 1px solid var(--line-strong);
-  padding: clamp(1.5rem, 4vw, 3rem);
-  background: rgba(8, 8, 8, 0.9);
-}
-
-.booking-v2-choice-grid article:first-child {
-  background:
-    linear-gradient(rgba(8, 8, 8, 0.86), rgba(8, 8, 8, 0.94)),
-    repeating-linear-gradient(125deg, transparent 0 70px, rgba(255, 255, 255, 0.035) 70px 72px, transparent 72px 110px, rgba(158, 27, 43, 0.08) 110px 114px);
-}
-
-.booking-v2-choice-grid h2 {
-  max-width: 12ch;
-  margin-bottom: 0.75rem;
 }
 
 .booking-v2-choice-grid p:not(.eyebrow) {
@@ -59,14 +19,6 @@
 
 .booking-v2-choice-grid .button {
   align-self: flex-start;
-}
-
-.booking-v2-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 2rem;
 }
 
 .booking-v2-progress {
@@ -191,26 +143,6 @@
   min-height: 8rem;
 }
 
-.booking-v2-date-strip {
-  display: flex;
-  gap: 0.45rem;
-  overflow-x: auto;
-  padding-bottom: 0.65rem;
-  scrollbar-width: thin;
-}
-
-.booking-v2-date-strip button {
-  display: grid;
-  flex: 0 0 auto;
-  min-width: 6.25rem;
-  min-height: 4.6rem;
-  place-items: center;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--paper);
-  cursor: pointer;
-}
-
 .booking-v2-date-strip button.is-selected {
   border-color: var(--paper);
   background: var(--paper);
@@ -256,10 +188,6 @@
 
 .booking-v2-no-times p {
   color: var(--muted);
-}
-
-.booking-v2-back-row {
-  margin-top: 1.25rem;
 }
 
 .booking-v2-review {
@@ -378,10 +306,6 @@
     grid-template-columns: 1fr;
   }
 
-  .booking-v2-choice-grid article {
-    min-height: 18rem;
-  }
-
   .booking-v2-times > div:not(.booking-v2-no-times) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -400,11 +324,6 @@
   .booking-v2-entry,
   .booking-v2-page {
     padding-block: 2.75rem;
-  }
-
-  .booking-v2-header {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .booking-v2-progress {

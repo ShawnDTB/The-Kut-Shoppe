@@ -38,10 +38,6 @@
   padding-inline: 0.45rem;
 }
 
-.provider-booking-link {
-  border-color: rgba(244, 244, 244, 0.3);
-}
-
 /* Inner pages use one small barbershop mark instead of the oversized ornament. */
 .page-hero {
   min-height: auto;

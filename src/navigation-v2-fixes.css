@@ -26,33 +26,6 @@
   scrollbar-gutter: stable;
 }
 
-.mobile-hours-card-compact {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.mobile-hours-card-compact > strong {
-  color: var(--paper);
-  font-size: 1rem;
-}
-
-.mobile-hours-card-compact > span,
-.mobile-hours-card-compact > small {
-  color: var(--muted);
-}
-
-.mobile-hours-card-compact > a {
-  display: flex;
-  min-height: 2.9rem;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.35rem;
-  border-top: 1px solid var(--line);
-  padding-top: 0.65rem;
-  color: var(--paper);
-  text-decoration: none;
-}
-
 .mobile-primary-links a,
 .mobile-secondary-links a,
 .mobile-call-link,

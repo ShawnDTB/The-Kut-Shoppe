@@ -1,17 +1,4 @@
-/* Final detail pass. Loaded after every earlier refinement. */
 
-/* Keep the script behind the navigation and phone, not behind the booking buttons. */
-.menu-signature::before {
-  top: 52%;
-  right: 17.5rem;
-  left: -3.5rem;
-  width: auto;
-  max-width: none;
-  font-size: clamp(3.2rem, 3.8vw, 4.45rem);
-  opacity: 0.095;
-  text-align: center;
-  transform: translateY(-50%);
-}
 
 .menu-surface,
 .desktop-nav,
@@ -280,20 +267,6 @@
 .visit-hours-summary {
   color: var(--muted);
   font-size: 0.78rem;
-}
-
-@media (max-width: 1360px) {
-  .menu-signature::before {
-    right: 15.5rem;
-    left: -2.5rem;
-    font-size: clamp(2.8rem, 3.5vw, 3.9rem);
-  }
-}
-
-@media (max-width: 1040px) {
-  .menu-signature::before {
-    display: none;
-  }
 }
 
 @media (max-width: 760px) {

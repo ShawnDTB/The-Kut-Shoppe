@@ -36,47 +36,10 @@
   padding-block: clamp(4.5rem, 7vw, 6.6rem);
 }
 
-.compact-services-intro {
-  display: grid;
-  align-items: start;
-  grid-template-columns: minmax(0, 0.9fr) minmax(28rem, 1.1fr);
-  gap: clamp(2.5rem, 7vw, 7rem);
-}
-
 .compact-services-intro h2,
 .compact-proof h2,
 .compact-about h2 {
   font-size: clamp(2.8rem, 4.8vw, 4.8rem);
-}
-
-.service-summary-panel {
-  display: grid;
-  border-top: 1px solid var(--line-strong);
-}
-
-.service-summary-panel > div {
-  display: grid;
-  grid-template-columns: 7rem 1fr;
-  gap: 1.5rem;
-  border-bottom: 1px solid var(--line);
-  padding-block: 1.2rem;
-}
-
-.service-summary-panel span {
-  color: var(--muted);
-  font-family: var(--accent);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.service-summary-panel strong {
-  color: var(--paper);
-  font-family: var(--heading-sans);
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.45;
 }
 
 .service-icon-strip {
@@ -122,19 +85,6 @@
   font-family: var(--heading-sans);
   font-size: 0.88rem;
   font-weight: 500;
-}
-
-.compact-section-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-top: 1.8rem;
-}
-
-.compact-section-actions .booking-choice-row {
-  width: min(100%, 41rem);
-  margin: 0;
 }
 
 .compact-proof-grid {
@@ -245,34 +195,6 @@
   object-fit: cover;
 }
 
-.compact-crew-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 2rem 0;
-  padding: 0;
-  border-top: 1px solid var(--line);
-  list-style: none;
-}
-
-.compact-crew-list li {
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  padding: 0.8rem 0.9rem;
-  color: var(--paper);
-  font-family: var(--heading-sans);
-  font-size: 0.88rem;
-}
-
-.compact-crew-list li:nth-child(even) {
-  border-right: 0;
-}
-
-.compact-about-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-}
-
 .shop-teaser {
   position: relative;
   padding-block: 2rem;
@@ -304,14 +226,6 @@
 .shop-teaser p:not(.eyebrow) {
   margin-bottom: 0;
   color: var(--muted);
-}
-
-.compact-final {
-  min-height: clamp(30rem, 57vh, 38rem);
-}
-
-.compact-final .conversion-panel {
-  padding-block: clamp(4rem, 8vw, 6rem);
 }
 
 .compact-final .conversion-copy h2 {
@@ -351,20 +265,6 @@
   .compact-proof,
   .compact-about {
     padding-block: 4rem;
-  }
-
-  .service-summary-panel > div {
-    grid-template-columns: 5.5rem 1fr;
-    gap: 1rem;
-  }
-
-  .compact-section-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .compact-section-actions .booking-choice-row {
-    width: 100%;
   }
 
   .compact-gallery {
@@ -412,14 +312,6 @@
     grid-auto-rows: 10rem;
   }
 
-  .compact-crew-list {
-    grid-template-columns: 1fr;
-  }
-
-  .compact-crew-list li {
-    border-right: 0;
-  }
-
   .shop-teaser-grid {
     grid-template-columns: 1fr;
   }
@@ -427,10 +319,6 @@
   .shop-teaser img {
     width: 100%;
     height: 10rem;
-  }
-
-  .compact-final .conversion-panel {
-    padding-block: 3.5rem;
   }
 }
 

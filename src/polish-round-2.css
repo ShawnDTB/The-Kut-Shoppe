@@ -287,42 +287,6 @@
   padding-block: clamp(2.5rem, 5vw, 4.5rem);
 }
 
-.v2-auth-layout-compact {
-  grid-template-columns: minmax(18rem, 0.68fr) minmax(22rem, 0.82fr);
-  max-width: 76rem;
-  gap: clamp(2rem, 6vw, 5rem);
-  align-items: center;
-}
-
-.v2-auth-intro {
-  padding-top: 0;
-}
-
-.v2-auth-intro h1 {
-  max-width: none;
-  margin-bottom: 0.7rem;
-  font-size: clamp(2.8rem, 4.8vw, 4.8rem);
-  line-height: 0.98;
-}
-
-.v2-auth-intro > p {
-  font-size: 1rem;
-}
-
-.v2-auth-role-note {
-  display: grid;
-  gap: 0.25rem;
-  margin-top: 1.25rem;
-  border-left: 2px solid var(--red);
-  padding-left: 1rem;
-}
-
-.v2-auth-role-note span {
-  max-width: 48ch;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
 .v2-auth-card {
   gap: 0.9rem;
   padding: clamp(1.2rem, 3vw, 2rem);
@@ -331,12 +295,6 @@
 .v2-auth-form {
   display: grid;
   gap: 0.95rem;
-}
-
-.v2-auth-mode-note {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.84rem;
 }
 
 .v2-auth-submit {
@@ -400,52 +358,6 @@
   border-color: rgba(244, 244, 244, 0.35);
 }
 
-/* Staff setup: smaller heading and impossible-to-miss validation. */
-.staff-v2-page {
-  padding-block: clamp(2.25rem, 4.5vw, 4rem);
-}
-
-.staff-v2-header {
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.staff-v2-header h1 {
-  max-width: none;
-  margin-bottom: 0.35rem;
-  font-size: clamp(2.75rem, 4.5vw, 4.4rem);
-}
-
-.staff-v2-panel {
-  padding: clamp(1.1rem, 3vw, 2rem);
-}
-
-.staff-v2-panel > section > h2 {
-  max-width: none;
-  font-size: clamp(1.9rem, 3vw, 2.8rem);
-}
-
-.staff-v2-fields [aria-invalid='true'],
-.staff-v2-hours [aria-invalid='true'] {
-  border-color: #ff8c8c;
-  box-shadow: 0 0 0 1px rgba(255, 140, 140, 0.25);
-}
-
-.staff-v2-error-summary {
-  display: grid;
-  gap: 0.2rem;
-  margin-top: 1rem;
-  border-left: 3px solid #ff7373;
-  padding: 0.8rem 1rem;
-  background: rgba(255, 80, 80, 0.08);
-  color: #ffb0b0;
-}
-
-.staff-v2-error-summary span {
-  color: #d6a1a1;
-  font-size: 0.82rem;
-}
-
 .staff-v2-actions {
   align-items: center;
   background: rgba(8, 8, 8, 0.96);
@@ -473,14 +385,6 @@
 .storefront-v2-title p:not(.eyebrow) {
   max-width: 66ch;
   margin-bottom: 0;
-}
-
-.storefront-v2-utility {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.65rem;
 }
 
 .storefront-v2-management {
@@ -772,10 +676,6 @@
     grid-template-columns: 1fr;
     align-items: start;
   }
-
-  .storefront-v2-utility {
-    justify-content: flex-start;
-  }
 }
 
 @media (max-width: 700px) {
@@ -816,20 +716,6 @@
 
   .verified-team-copy h2 {
     font-size: clamp(1.45rem, 6vw, 1.9rem);
-  }
-
-  .v2-auth-layout-compact {
-    gap: 1.25rem;
-  }
-
-  .v2-auth-intro > p,
-  .v2-auth-role-note {
-    max-width: 40rem;
-  }
-
-  .staff-v2-header {
-    grid-template-columns: 1fr;
-    align-items: start;
   }
 
   .storefront-v2-grid {

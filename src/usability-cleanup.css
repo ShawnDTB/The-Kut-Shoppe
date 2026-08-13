@@ -42,23 +42,6 @@
   min-width: 8.65rem;
 }
 
-.provider-booking-link {
-  width: 7.9rem;
-  min-width: 7.9rem;
-}
-
-.menu-signature::before {
-  width: 100%;
-  font-family: var(--display);
-  font-size: clamp(3.8rem, 4.35vw, 5.4rem);
-  font-style: italic;
-  letter-spacing: -0.035em;
-  opacity: 0.1;
-  text-align: center;
-  transform: translate(-50%, -50%);
-  -webkit-text-stroke: 0.8px rgba(174, 180, 187, 0.68);
-}
-
 .services-chair-photo img {
   aspect-ratio: 4 / 3;
   object-position: center 46%;
@@ -319,16 +302,6 @@
 
   .header-call {
     min-width: 7.5rem;
-  }
-
-  .provider-booking-link {
-    width: 7.25rem;
-    min-width: 7.25rem;
-  }
-
-  .menu-signature::before {
-    font-size: 4rem;
-    opacity: 0.075;
   }
 }
 

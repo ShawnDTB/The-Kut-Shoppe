@@ -42,14 +42,6 @@
   width: 100%;
 }
 
-.mobile-staff-link {
-  display: block;
-  padding: 0.75rem 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-align: center;
-}
-
 .platform-pattern {
   position: relative;
   isolation: isolate;
@@ -135,22 +127,6 @@
   font-size: 0.78rem;
 }
 
-.booking-choice-grid-three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.booking-choice-grid-three article {
-  min-height: 32rem;
-}
-
-.booking-choice-grid-three h2 {
-  max-width: 11ch;
-}
-
-.booking-step-indicator {
-  grid-template-columns: repeat(6, 1fr);
-}
-
 .booking-form-wide,
 .staff-form-wide {
   grid-column: 1 / -1;
@@ -172,16 +148,6 @@
   color: var(--paper);
   padding: 0.75rem;
   font: inherit;
-}
-
-.booking-customer-form textarea,
-.walk-in-request-card textarea {
-  resize: vertical;
-}
-
-.booking-customer-form small {
-  color: var(--muted);
-  font-weight: 400;
 }
 
 .booking-verification-panel,
@@ -214,25 +180,6 @@
   gap: 0.4rem;
   color: var(--paper);
   font-weight: 600;
-}
-
-.walk-in-request-card {
-  display: grid;
-  gap: 1rem;
-}
-
-.walk-in-request-card > section {
-  border: 1px solid var(--line);
-  padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: rgba(255, 255, 255, 0.028);
-}
-
-.walk-in-request-card h2 {
-  margin-bottom: 1.2rem;
-}
-
-.walk-in-submit {
-  margin-top: 1rem;
 }
 
 .staff-session-actions,
@@ -622,180 +569,12 @@
   color: var(--muted);
 }
 
-.account-auth-shell {
-  display: grid;
-  place-items: center;
-  padding-block: clamp(3rem, 8vw, 7rem);
-}
-
-.account-auth-card {
-  width: min(38rem, calc(100% - 2rem));
-}
-
-.account-auth-card > img {
-  margin-bottom: 0.25rem;
-}
-
-.account-auth-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  border: 1px solid var(--line);
-  padding: 0.3rem;
-}
-
-.account-auth-tabs button {
-  min-height: 3rem;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-}
-
 .account-auth-tabs button.is-active {
   background: var(--paper);
   color: var(--ink);
 }
 
-.account-auth-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.account-auth-fields label {
-  display: grid;
-  gap: 0.4rem;
-  color: var(--paper);
-  font-weight: 600;
-}
-
-.account-auth-fields label:first-child:nth-last-child(3) {
-  grid-column: 1 / -1;
-}
-
-.account-app-profile-card {
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-}
-
-.account-priority-panel {
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-.account-panel-heading > div:last-child {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.account-appointment-list,
-.account-order-list {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.account-appointment-card {
-  display: grid;
-  grid-template-columns: minmax(8rem, 0.25fr) minmax(0, 1fr) auto;
-  gap: 1rem;
-  align-items: center;
-  border: 1px solid var(--line);
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.022);
-}
-
-.account-appointment-card time,
-.account-appointment-copy {
-  display: grid;
-}
-
-.account-appointment-card time span,
-.account-appointment-copy p,
-.account-appointment-copy small {
-  color: var(--muted);
-}
-
-.account-appointment-copy h3 {
-  margin-bottom: 0.2rem;
-}
-
-.account-proposal {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-left: 3px solid #ffd28a;
-  padding: 0.8rem 1rem;
-  background: rgba(255, 195, 95, 0.06);
-}
-
-.account-proposal p {
-  margin: 0;
-}
-
-.account-proposal > div {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.account-cancel {
-  grid-column: 1 / -1;
-  justify-self: start;
-}
-
-.account-history {
-  margin-top: 1rem;
-  border-top: 1px solid var(--line);
-  padding-top: 1rem;
-}
-
-.account-history summary {
-  margin-bottom: 1rem;
-  color: var(--paper);
-  cursor: pointer;
-}
-
-.account-order-card {
-  border: 1px solid var(--line);
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.022);
-}
-
-.account-order-card > header,
-.account-order-card > footer,
-.account-order-items > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.account-order-items {
-  margin: 1rem 0;
-  border-block: 1px solid var(--line);
-}
-
-.account-order-items > div {
-  padding: 0.65rem 0;
-}
-
-.account-order-items span {
-  display: grid;
-}
-
-.account-order-items small,
-.account-order-card footer span {
-  color: var(--muted);
-}
-
 @media (max-width: 1100px) {
-  .booking-choice-grid-three {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .booking-choice-grid-three article:last-child {
-    grid-column: 1 / -1;
-  }
 
   .staff-month-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -846,34 +625,9 @@
     grid-column: 2;
     justify-self: start;
   }
-
-  .account-app-profile-card {
-    grid-template-columns: auto 1fr;
-  }
-
-  .account-app-profile-card > span,
-  .account-app-profile-card > button {
-    grid-column: 2;
-  }
 }
 
 @media (max-width: 680px) {
-  .booking-choice-grid-three {
-    grid-template-columns: 1fr;
-  }
-
-  .booking-choice-grid-three article:last-child {
-    grid-column: auto;
-  }
-
-  .booking-choice-grid-three article {
-    min-height: auto;
-  }
-
-  .booking-step-indicator {
-    grid-template-columns: repeat(6, minmax(2.5rem, 1fr));
-    overflow-x: auto;
-  }
 
   .booking-verification-entry,
   .staff-verification-entry,
@@ -954,14 +708,6 @@
 
   .appointment-editor-actions {
     display: grid;
-  }
-
-  .account-panel-heading > div:last-child,
-  .account-order-card > header,
-  .account-order-card > footer,
-  .account-order-items > div {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .account-auth-card > .button,

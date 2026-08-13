@@ -18,20 +18,7 @@
   line-height: 1.5;
 }
 
-@media (max-width: 1040px) {
-  body:has(.mobile-nav-branded[open]) {
-    overflow: hidden;
-  }
-
-  .mobile-nav-branded nav {
-    position: fixed !important;
-  }
-}
-
 @media (max-width: 700px) {
-  .mobile-nav-heading strong {
-    font-size: 1.18rem;
-  }
 
   .mobile-primary-links > a,
   .mobile-secondary-links > a,

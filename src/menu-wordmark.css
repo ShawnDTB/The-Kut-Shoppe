@@ -52,32 +52,6 @@
   pointer-events: none;
 }
 
-.menu-signature {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.menu-signature::before {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max-content;
-  color: transparent;
-  content: 'The Kut Shoppe';
-  font-family: 'Allura', cursive;
-  font-size: clamp(5rem, 6vw, 7.4rem);
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1;
-  opacity: 0.14;
-  transform: translate(-50%, -49%);
-  white-space: nowrap;
-  -webkit-text-stroke: 0.85px rgba(166, 172, 179, 0.72);
-}
-
 .menu-surface {
   position: relative;
   display: flex;
@@ -138,15 +112,6 @@
   background: rgba(9, 9, 9, 0.36);
 }
 
-.mobile-nav-branded > summary {
-  border-color: rgba(244, 244, 244, 0.45);
-}
-
-.mobile-nav-branded nav {
-  background-color: #080808;
-  background-image: none;
-}
-
 @media (max-width: 1360px) {
   .menu-surface {
     padding-inline: 0.8rem;
@@ -154,11 +119,6 @@
 
   .menu-surface .nav-list-branded {
     gap: 0.9rem;
-  }
-
-  .menu-signature::before {
-    font-size: clamp(4.4rem, 5.6vw, 6rem);
-    opacity: 0.11;
   }
 }
 

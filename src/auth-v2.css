@@ -4,56 +4,6 @@
   padding-block: clamp(4rem, 8vw, 7rem);
 }
 
-.v2-auth-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 0.72fr);
-  gap: clamp(2rem, 7vw, 7rem);
-  align-items: start;
-}
-
-.v2-auth-intro {
-  padding-top: clamp(1rem, 4vw, 4rem);
-}
-
-.v2-auth-intro h1 {
-  max-width: 12ch;
-  margin-bottom: 1rem;
-  font-size: clamp(3rem, 6vw, 6.4rem);
-  line-height: 0.95;
-  text-wrap: pretty;
-}
-
-.v2-auth-intro > p {
-  max-width: 56ch;
-  color: var(--muted);
-  font-size: 1.05rem;
-}
-
-.v2-auth-intro ul {
-  display: grid;
-  gap: 0.7rem;
-  margin: 2rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.v2-auth-intro li {
-  position: relative;
-  padding-left: 1.3rem;
-  color: #b8b8b8;
-}
-
-.v2-auth-intro li::before {
-  position: absolute;
-  top: 0.65em;
-  left: 0;
-  width: 0.35rem;
-  height: 0.35rem;
-  border: 1px solid var(--red);
-  content: '';
-  transform: rotate(45deg);
-}
-
 .v2-auth-card {
   display: grid;
   gap: 1.2rem;
@@ -177,30 +127,6 @@
   color: var(--muted);
 }
 
-.v2-profile-summary {
-  display: grid;
-  min-width: min(22rem, 100%);
-  gap: 0.35rem;
-  border: 1px solid var(--line);
-  padding: 1.1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.v2-profile-summary span {
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
-.v2-profile-summary button {
-  justify-self: start;
-}
-
-.v2-dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
 .v2-panel {
   min-width: 0;
   border: 1px solid var(--line);
@@ -287,16 +213,6 @@
   color: var(--muted);
 }
 
-.v2-status {
-  width: fit-content;
-  border: 1px solid rgba(255, 195, 95, 0.55);
-  padding: 0.35rem 0.55rem;
-  color: #ffd28a !important;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .v2-empty {
   border: 1px dashed var(--line-strong);
   padding: 1.25rem;
@@ -348,19 +264,6 @@
     grid-template-columns: 1fr;
   }
 
-  .v2-auth-intro {
-    padding-top: 0;
-  }
-
-  .v2-auth-intro h1 {
-    max-width: 15ch;
-    font-size: clamp(2.8rem, 11vw, 5.2rem);
-  }
-
-  .v2-profile-summary {
-    min-width: 0;
-  }
-
   .v2-panel-priority,
   .v2-panel-wide {
     grid-column: auto;
@@ -375,10 +278,6 @@
   .v2-auth-page,
   .v2-dashboard-page {
     padding-block: 2.75rem;
-  }
-
-  .v2-auth-layout {
-    gap: 1.5rem;
   }
 
   .v2-auth-card {

@@ -24,32 +24,6 @@
   color: var(--muted);
 }
 
-.storefront-v2-cart-button {
-  display: inline-flex;
-  min-height: 3.4rem;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid var(--paper);
-  padding: 0.75rem 1rem;
-  background: transparent;
-  color: var(--paper);
-  cursor: pointer;
-  font-family: var(--accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.storefront-v2-cart-button strong {
-  display: grid;
-  min-width: 1.75rem;
-  height: 1.75rem;
-  place-items: center;
-  background: var(--paper);
-  color: var(--ink);
-}
-
 .storefront-v2-filters {
   display: flex;
   gap: 0.45rem;
@@ -377,10 +351,6 @@
   .storefront-v2-header {
     grid-template-columns: 1fr;
     align-items: start;
-  }
-
-  .storefront-v2-cart-button {
-    justify-self: start;
   }
 
   .storefront-v2-grid {

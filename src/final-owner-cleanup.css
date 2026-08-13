@@ -46,23 +46,6 @@
   overflow: hidden;
 }
 
-.menu-signature::before {
-  top: 57%;
-  left: 43%;
-  width: 100%;
-  max-width: 100%;
-  content: 'The Kut Shoppe';
-  font-family: 'Allura', cursive;
-  font-size: clamp(3.6rem, 4.25vw, 5rem);
-  font-style: normal;
-  letter-spacing: 0;
-  opacity: 0.11;
-  text-align: center;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  -webkit-text-stroke: 0.8px rgba(166, 172, 179, 0.72);
-}
-
 .header-actions-direct {
   gap: 0.45rem;
   padding-right: 0.75rem;
@@ -70,23 +53,6 @@
 
 .header-navigation-surface .header-actions-direct {
   background: transparent;
-}
-
-.provider-booking-link {
-  width: 8.7rem;
-  min-width: 8.7rem;
-  min-height: 2.85rem;
-  justify-content: center;
-  padding: 0.65rem 0.75rem;
-  text-align: center;
-}
-
-.provider-booking-link small {
-  display: none;
-}
-
-.provider-booking-link span {
-  line-height: 1.2;
 }
 
 /* The wide customer pages do not need a repeated icon and eyebrow label. */
@@ -217,15 +183,6 @@
 @media (max-width: 1360px) {
   .header-inner-branded {
     min-height: 5rem;
-  }
-
-  .menu-signature::before {
-    font-size: clamp(3.2rem, 4vw, 4.35rem);
-  }
-
-  .provider-booking-link {
-    width: 8rem;
-    min-width: 8rem;
   }
 }
 
