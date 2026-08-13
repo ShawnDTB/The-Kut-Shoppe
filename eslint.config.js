@@ -23,20 +23,6 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'src/components/StaffPlatformPages.tsx',
-      'src/components/CommercePlatformPages.tsx',
-    ],
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^(BarberDirectoryEntry|useMemo|isValidEmail|isManagerRole)$',
-      }],
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/use-memo': 'off',
-    },
-  },
-  {
     files: ['src/components/Layout.tsx'],
     rules: {
       'react-hooks/set-state-in-effect': 'off',

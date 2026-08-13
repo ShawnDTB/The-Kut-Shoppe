@@ -1,26 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import {
-  createOrUpdateStaffAccount,
-  endSession,
-  findAccount,
-  formatPhone,
-  getSessionAccount,
-  isValidPhone,
-  requestPhoneVerification,
-  startSession,
-  verifyPhoneChallenge,
-} from '../data/auth';
+import { getCurrentAccount, isManagement, isStaff, endSessionEverywhere } from '../data/session';
+import { formatPhone } from '../data/auth';
 import { readNotifications, type NotificationRecord } from '../data/notifications';
 import {
   barberServiceOptions,
   claimWalkIn,
   confirmAppointment,
-  createStaffProfileDraft,
   declineAppointment,
   getBarberDirectory,
   hasAppointmentConflict,
   minutesToTimeLabel,
-  primaryLocation,
   proposeAppointmentTime,
   readAppointments,
   readStaffProfiles,
@@ -47,22 +36,6 @@ const staffLinks = [
 ] as const;
 
 type CalendarView = 'day' | 'week' | 'month';
-
-type VerificationState = {
-  challengeId: string;
-  code: string;
-  developmentCode: string;
-  verified: boolean;
-  error: string;
-};
-
-const emptyVerification: VerificationState = {
-  challengeId: '',
-  code: '',
-  developmentCode: '',
-  verified: false,
-  error: '',
-};
 
 function todayKey() {
   const date = new Date();
@@ -107,14 +80,9 @@ function appointmentDateTime(appointment: PlatformAppointment) {
 }
 
 function getProfileForSession() {
-  const account = getSessionAccount();
+  const account = getCurrentAccount();
   if (!account?.staffProfileId) return null;
   return readStaffProfiles().find((profile) => profile.id === account.staffProfileId) ?? null;
-}
-
-function isManagerRole() {
-  const role = getSessionAccount()?.role;
-  return role === 'owner' || role === 'manager';
 }
 
 function appointmentsVisibleToStaff(
@@ -156,8 +124,8 @@ function StaffShell({
   profile: StaffProfile;
 }) {
   const logout = () => {
-    endSession();
-    window.location.assign('/staff/login');
+    endSessionEverywhere();
+    window.location.assign('/account');
   };
 
   return (
@@ -181,326 +149,8 @@ function StaffShell({
   );
 }
 
-function PhoneVerificationFields({
-  phone,
-  verification,
-  onChange,
-}: {
-  phone: string;
-  verification: VerificationState;
-  onChange: (next: VerificationState) => void;
-}) {
-  const requestCode = () => {
-    try {
-      const challenge = requestPhoneVerification(phone);
-      onChange({
-        challengeId: challenge.challengeId,
-        code: '',
-        developmentCode: challenge.developmentCode,
-        verified: false,
-        error: '',
-      });
-    } catch (error) {
-      onChange({ ...verification, error: error instanceof Error ? error.message : 'Unable to start verification.' });
-    }
-  };
-
-  const verify = () => {
-    const result = verifyPhoneChallenge(verification.challengeId, verification.code);
-    onChange(result.valid
-      ? { ...verification, verified: true, error: '' }
-      : { ...verification, error: result.reason });
-  };
-
-  return (
-    <div className="staff-verification-box">
-      <p><strong>Verify {formatPhone(phone)}</strong></p>
-      {!verification.challengeId ? <button className="button" type="button" disabled={!isValidPhone(phone)} onClick={requestCode}>Send code</button> : null}
-      {verification.challengeId && !verification.verified ? (
-        <div className="staff-verification-entry">
-          <label>Verification code<input inputMode="numeric" maxLength={6} autoComplete="one-time-code" value={verification.code} onChange={(event) => onChange({ ...verification, code: event.target.value.replace(/\D/g, '').slice(0, 6), error: '' })} /></label>
-          <button className="button" type="button" disabled={verification.code.length !== 6} onClick={verify}>Verify</button>
-          <button className="text-button" type="button" onClick={requestCode}>Send another</button>
-        </div>
-      ) : null}
-      {verification.verified ? <p className="success-message">Phone verified.</p> : null}
-      {verification.developmentCode && !verification.verified ? <p className="development-code"><strong>Development code:</strong> {verification.developmentCode}<span>Queued for SMS delivery when the production transport is connected.</span></p> : null}
-      {verification.error ? <p className="form-error" role="alert">{verification.error}</p> : null}
-    </div>
-  );
-}
-
-function StaffLoginPage() {
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [verification, setVerification] = useState<VerificationState>(emptyVerification);
-  const [error, setError] = useState('');
-  const matching = findAccount(email, phone);
-  const validStaff = matching && matching.role !== 'customer' && matching.staffProfileId;
-
-  const finishLogin = () => {
-    if (!matching || !validStaff || !verification.verified) {
-      setError('Complete phone verification with the contact details attached to the staff account.');
-      return;
-    }
-    startSession(matching);
-    window.location.assign('/staff');
-  };
-
-  return (
-    <section className="section staff-login-page platform-pattern platform-pattern-poles">
-      <div className="container narrow-container">
-        <div className="staff-login-card">
-          <p className="eyebrow">Staff portal</p>
-          <h1>Sign in to your chair.</h1>
-          <p>Use the email and mobile number saved during staff setup.</p>
-          <div className="staff-form-grid">
-            <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => { setEmail(event.target.value); setVerification(emptyVerification); setError(''); }} /></label>
-            <label>Mobile phone<input type="tel" autoComplete="tel" value={phone} onChange={(event) => { setPhone(event.target.value); setVerification(emptyVerification); setError(''); }} /></label>
-          </div>
-          {email && phone && !validStaff ? <p className="form-error">No completed staff account matches those details.</p> : null}
-          {validStaff ? <PhoneVerificationFields phone={phone} verification={verification} onChange={setVerification} /> : null}
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
-          <button className="button" type="button" disabled={!validStaff || !verification.verified} onClick={finishLogin}>Open staff portal</button>
-          <div className="staff-login-links"><a href="/staff/setup">Set up a staff account</a><a href="/account">Customer sign in</a></div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SetupProgress({ step }: { step: number }) {
-  const labels = ['Profile', 'Location', 'Services', 'Work hours', 'Booking rules', 'Payouts', 'Verify'];
-  return (
-    <aside className="staff-setup-progress">
-      <p className="eyebrow">Account setup</p>
-      <ol>
-        {labels.map((label, index) => (
-          <li className={step === index + 1 ? 'is-current' : step > index + 1 ? 'is-complete' : ''} key={label}><span>{index + 1}</span>{label}</li>
-        ))}
-      </ol>
-    </aside>
-  );
-}
-
 function FieldError({ message }: { message?: string }) {
   return message ? <small className="field-error" role="alert">{message}</small> : null;
-}
-
-function StaffSetupPage() {
-  const existingSessionProfile = getProfileForSession();
-  const hasApprovedStaff = readStaffProfiles().some((profile) => profile.setupComplete);
-  const sessionAccount = getSessionAccount();
-  const canCreateAdditionalProfile = !hasApprovedStaff
-    || import.meta.env.DEV
-    || sessionAccount?.role === 'owner'
-    || sessionAccount?.role === 'manager';
-  const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState<StaffProfile>(() => existingSessionProfile ?? createStaffProfileDraft());
-  const [verification, setVerification] = useState<VerificationState>(emptyVerification);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (existingSessionProfile) window.location.replace('/staff/settings');
-  }, [existingSessionProfile]);
-
-  const updateSchedule = (day: WeeklyWindow['day'], patch: Partial<WeeklyWindow>) => {
-    setProfile((current) => ({
-      ...current,
-      schedule: current.schedule.map((window) => window.day === day ? { ...window, ...patch } : window),
-    }));
-  };
-
-  const toggleService = (serviceId: string) => {
-    setProfile((current) => ({
-      ...current,
-      serviceIds: current.serviceIds.includes(serviceId)
-        ? current.serviceIds.filter((id) => id !== serviceId)
-        : [...current.serviceIds, serviceId],
-    }));
-  };
-
-  const nextStep = (next: number) => {
-    const validation = validateStaffProfile(profile);
-    const currentErrors: Record<string, string> = {};
-    if (step === 1) {
-      if (validation.professionalName) currentErrors.professionalName = validation.professionalName;
-      if (validation.email) currentErrors.email = validation.email;
-      if (validation.phone) currentErrors.phone = validation.phone;
-    }
-    if (step === 2) {
-      if (validation.locationName) currentErrors.locationName = validation.locationName;
-      if (validation.locationAddress) currentErrors.locationAddress = validation.locationAddress;
-    }
-    if (step === 3 && validation.serviceIds) currentErrors.serviceIds = validation.serviceIds;
-    if (step === 4) {
-      Object.entries(validation).forEach(([key, value]) => {
-        if (key === 'schedule' || key.startsWith('schedule-')) currentErrors[key] = value;
-      });
-    }
-    setErrors(currentErrors);
-    if (!Object.keys(currentErrors).length) setStep(next);
-  };
-
-  const completeSetup = () => {
-    const validation = validateStaffProfile(profile);
-    if (Object.keys(validation).length || !verification.verified) {
-      setErrors(validation);
-      return;
-    }
-    const completed: StaffProfile = {
-      ...profile,
-      email: profile.email.trim().toLowerCase(),
-      phone: profile.phone.replace(/\D/g, '').slice(-10),
-      setupComplete: true,
-      updatedAt: new Date().toISOString(),
-    };
-    saveStaffProfile(completed);
-    const account = createOrUpdateStaffAccount({
-      name: completed.professionalName,
-      email: completed.email,
-      phone: completed.phone,
-      role: completed.role,
-      staffProfileId: completed.id,
-      phoneVerified: true,
-    });
-    startSession(account);
-    window.location.assign('/staff');
-  };
-
-  if (existingSessionProfile) {
-    return (
-      <section className="section staff-platform-page">
-        <div className="container narrow-container"><div className="staff-empty-state"><h1>Opening staff settings.</h1><p>Completed setup is managed from the protected Settings page.</p><a className="button" href="/staff/settings">Continue</a></div></div>
-      </section>
-    );
-  }
-
-  if (!canCreateAdditionalProfile) {
-    return (
-      <section className="section staff-platform-page platform-pattern platform-pattern-poles">
-        <div className="container narrow-container">
-          <div className="staff-empty-state">
-            <p className="eyebrow">Staff invitation required</p>
-            <h1>Additional staff accounts require owner approval.</h1>
-            <p>The first local prototype account can initialize setup. Additional production accounts must be invited by an owner or manager before the barber enters personal contact, services, hours, and booking rules.</p>
-            <a className="button" href="/staff/login">Staff sign in</a>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="section staff-platform-page platform-pattern platform-pattern-tools">
-      <div className="container route-wide">
-        <header className="staff-platform-header">
-          <div><p className="eyebrow">Staff account setup</p><h1>Build the schedule customers can trust.</h1></div>
-          <a className="text-link" href="/staff/login">Already set up? Sign in</a>
-        </header>
-        <div className="staff-setup-layout">
-          <SetupProgress step={step} />
-          <main className="staff-setup-card">
-            {step === 1 ? (
-              <section>
-                <p className="eyebrow">Step 1 of 7</p><h2>Professional profile</h2><p>Required fields are marked and must be valid before continuing.</p>
-                <div className="staff-form-grid">
-                  <label>Professional name <span aria-hidden="true">*</span><input required value={profile.professionalName} onChange={(event) => setProfile({ ...profile, professionalName: event.target.value })} /><FieldError message={errors.professionalName} /></label>
-                  <label>Email <span aria-hidden="true">*</span><input required type="email" autoComplete="email" value={profile.email} onChange={(event) => { setProfile({ ...profile, email: event.target.value }); setVerification(emptyVerification); }} /><FieldError message={errors.email} /></label>
-                  <label>Mobile phone <span aria-hidden="true">*</span><input required type="tel" autoComplete="tel" value={profile.phone} onChange={(event) => { setProfile({ ...profile, phone: event.target.value }); setVerification(emptyVerification); }} /><FieldError message={errors.phone} /></label>
-                  <label>Portal role<input value="Barber" readOnly /><small>Managers and owners assign elevated permissions after setup.</small></label>
-                  <label className="staff-form-wide">Public introduction<textarea rows={4} value={profile.publicBio} onChange={(event) => setProfile({ ...profile, publicBio: event.target.value })} placeholder="Optional short introduction shown to customers" /></label>
-                </div>
-                <div className="staff-form-actions"><span /><button className="button" type="button" onClick={() => nextStep(2)}>Continue</button></div>
-              </section>
-            ) : null}
-
-            {step === 2 ? (
-              <section>
-                <p className="eyebrow">Step 2 of 7</p><h2>Work location</h2><p>The Main Street shop is selected by default. Future approved locations can be added by management.</p>
-                <label className="staff-location-card is-selected"><input type="radio" checked readOnly /><span><strong>{primaryLocation.name}</strong><small>{primaryLocation.address}</small></span></label>
-                <div className="staff-form-grid">
-                  <label>Location display name <span aria-hidden="true">*</span><input required value={profile.locationName} onChange={(event) => setProfile({ ...profile, locationName: event.target.value })} /><FieldError message={errors.locationName} /></label>
-                  <label>Address <span aria-hidden="true">*</span><input required value={profile.locationAddress} onChange={(event) => setProfile({ ...profile, locationAddress: event.target.value })} /><FieldError message={errors.locationAddress} /></label>
-                </div>
-                <div className="staff-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(1)}>Back</button><button className="button" type="button" onClick={() => nextStep(3)}>Choose services</button></div>
-              </section>
-            ) : null}
-
-            {step === 3 ? (
-              <section>
-                <p className="eyebrow">Step 3 of 7</p><h2>Services you accept</h2><p>Select every service customers can request from your chair.</p>
-                <FieldError message={errors.serviceIds} />
-                <div className="staff-service-selector">
-                  {barberServiceOptions.map((service) => (
-                    <label className={profile.serviceIds.includes(service.id) ? 'is-selected' : ''} key={service.id}><input type="checkbox" checked={profile.serviceIds.includes(service.id)} onChange={() => toggleService(service.id)} /><span><small>{service.category}</small><strong>{service.name}</strong></span><span><strong>{service.price}</strong><small>{service.durationMinutes} min</small></span></label>
-                  ))}
-                </div>
-                <div className="staff-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(2)}>Back</button><button className="button" type="button" onClick={() => nextStep(4)}>Set work hours</button></div>
-              </section>
-            ) : null}
-
-            {step === 4 ? (
-              <section>
-                <p className="eyebrow">Step 4 of 7</p><h2>Weekly work hours</h2><p>These hours drive the customer-facing availability engine.</p>
-                <FieldError message={errors.schedule} />
-                <div className="staff-hours-editor">
-                  {profile.schedule.map((window) => (
-                    <div className={window.enabled ? 'is-enabled' : ''} key={window.day}>
-                      <label><input type="checkbox" checked={window.enabled} onChange={(event) => updateSchedule(window.day, { enabled: event.target.checked })} />{window.label}</label>
-                      <input type="time" value={window.start} disabled={!window.enabled} aria-label={`${window.label} start time`} onChange={(event) => updateSchedule(window.day, { start: event.target.value })} />
-                      <span>to</span>
-                      <input type="time" value={window.end} disabled={!window.enabled} aria-label={`${window.label} end time`} onChange={(event) => updateSchedule(window.day, { end: event.target.value })} />
-                      <FieldError message={errors[`schedule-${window.day}`]} />
-                    </div>
-                  ))}
-                </div>
-                <div className="staff-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(3)}>Back</button><button className="button" type="button" onClick={() => nextStep(5)}>Booking rules</button></div>
-              </section>
-            ) : null}
-
-            {step === 5 ? (
-              <section>
-                <p className="eyebrow">Step 5 of 7</p><h2>Booking and waitlist rules</h2>
-                <div className="staff-form-grid">
-                  <label>Buffer after appointments<select value={profile.bookingRules.bufferMinutes} onChange={(event) => setProfile({ ...profile, bookingRules: { ...profile.bookingRules, bufferMinutes: Number(event.target.value) } })}><option value="0">No buffer</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option></select></label>
-                  <label>Minimum notice<select value={profile.bookingRules.minimumNoticeHours} onChange={(event) => setProfile({ ...profile, bookingRules: { ...profile.bookingRules, minimumNoticeHours: Number(event.target.value) } })}><option value="0">Same time if open</option><option value="1">1 hour</option><option value="2">2 hours</option><option value="4">4 hours</option><option value="24">24 hours</option></select></label>
-                  <label>Booking window<select value={profile.bookingRules.bookingWindowDays} onChange={(event) => setProfile({ ...profile, bookingRules: { ...profile.bookingRules, bookingWindowDays: Number(event.target.value) } })}><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label>
-                </div>
-                <div className="staff-toggle-list">
-                  <label><input type="checkbox" checked={profile.bookingRules.acceptsNewClients} onChange={(event) => setProfile({ ...profile, bookingRules: { ...profile.bookingRules, acceptsNewClients: event.target.checked } })} /><span><strong>Accept new clients</strong><small>Allow first-time customers to request your chair.</small></span></label>
-                  <label><input type="checkbox" checked={profile.bookingRules.allowAnyAvailable} onChange={(event) => setProfile({ ...profile, bookingRules: { ...profile.bookingRules, allowAnyAvailable: event.target.checked } })} /><span><strong>Join Any Available Barber</strong><small>Allow open times to be matched to your chair.</small></span></label>
-                  <label><input type="checkbox" checked={profile.bookingRules.acceptsWalkIns} onChange={(event) => setProfile({ ...profile, bookingRules: { ...profile.bookingRules, acceptsWalkIns: event.target.checked } })} /><span><strong>See walk-in requests</strong><small>Claim last-minute clients or propose another time.</small></span></label>
-                </div>
-                <div className="staff-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(4)}>Back</button><button className="button" type="button" onClick={() => setStep(6)}>Payout setup</button></div>
-              </section>
-            ) : null}
-
-            {step === 6 ? (
-              <section>
-                <p className="eyebrow">Step 6 of 7</p><h2>Payout profile</h2>
-                <div className="staff-payout-notice"><strong>No banking information is collected here.</strong><p>The platform records approved earnings and manual payouts until a regulated transfer provider is connected.</p></div>
-                <div className="staff-form-grid">
-                  <label>Payout tracking<input value="Manual payout ledger" readOnly /></label>
-                  <label>Preferred frequency<select value={profile.payoutProfile.frequency} onChange={(event) => setProfile({ ...profile, payoutProfile: { ...profile.payoutProfile, frequency: event.target.value as StaffProfile['payoutProfile']['frequency'] } })}><option value="weekly">Weekly</option><option value="biweekly">Every two weeks</option><option value="monthly">Monthly</option></select></label>
-                </div>
-                <div className="staff-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(5)}>Back</button><button className="button" type="button" onClick={() => setStep(7)}>Verify account</button></div>
-              </section>
-            ) : null}
-
-            {step === 7 ? (
-              <section>
-                <p className="eyebrow">Step 7 of 7</p><h2>Verify and activate the staff account</h2>
-                <div className="staff-review-panel"><p><strong>Professional:</strong> {profile.professionalName}</p><p><strong>Email:</strong> {profile.email}</p><p><strong>Phone:</strong> {formatPhone(profile.phone)}</p><p><strong>Services:</strong> {profile.serviceIds.length}</p><p><strong>Working days:</strong> {profile.schedule.filter((window) => window.enabled).length}</p></div>
-                <PhoneVerificationFields phone={profile.phone} verification={verification} onChange={setVerification} />
-                <div className="staff-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(6)}>Back</button><button className="button" type="button" disabled={!verification.verified} onClick={completeSetup}>Activate staff portal</button></div>
-              </section>
-            ) : null}
-          </main>
-        </div>
-      </div>
-    </section>
-  );
 }
 
 function StaffSettingsPage({ profile }: { profile: StaffProfile }) {
@@ -860,13 +510,13 @@ function StaffNotificationsPage({ profile, canManageAll }: { profile: StaffProfi
 }
 
 function StaffProtectedRoutes({ path }: { path: string }) {
-  const account = getSessionAccount();
+  const account = getCurrentAccount();
   const profile = getProfileForSession();
-  if (!account || account.role === 'customer' || !profile) {
-    return <section className="section staff-login-required platform-pattern platform-pattern-poles"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">Staff sign-in required</p><h1>Open the protected staff portal.</h1><p>Appointment details, customer contact information, schedules, earnings, and payouts are available only after staff verification.</p><a className="button" href="/staff/login">Staff sign in</a></div></div></section>;
+  if (!account || !isStaff(account) || !profile) {
+    return <section className="section staff-login-required platform-pattern platform-pattern-poles"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">Staff sign-in required</p><h1>Open the protected staff portal.</h1><p>Appointment details, customer contact information, schedules, earnings, and payouts are available only after staff verification.</p><a className="button" href="/account">Staff sign in</a></div></div></section>;
   }
 
-  const canManageAll = account.role === 'owner' || account.role === 'manager';
+  const canManageAll = isManagement(account);
   if (path === '/staff/settings') return <StaffSettingsPage profile={profile} />;
   if (path === '/staff/calendar') return <StaffCalendarPage profile={profile} canManageAll={canManageAll} />;
   if (path === '/staff/requests') return <StaffRequestsPage profile={profile} canManageAll={canManageAll} />;
@@ -877,8 +527,10 @@ function StaffProtectedRoutes({ path }: { path: string }) {
   return <StaffDashboardPage profile={profile} canManageAll={canManageAll} />;
 }
 
+// /staff/login and /staff/setup never actually reach this component --
+// App.tsx redirects /staff/login to /account and routes /staff/setup to
+// StaffOnboardingV6 directly -- so this only ever handles the protected
+// operational routes.
 export function StaffPlatformPage({ path }: { path: string }) {
-  if (path === '/staff/login') return <StaffLoginPage />;
-  if (path === '/staff/setup') return <StaffSetupPage />;
   return <StaffProtectedRoutes path={path} />;
 }

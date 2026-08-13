@@ -1,3 +1,5 @@
+import { findAccount as findLegacyAccount, saveAccount as saveLegacyAccount, type AccountRole as LegacyRole } from './auth';
+
 export type PlatformRole = 'customer' | 'barber' | 'manager' | 'owner' | 'developer';
 
 export type PlatformCapability =
@@ -230,12 +232,25 @@ export function updatePlatformRole(actor: PlatformAccount, accountId: string, ro
   }
   if (target.id === actor.id && role === 'customer') throw new Error('You cannot remove your own access from this preview.');
 
-  return savePlatformAccount({
+  const updated = savePlatformAccount({
     ...target,
     role,
     developerAccess: role === 'developer' ? true : target.developerAccess,
     updatedAt: new Date().toISOString(),
   });
+
+  // Keep the legacy auth.ts record in sync immediately, rather than only
+  // at that user's next login (see the "Two parallel, incompatible auth
+  // data models" note in CLAUDE.md). Only live components that haven't
+  // been migrated onto src/data/session.ts still depend on this, but a
+  // role change should never be allowed to leave a stale copy behind.
+  const legacyMatch = findLegacyAccount(updated.email);
+  if (legacyMatch) {
+    const legacyRole: LegacyRole = role === 'developer' ? 'owner' : role === 'barber' ? 'staff' : role;
+    saveLegacyAccount({ ...legacyMatch, role: legacyRole, staffProfileId: updated.staffProfileId, updatedAt: updated.updatedAt });
+  }
+
+  return updated;
 }
 
 export function linkPlatformStaffProfile(accountId: string, staffProfileId: string, displayName?: string) {
