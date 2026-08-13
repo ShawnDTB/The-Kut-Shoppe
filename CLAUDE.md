@@ -29,7 +29,7 @@ src/entry-server.tsx    SSR entry + per-route SEO metadata + the route list used
 src/data/site.ts        Real business info, services/pricing, team, nav, route metadata + a content verification-status model
 src/data/*.ts           Other business data + browser-only "platform" persistence adapters (accounts, appointments, orders, etc. — NOT a real backend, see below)
 src/components/*.tsx    UI components — see "Component version sprawl" below before touching any of these
-src/*.css (36 files)    Globally imported in App.tsx, cascade-order dependent — see "CSS" below
+src/*.css               Globally imported in App.tsx, cascade-order dependent — see "CSS" below
 scripts/build.mjs       Client build + SSR build + prerender, invoked by `npm run build`
 scripts/prerender.mjs   Writes static HTML per route + sitemap.xml into dist/
 scripts/check-bundle-size.mjs   Enforces gzip budgets (see below)
@@ -39,25 +39,44 @@ migrations/             D1 schema (not yet applied anywhere real)
 
 ### Platform V2: what it actually is
 
-This codebase has grown well beyond a marketing site into a full multi-role SaaS: customer accounts, barber/manager/owner/developer roles, an internal booking engine with waitlist, a product shop with cart/checkout/inventory, and staff/admin dashboards. This is deliberate, not runaway scope creep — the owner confirmed (2026-08-13) it's the active direction.
+This codebase has grown well beyond a marketing site into a full multi-role SaaS: customer accounts, barber/manager/owner/developer roles, an internal booking engine with waitlist, a product shop with cart/checkout/inventory, and staff/admin dashboards. This is deliberate, not runaway scope creep — the owner confirmed it's the active direction.
 
 **But it has no real backend.** Accounts, appointments, orders, and inventory all live in browser storage (`src/data/*.ts` adapters). `docs/platform/production-cutover-checklist.md` lists everything required before this is safe to expose to real customers (real database, server-side auth, payments, email/SMS, etc.) — as of this writing, none of it is checked off.
 
 **Concretely:** the homepage's "Book Now" CTA and the `/book` "Book with a Barber" path currently route into this backend-less internal engine (`/book?barber=any`), not directly to the real Booksy calendar. "Book with the Loctician" correctly links out to the real GlossGenius URL. Do not let the internal barber flow go live/get indexed before its backend exists — either finish the backend first, or keep/restore a direct external link as an interim safeguard. This is the single highest-stakes gate before any real deployment.
 
+### Two parallel, incompatible auth data models — read before touching account/session code
+
+`src/data/auth.ts` (legacy, storage keys `kut-shoppe.*.v2`, `CustomerAccount` type, no password field, phone-based SMS verification) and `src/data/auth-v2.ts` (current, storage keys `kut-shoppe.*.v3`, `PlatformAccount` type, real PBKDF2 password hashing, capability-based roles) are **not two versions of the same system — they're genuinely different data models with separate storage and no shared source of truth.**
+
+`auth-v2.ts` is primary: `AccountAccessV5.tsx` (signup/login), `AccountDashboard.tsx`/`CustomerAccountDashboard.tsx`/`StaffAccountDashboard.tsx` (account views) all use it. But `auth.ts` is still genuinely load-bearing: **`StaffPlatformPages.tsx` (all of `/staff/*` — calendar, requests, waitlist, earnings, payouts, notifications) and `CommercePlatformPages.tsx` authenticate exclusively via `auth.ts`'s `getSessionAccount()`, and were never migrated to `auth-v2.ts`.** To keep those pages working, `AccountAccessV5.tsx` and `StaffOnboardingV5/V6.tsx` dual-write a compatible `auth.ts` record every time someone logs in or completes onboarding (`bridgePrototypeSession` / `saveLegacyAccount` / `startLegacySession`).
+
+This bridge has a known gap: `updatePlatformRole()` (the role-elevation feature in `StaffAccountDashboard.tsx`'s Access Manager) only updates `auth-v2.ts` — it does not sync the legacy `auth.ts` record, so a role change won't be visible to the `/staff/*` pages until that user's next login. Don't casually merge these two systems; see the engineering report from the 2026-08-13 consolidation session for the full migration plan. Do keep using `auth.ts`'s phone/email formatting utilities (`normalizePhone`, `isValidPhone`, etc.) freely — those are just pure functions, not part of the account/session divide.
+
 ### Component version sprawl — read before deleting or "consolidating" anything
 
-Many components exist in multiple numbered generations in the same directory (`BookingV2`...`BookingV7`, `RoleDashboardV2`...`RoleDashboardV6`, `AccountAccessV2`...`AccountAccessV5`, `StaffOnboardingV2`...`V6`, etc.). **The highest version number is not always the live one, and some "live" chains wrap older versions as fallbacks** (e.g. `RoleDashboardV6` wraps `RoleDashboardV5`, which falls back to `RoleDashboardV4` for non-customer roles; `StaffOnboardingV6` falls back to `StaffOnboardingV5`).
+Some components still exist in multiple numbered generations (e.g. `AccountAccessV2`...`AccountAccessV5`, `StaffOnboardingV2`...`V6`). A 2026-08-13 session consolidated the chains that were safe to flatten without behavior change:
 
-Before treating any `src/components/*.tsx` file as dead or current: **trace real reachability from `src/App.tsx`'s imports**, transitively, by grepping the whole `src/` tree for `from './<Name>'` (there are no dynamic imports in this codebase to worry about, as of this writing). Thirteen genuinely orphaned files from earlier iterations were already removed in the 2026-08-13 session; if more accumulate, use the same reachability method before removing them.
+- `RoleDashboardV4/V5/V6` → `StaffAccountDashboard.tsx` / `CustomerAccountDashboard.tsx` / `AccountDashboard.tsx`
+- `LayoutV5/V6` (plus the old, mostly-dead `Layout.tsx`) → `Layout.tsx` (exports `SiteLayout`, `Arrow`)
+- `BookingV6/V7` → `Booking.tsx` (exports `Booking`, `WalkInEntry`)
+- `StaffPlatformPagesV6` → `StaffPlatformGate.tsx` (renamed only, not merged into the underlying 55KB `StaffPlatformPages.tsx`)
+
+**`StaffOnboardingV5.tsx`/`StaffOnboardingV6.tsx` were deliberately left alone** — V6 now intercepts every non-barber, non-customer account before it reaches V5, making V5's `!isBarber` branches dead, but those branches are interleaved inside the same dense single-line JSX ternaries as the still-live barber wizard. See the comment block at the top of `StaffOnboardingV5.tsx` before attempting to touch it.
+
+**Before treating any `src/components/*.tsx` file as dead or current: trace real reachability from `src/App.tsx`'s imports**, transitively, by grepping the whole `src/` tree for `from './<Name>'` (there are no dynamic imports in this codebase to worry about, as of this writing). Some "live" chains wrap others as role-based fallbacks rather than superseding them outright — read the actual component before assuming a version number tells you anything.
 
 ### CSS — do not assume file-name versions match component versions
 
-All 36 CSS files are imported unconditionally and globally in `src/App.tsx`, in a specific cascade order that matters (no CSS modules, no scoping). **A CSS file named e.g. `booking-v2.css` is not necessarily only used by `BookingV2.tsx`** — verified in this session, `booking-v2.css`, `storefront-v2.css`, and `staff-onboarding-v2.css` classes are actually consumed by the current `BookingV6`/`BookingV7`, `StorefrontV5`, and `StaffOnboardingV5` components. Never delete or "clean up" a CSS file based on its filename alone — grep the class names it defines against every live component first.
+All CSS files are imported unconditionally and globally in `src/App.tsx`, in a specific cascade order that matters (no CSS modules, no scoping). **A CSS file named e.g. `booking-v2.css` is not necessarily only used by a "V2" component** — verified twice now, `booking-v2.css`, `storefront-v2.css`, and `staff-onboarding-v2.css` classes are consumed by current-generation components despite the naming. Never delete or "clean up" a CSS file (or even a single rule) based on its filename alone — cross-reference every class token in a selector against a literal-text search of all live `.tsx`/`.ts` source first. Watch for dynamic class names built from runtime enum values via template literals (e.g. `` `order-status-${order.status}` ``) — a literal-text search can't see the concatenated result, so treat known dynamic-prefix families (`order-status-`, `order-payment-`, `order-v5-`, `staff-status-`, `account-v6-view-`) as unremovable regardless of what a naive search says.
 
-### Bundle budgets are nearly exhausted
+### Bundle budgets
 
-`npm run bundlecheck` enforces **120 KB gzip JS / 40 KB gzip CSS**, checked against everything in `dist/assets`. As of 2026-08-13 the build sits at **~119.97 KB / ~39.99 KB** — essentially no headroom left. Any nontrivial new dependency, component, or CSS addition is likely to fail this check. Budget headroom should be treated as scarce; a CSS audit to reclaim space is a good candidate for a future session (see Remaining Issues in the engineering report from this session).
+`npm run bundlecheck` enforces **120 KB gzip JS / 40 KB gzip CSS**, checked against everything in `dist/assets`. This was essentially maxed out (~119.97/39.99 KB) until a 2026-08-13 dead-CSS-rule removal pass reclaimed real headroom (CSS down to ~32.6 KB). Treat headroom as still finite — recheck `npm run bundlecheck` after any nontrivial addition, and prefer removing genuinely dead code/CSS (verified via reachability/usage tracing, never by filename) over just accepting a shrinking margin.
+
+### Hydration-safety pattern for anything outside a `ClientPlatform` gate
+
+`App.tsx`'s `ClientPlatform` wrapper (`useSyncExternalStore`) makes browser-only content safely render nothing during the hydration-critical first pass, then swap in the real content after mount — but this only protects components that are actually inside that wrapper. **Anything rendered outside it (the shared `Layout.tsx` Header, `HomePage.tsx`, the `RoutePage` fallback pages) must not read `localStorage`/session/cart state via a `useState(() => ...)` lazy initializer**, because that runs during the hydration-critical render and will only match the server's output when the browser's storage happens to be empty — a real, site-wide, easy-to-miss bug (see `Layout.tsx`'s `Header`, fixed 2026-08-13: start from the SSR-safe default, e.g. `null`/`0`, and set the real value in a mount effect instead). To reproduce this class of bug reliably, don't rely on random reloads — seed `localStorage` with fake account/cart data in a production preview build (`kut-shoppe.cart.v2`, `kut-shoppe.accounts.v3` + `kut-shoppe.session.v3`) and it should reproduce on the very first load.
 
 ## Development commands (all verified to actually exist and run)
 
@@ -79,7 +98,7 @@ There is no test script — don't reference `npm test` or invent one without bei
 - Business data (name, address, phone, services, pricing, team, booking URLs) is centralized in `src/data/site.ts` — don't hardcode business facts elsewhere.
 - Route content carries an explicit verification status (`verified-live-site` / `verified-booking-platform` / `requires-verification` / `placeholder`) used to drive `robots` meta and sitemap inclusion (`placeholder` routes are `noindex` and excluded from the sitemap). Preserve this pattern for new routes.
 - SEO metadata (title/description/canonical/OG) is generated per-route in `src/entry-server.tsx`, not hardcoded in `index.html`.
-- `index.html`'s `<div id="root"><!--app-html--></div>` is only filled in by the production prerender step. In dev, `#root` is genuinely empty — `src/entry-client.tsx` now branches on whether `#root` has element children to decide `hydrateRoot` vs `createRoot` (fixed 2026-08-13; keep this branch if you touch that file).
+- `index.html`'s `<div id="root"><!--app-html--></div>` is only filled in by the production prerender step. In dev, `#root` is genuinely empty — `src/entry-client.tsx` branches on `import.meta.env.DEV` + whether `#root` has element children to decide `createRoot` vs `hydrateRoot`. The `import.meta.env.DEV` check is load-bearing, not just a guard: it lets Vite dead-code-eliminate the whole dev-only branch (including the `createRoot` import) from the production bundle, so the fix costs nothing in the real build. Keep that structure if you touch this file.
 
 ## Design principles
 
@@ -95,9 +114,9 @@ Every meaningful frontend change must be checked at minimum at **320 / 375 / 390
 
 ## Git safety
 
-- Don't develop directly on `main`. Use a focused branch per unit of work.
+- Don't develop directly on `main`. **`dev-branch`** (branched from `main`) is the active development branch as of 2026-08-13 — continue work there unless told otherwise. `main` stays production-intent.
 - No force-push, no history rewrite, no deleting branches/tags, no merging into `main`, without explicit owner approval.
-- This history already contains intentional safety artifacts from an 2026-08-04 stabilization event: tags `pre-platform-v2-main-2026-08-04` / `pre-repository-stabilization-2026-08-04`, and branches `backup/pre-platform-v2-restore-2026-08-04` / `recovery/restore-platform-v2-2026-08-04`. Leave them alone — they're rollback insurance, not clutter.
+- This history already contains intentional safety artifacts from an 2026-08-04 stabilization event: tags `pre-platform-v2-main-2026-08-04` / `pre-repository-stabilization-2026-08-04`, and branches `backup/pre-platform-v2-restore-2026-08-04` / `recovery/restore-platform-v2-2026-08-04`. Leave them alone — they're rollback insurance, not clutter. The now-superseded `claude/repository-foundation` branch (same tip as `dev-branch`'s starting point) is also still around; don't delete it without being asked.
 - **Only one Claude Code session should operate in this working directory at a time.** Git branch state and the working tree are shared filesystem state, not session-isolated — a concurrent session running `git checkout`/`git commit` here will race with yours. If you see unexplained commits or branch changes in `git reflog` that you didn't make, stop and check with the owner before continuing.
 
 ## Validation before claiming work is done

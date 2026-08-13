@@ -80,13 +80,13 @@ The frontend workflows are now reviewable together. Production launch still requ
 
 ## Platform V2 status
 
-The active review branch is:
+As of 2026-08-13, **`main` is Platform V2.** The earlier `feature/platform-v2` review branch was consolidated into `main` on 2026-08-04 and no longer exists; there is no separate "stable simple site" branch in this repository anymore. Safety snapshots from that consolidation (tags `pre-platform-v2-main-2026-08-04` and `pre-repository-stabilization-2026-08-04`, and branches under `backup/` and `recovery/`) remain in the repository as rollback insurance and should be left alone.
 
-```text
-feature/platform-v2
-```
+Active development now happens on **`dev-branch`**, branched from `main`. `main` stays production-intent; changes land on `dev-branch` first.
 
-`main` remains the stable website branch while Platform V2 is reviewed and its production services are built.
+**Platform V2 is not connected to the live website.** `www.thekutshoppe.com` runs on WordPress today, entirely separate from this repository. Nothing here is deployed anywhere yet.
+
+**Platform V2 has no real backend.** Every account, appointment, order, and product described below is stored in the visitor's own browser (see [Current local persistence](#current-local-persistence)). Treat all of it as a working prototype of the intended product, not as production-ready customer-facing functionality, until the backend described in [Production boundary](#production-boundary) exists.
 
 Platform V2 was assembled through isolated feature branches for:
 
@@ -98,7 +98,7 @@ Platform V2 was assembled through isolated feature branches for:
 - Account-linked professional onboarding
 - Crew, route, mobile, and accessibility refinement
 
-Each completed phase passed TypeScript, ESLint, and the production build before being merged into the Platform V2 branch.
+Each completed phase passed TypeScript, ESLint, and the production build before being merged.
 
 ## Customer experience
 
@@ -301,8 +301,8 @@ Low-contrast pattern families bring more life to Services, Crew, Gallery, Visit,
 
 ```bash
 git fetch origin
-git switch feature/platform-v2
-git pull --ff-only origin feature/platform-v2
+git switch dev-branch
+git pull --ff-only origin dev-branch
 npm install
 npm run check
 npm run dev
@@ -393,7 +393,7 @@ docs/
   platform/               Booking, commerce, schema, and V2 handoff
 
 migrations/
-  0001_platform_core.sql  D1 platform schema
+  0001_unified_platform.sql  D1 platform schema
 
 public/
   favicon.svg
@@ -415,7 +415,7 @@ src/
 
 ## Current local persistence
 
-Platform V2 currently uses browser adapters for local review of:
+Platform V2 currently uses browser adapters (`window.localStorage`) for local review of:
 
 - Accounts and sessions
 - Staff profiles
@@ -426,7 +426,7 @@ Platform V2 currently uses browser adapters for local review of:
 - Orders
 - Notification outbox
 
-This makes the complete workflow testable on one device. It is not production multi-user persistence.
+This makes the complete workflow testable on one device, and nothing more. **None of it is real production data.** It lives only in one visitor's browser, is never sent to a server, disappears if that browser's storage is cleared, and cannot be seen by anyone else — including the shop. Do not treat a customer "creating an account," "booking an appointment," or "placing an order" in this app as something the business has actually received, until the real backend in [Production boundary](#production-boundary) is built and connected.
 
 ## Production boundary
 

@@ -1,6 +1,7 @@
 import { renderToString } from 'react-dom/server';
 import { App } from './App';
-import { findRoute, routes, type RouteDefinition } from './data/site';
+import { business, findRoute, routes, type RouteDefinition } from './data/site';
+import { originalAssets } from './data/visuals';
 
 const platformRoutes: RouteDefinition[] = [
   {
@@ -207,6 +208,35 @@ function resolveRoute(url: string) {
   return findRoute(normalized);
 }
 
+// LocalBusiness structured data, built only from fields already verified
+// elsewhere in this codebase (src/data/site.ts's `business` object and the
+// live logo asset). Hours are deliberately excluded: business.hoursStatus
+// is 'requires-verification', and presenting unverified hours to search
+// engines as fact risks sending real customers to a closed shop. The
+// street address below mirrors `business.address` in site.ts -- keep them
+// in sync if that ever changes.
+const localBusinessSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BarberShop',
+  name: business.name,
+  legalName: business.legalName,
+  telephone: business.phoneHref.replace('tel:', ''),
+  url: 'https://www.thekutshoppe.com',
+  image: originalAssets.logo,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '518 Main Street',
+    addressLocality: 'Stroudsburg',
+    addressRegion: 'PA',
+    postalCode: '18360',
+    addressCountry: 'US',
+  },
+};
+
+// Escape '</' so a literal `</script>` inside the JSON can't prematurely
+// close the surrounding <script> tag.
+const localBusinessJsonLd = JSON.stringify(localBusinessSchema).replaceAll('</', '<\\/');
+
 export function render(url: string) {
   const route = resolveRoute(url);
   const canonical = `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`;
@@ -222,6 +252,7 @@ export function render(url: string) {
     `<meta property="og:title" content="${escapeAttribute(route.title)}" />`,
     `<meta property="og:description" content="${escapeAttribute(route.description)}" />`,
     `<meta property="og:url" content="${canonical}" />`,
+    `<script type="application/ld+json">${localBusinessJsonLd}</script>`,
   ].join('\n    ');
 
   return {
