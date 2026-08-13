@@ -330,6 +330,8 @@ VITE_DEV_MASTER_EMAIL=
 VITE_DEV_MASTER_PASSWORD=
 ```
 
+Copy [.env.example](./.env.example) to `.env` to configure these locally.
+
 The development seed is disabled in production builds and must not be used as a production credential.
 
 ## Recommended review routes
