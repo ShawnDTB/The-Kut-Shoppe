@@ -24,9 +24,7 @@ export default tseslint.config(
   },
   {
     files: [
-      'src/components/InternalBookingPage.tsx',
       'src/components/StaffPlatformPages.tsx',
-      'src/components/CustomerAccountPrototype.tsx',
       'src/components/CommercePlatformPages.tsx',
     ],
     rules: {
@@ -36,12 +34,6 @@ export default tseslint.config(
       }],
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/use-memo': 'off',
-    },
-  },
-  {
-    files: ['src/components/BookingV4.tsx', 'src/components/BookingV5.tsx'],
-    rules: {
-      '@typescript-eslint/no-unused-expressions': 'off',
     },
   },
   {
