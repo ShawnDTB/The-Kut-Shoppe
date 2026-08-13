@@ -37,13 +37,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/RoleDashboardV4.tsx', 'src/components/LayoutV5.tsx'],
+    files: ['src/components/Layout.tsx'],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
     },
   },
   {
-    files: ['src/components/RoleDashboardV5.tsx', 'src/components/OrderAdminV5.tsx'],
+    files: ['src/components/CustomerAccountDashboard.tsx', 'src/components/OrderAdminV5.tsx'],
     rules: {
       'react-hooks/purity': 'off',
     },

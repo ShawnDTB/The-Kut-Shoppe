@@ -31,7 +31,7 @@ import { formatNoticeWindow, getStaffPolicy } from '../data/staff-policy-v5';
 import { formatMoney, readOrders, readProducts, subscribeToStorefrontChanges, type StoreOrder } from '../data/storefront';
 import { business } from '../data/site';
 import { OrderReceiptV5 } from './CommerceCustomerV5';
-import { RoleDashboardV4 } from './RoleDashboardV4';
+import { StaffAccountDashboard } from './StaffAccountDashboard';
 
 function appointmentDate(appointment: PlatformAppointment) {
   return new Date(`${appointment.date}T${String(Math.floor(appointment.startMinutes / 60)).padStart(2, '0')}:${String(appointment.startMinutes % 60).padStart(2, '0')}:00`);
@@ -187,13 +187,13 @@ function CustomerDashboard({ initialAccount }: { initialAccount: PlatformAccount
   </div></section>;
 }
 
-export function RoleDashboardV5() {
+export function CustomerAccountDashboard() {
   const account = getPlatformSessionAccount();
   if (!account) return <section className="section"><div className="container narrow-container"><a className="button" href="/account">Account / Login</a></div></section>;
   if (account.role === 'barber' && account.staffProfileId) {
     if (typeof window !== 'undefined') window.location.replace('/staff');
     return <section className="section"><div className="container narrow-container"><p>Opening your chair dashboard…</p></div></section>;
   }
-  if (account.role !== 'customer') return <RoleDashboardV4 />;
+  if (account.role !== 'customer') return <StaffAccountDashboard />;
   return <CustomerDashboard initialAccount={account} />;
 }

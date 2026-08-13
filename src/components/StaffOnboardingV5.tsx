@@ -1,3 +1,15 @@
+// NOT SAFELY CONSOLIDATABLE (documented per 2026-08 architecture review):
+// StaffOnboardingV6 now intercepts every manager/owner/developer account
+// before it reaches this component (see StaffOnboardingV6.tsx's gate) and
+// handles them with its own simpler single-screen ManagementSetup flow.
+// That means every `!isBarber` branch below -- scattered through the dense
+// single-line JSX in steps 2-4 -- is unreachable in the live app; only the
+// `isBarber` branches (the 5-step barber onboarding wizard) still run.
+// The barber and management branches are tightly interleaved inside the
+// same ternaries, so removing the dead ones by hand risks corrupting the
+// still-live barber flow. A future pass should first reformat this file to
+// multi-line JSX to make the branches safely editable, then delete the
+// dead management-role content. Left intact for this session.
 import { useEffect, useState } from 'react';
 import {
   getPlatformSessionAccount,

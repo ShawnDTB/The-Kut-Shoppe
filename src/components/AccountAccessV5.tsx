@@ -22,7 +22,7 @@ import {
   type IdentityChallengeV5,
 } from '../data/account-profile-v5';
 import { saveAccount as saveLegacyAccount, startSession as startLegacySession, type AccountRole as LegacyRole } from '../data/auth';
-import { RoleDashboardV5 } from './RoleDashboardV5';
+import { CustomerAccountDashboard } from './CustomerAccountDashboard';
 
 function bridgePrototypeSession(account: PlatformAccount) {
   const profile = getCustomerProfileV5(account);
@@ -88,7 +88,7 @@ export function AccountAccessV5() {
   const [error, setError] = useState('');
 
   useEffect(() => { void ensureDevelopmentMasterAccount(); return subscribeToPlatformAuth(() => setSessionAccount(getPlatformSessionAccount())); }, []);
-  if (sessionAccount) return <RoleDashboardV5 />;
+  if (sessionAccount) return <CustomerAccountDashboard />;
   if (pendingAccount) return <section className="section v2-auth-page v5-auth-page platform-pattern platform-pattern-account"><div className="container v5-verification-container"><VerificationPanel account={pendingAccount} phone={phone || getCustomerProfileV5(pendingAccount)?.phone || ''} onComplete={(account) => window.location.assign(account.role === 'customer' ? '/account' : '/dashboard')} /></div></section>;
 
   const resetFeedback = () => setError('');

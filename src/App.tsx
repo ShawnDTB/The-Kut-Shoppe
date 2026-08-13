@@ -37,15 +37,15 @@ import './stabilization-v7.css';
 import { findRoute } from './data/site';
 import { getPlatformSessionAccount } from './data/auth-v2';
 import { HomePage } from './components/HomePage';
-import { SiteLayoutV6 } from './components/LayoutV6';
+import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
-import { BookingV7, WalkInEntryV7 } from './components/BookingV7';
-import { StaffPlatformPageV6 } from './components/StaffPlatformPagesV6';
+import { Booking, WalkInEntry } from './components/Booking';
+import { StaffPlatformGate } from './components/StaffPlatformGate';
 import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
 import { StaffSettingsV5 } from './components/StaffSettingsV5';
 import { AccountAccessV5 } from './components/AccountAccessV5';
-import { RoleDashboardV6 } from './components/RoleDashboardV6';
+import { AccountDashboard } from './components/AccountDashboard';
 import { CartPageV4 } from './components/CartPageV4';
 import { StorefrontV5 } from './components/StorefrontV5';
 import { AdminGuard } from './components/AdminAccess';
@@ -114,21 +114,21 @@ export function App({ url }: AppProps) {
         ? '/shop'
         : route.path;
 
-  return <SiteLayoutV6 currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
+  return <SiteLayout currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
     : normalizedUrl === '/' ? <HomePage />
-    : normalizedUrl === '/book/walk-in' ? <ClientPlatform><WalkInEntryV7 /></ClientPlatform>
-    : normalizedUrl === '/book' ? <ClientPlatform><BookingV7 /></ClientPlatform>
+    : normalizedUrl === '/book/walk-in' ? <ClientPlatform><WalkInEntry /></ClientPlatform>
+    : normalizedUrl === '/book' ? <ClientPlatform><Booking /></ClientPlatform>
     : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
     : normalizedUrl === '/shop' ? <ClientPlatform><StorefrontV5 /></ClientPlatform>
     : productMatch ? <ClientPlatform><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
     : normalizedUrl === '/cart' ? <ClientPlatform><CartPageV4 /></ClientPlatform>
     : normalizedUrl === '/checkout' ? <ClientPlatform><CheckoutPageV5 /></ClientPlatform>
-    : normalizedUrl === '/account' ? <ClientPlatform>{getPlatformSessionAccount() ? <RoleDashboardV6 /> : <AccountAccessV5 />}</ClientPlatform>
-    : normalizedUrl === '/dashboard' ? <ClientPlatform><RoleDashboardV6 /></ClientPlatform>
+    : normalizedUrl === '/account' ? <ClientPlatform>{getPlatformSessionAccount() ? <AccountDashboard /> : <AccountAccessV5 />}</ClientPlatform>
+    : normalizedUrl === '/dashboard' ? <ClientPlatform><AccountDashboard /></ClientPlatform>
     : normalizedUrl === '/staff/setup' ? <ClientPlatform><StaffOnboardingV6 /></ClientPlatform>
     : normalizedUrl === '/staff/settings' ? <ClientPlatform><StaffSettingsV5 /></ClientPlatform>
     : normalizedUrl === '/admin/products' ? <ClientPlatform><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
     : normalizedUrl === '/admin/orders' ? <ClientPlatform><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
-    : isStaffRoute ? <ClientPlatform><StaffPlatformPageV6 path={normalizedUrl} /></ClientPlatform>
-    : <RoutePage url={url} />}</SiteLayoutV6>;
+    : isStaffRoute ? <ClientPlatform><StaffPlatformGate path={normalizedUrl} /></ClientPlatform>
+    : <RoutePage url={url} />}</SiteLayout>;
 }
