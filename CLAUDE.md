@@ -16,7 +16,7 @@ Conversion goals for the eventual public site: fast trust-building first impress
 - Hand-rolled routing: `src/App.tsx` matches `window.location.pathname` against `src/data/site.ts` — no React Router or framework routing
 - Hand-rolled SSR + static prerendering: `src/entry-server.tsx` (`renderToString`) + `scripts/prerender.mjs` writes one `index.html` per route into `dist/`; `src/entry-client.tsx` hydrates in the browser
 - **ESLint 10** flat config (`eslint.config.js`) with `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`
-- No test framework is configured (no `test` script exists — don't invent one silently)
+- **Vitest** (added 2026-08-14) covers the data layer only (`src/data/*.test.ts`, jsdom environment) — no React component/rendering tests, no React Testing Library. See "Automated tests" below before adding more.
 - Node `>=20.19.0` per `package.json` engines; `.nvmrc` pins `22`
 - Deployment target is **Cloudflare Pages** (`public/_headers`, `public/_redirects`, a D1-ready schema in `migrations/`) — but no `wrangler.toml` or Cloudflare binding exists yet; nothing here is connected to a real database or backend
 
@@ -49,9 +49,15 @@ This codebase has grown well beyond a marketing site into a full multi-role SaaS
 
 `src/data/auth.ts` (legacy, storage keys `kut-shoppe.*.v2`, `CustomerAccount` type, no password field, phone-based SMS verification) and `src/data/auth-v2.ts` (current, storage keys `kut-shoppe.*.v3`, `PlatformAccount` type, real PBKDF2 password hashing, capability-based roles) are **not two versions of the same system — they're genuinely different data models with separate storage and no shared source of truth.**
 
-`auth-v2.ts` is primary: `AccountAccessV5.tsx` (signup/login), `AccountDashboard.tsx`/`CustomerAccountDashboard.tsx`/`StaffAccountDashboard.tsx` (account views) all use it. But `auth.ts` is still genuinely load-bearing: **`StaffPlatformPages.tsx` (all of `/staff/*` — calendar, requests, waitlist, earnings, payouts, notifications) and `CommercePlatformPages.tsx` authenticate exclusively via `auth.ts`'s `getSessionAccount()`, and were never migrated to `auth-v2.ts`.** To keep those pages working, `AccountAccessV5.tsx` and `StaffOnboardingV5/V6.tsx` dual-write a compatible `auth.ts` record every time someone logs in or completes onboarding (`bridgePrototypeSession` / `saveLegacyAccount` / `startLegacySession`).
+`auth-v2.ts` is the source of truth for the account itself (identity, password, role, capabilities). `auth.ts` is kept only as a write-only-by-convention compatibility shim for the one place that hasn't migrated (see below) — never build new account/session logic against `auth.ts` directly. Its phone/email formatting utilities (`normalizePhone`, `isValidPhone`, `formatPhone`, etc.) are fine to keep using freely; those are pure functions, not part of the account/session divide.
 
-This bridge has a known gap: `updatePlatformRole()` (the role-elevation feature in `StaffAccountDashboard.tsx`'s Access Manager) only updates `auth-v2.ts` — it does not sync the legacy `auth.ts` record, so a role change won't be visible to the `/staff/*` pages until that user's next login. Don't casually merge these two systems; see the engineering report from the 2026-08-13 consolidation session for the full migration plan. Do keep using `auth.ts`'s phone/email formatting utilities (`normalizePhone`, `isValidPhone`, etc.) freely — those are just pure functions, not part of the account/session divide.
+**`src/data/session.ts` (added 2026-08-14) is the single facade every component should use for "who is signed in" and permission checks** — `getCurrentAccount()`, `isStaff()`, `isManagement()`, `can(account, capability)`, `endSessionEverywhere()`. It wraps `auth-v2.ts` and exists so components don't need to know the two-system split is an implementation detail. `StaffPlatformPages.tsx` (all of `/staff/*` — calendar, requests, waitlist, earnings, payouts, notifications) and `CommercePlatformPages.tsx` were migrated onto this facade in the same pass that created it, closing the last real dependency those files had on `auth.ts`'s `getSessionAccount()`. `AccountAccessV5.tsx` and `StaffOnboardingV5/V6.tsx` still dual-write a compatible `auth.ts` record on login/onboarding completion (`bridgePrototypeSession` / `saveLegacyAccount` / `startLegacySession`) as a safety net for any code that reads `auth.ts` directly — check reachability before assuming something still needs it.
+
+`updatePlatformRole()` (the role-elevation feature in `StaffAccountDashboard.tsx`'s Access Manager) now syncs the legacy `auth.ts` record immediately on every role change, rather than waiting for that user's next login — this used to be a known gap; it no longer is.
+
+**Authorization rule, enforced at the data layer (`updatePlatformRole()`) and mirrored in the Access Manager UI's `disabled` state:** only an Owner or Developer can assign an Owner/Developer role, **and only an Owner or Developer can modify an *existing* Owner/Developer account at all** — a Manager cannot touch one even to leave its role unchanged. This closes a real privilege-descalation bug found and fixed 2026-08-14 (a Manager could demote an Owner to `customer` through the real UI, actually removing their access) — see `src/data/auth-v2.test.ts`'s `updatePlatformRole authorization` suite for the regression tests before loosening this.
+
+Don't casually merge `auth.ts` and `auth-v2.ts` into one system; see the engineering report from the 2026-08-13 consolidation session for the full migration plan.
 
 ### Component version sprawl — read before deleting or "consolidating" anything
 
@@ -60,7 +66,9 @@ Some components still exist in multiple numbered generations (e.g. `AccountAcces
 - `RoleDashboardV4/V5/V6` → `StaffAccountDashboard.tsx` / `CustomerAccountDashboard.tsx` / `AccountDashboard.tsx`
 - `LayoutV5/V6` (plus the old, mostly-dead `Layout.tsx`) → `Layout.tsx` (exports `SiteLayout`, `Arrow`)
 - `BookingV6/V7` → `Booking.tsx` (exports `Booking`, `WalkInEntry`)
-- `StaffPlatformPagesV6` → `StaffPlatformGate.tsx` (renamed only, not merged into the underlying 55KB `StaffPlatformPages.tsx`)
+- `StaffPlatformPagesV6` → `StaffPlatformGate.tsx` (renamed only, not merged into the underlying `StaffPlatformPages.tsx`)
+
+**`/staff/settings` does not route through `StaffPlatformPages.tsx`** despite that file historically having its own `StaffSettingsPage` — `App.tsx`'s route dispatch matches the literal `/staff/settings` URL to the separate `StaffSettingsV5.tsx` component before `isStaffRoute` is ever checked, so `StaffPlatformPages.tsx`'s version could never render. That dead function (and its now-unused-only-there imports: `FieldError`, `barberServiceOptions`, `saveStaffProfile`, `validateStaffProfile`, `WeeklyWindow`) was removed 2026-08-14. If you're looking for the live barber "chair settings" page, it's `StaffSettingsV5.tsx`, not anything inside `StaffPlatformPages.tsx`.
 
 **`StaffOnboardingV5.tsx`/`StaffOnboardingV6.tsx` were deliberately left alone** — V6 now intercepts every non-barber, non-customer account before it reaches V5, making V5's `!isBarber` branches dead, but those branches are interleaved inside the same dense single-line JSX ternaries as the still-live barber wizard. See the comment block at the top of `StaffOnboardingV5.tsx` before attempting to touch it.
 
@@ -72,7 +80,11 @@ All CSS files are imported unconditionally and globally in `src/App.tsx`, in a s
 
 ### Bundle budgets
 
-`npm run bundlecheck` enforces **120 KB gzip JS / 40 KB gzip CSS**, checked against everything in `dist/assets`. This was essentially maxed out (~119.97/39.99 KB) until a 2026-08-13 dead-CSS-rule removal pass reclaimed real headroom (CSS down to ~32.6 KB). Treat headroom as still finite — recheck `npm run bundlecheck` after any nontrivial addition, and prefer removing genuinely dead code/CSS (verified via reachability/usage tracing, never by filename) over just accepting a shrinking margin.
+`npm run bundlecheck` enforces **120 KB gzip JS / 40 KB gzip CSS**, checked against everything in `dist/assets`. This was essentially maxed out (~119.97/39.99 KB) until a 2026-08-13 dead-CSS-rule removal pass reclaimed real headroom (CSS down to ~32.6 KB); a 2026-08-14 pass removing dead code from `StaffPlatformPages.tsx` (see above) took JS down further to ~114.3 KB. Treat headroom as still finite — recheck `npm run bundlecheck` after any nontrivial addition, and prefer removing genuinely dead code/CSS (verified via reachability/usage tracing, never by filename) over just accepting a shrinking margin. Vitest/jsdom are dev dependencies only and are not pulled into the production bundle — confirm this stays true (module count and gzip size unchanged after `npm run build`) if you touch test config.
+
+### "Not signed in" vs "signed in but no linked profile" — two different empty states
+
+`StaffPlatformPages.tsx`'s `StaffProtectedRoutes` (and similar guards elsewhere, e.g. `AdminAccess.tsx`'s `AdminGuard`) can hit two genuinely different situations that look similar in code (`!account` vs `account` truthy but missing a linked record) but need different messaging: an anonymous visitor should be told to sign in; an authenticated Manager/Owner/Developer who hasn't finished professional setup yet (no `staffProfileId`) should be sent to `/staff/setup`, not told to "sign in" again. Collapsing both into one "sign-in required" screen is a real, easy-to-miss dead end — it's reachable straight from that same account's own dashboard quick links — found and fixed 2026-08-14. Check both cases explicitly and separately in any new staff/admin guard.
 
 ### Hydration-safety pattern for anything outside a `ClientPlatform` gate
 
@@ -86,12 +98,17 @@ All CSS files are imported unconditionally and globally in `src/App.tsx`, in a s
 | `npm run dev` | Start Vite dev server (`http://localhost:5173`) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint across the repo |
+| `npm run test` | `vitest run` — data-layer tests under `src/data/*.test.ts`, see "Automated tests" below |
 | `npm run build` | Full production build: client build → SSR build → prerender → sitemap (writes `dist/`) |
 | `npm run bundlecheck` | Enforce the JS/CSS gzip budgets above |
-| `npm run check` | typecheck → lint → build → bundlecheck, chained (this is the canonical "is it healthy" command) |
+| `npm run check` | typecheck → lint → test → build → bundlecheck, chained (this is the canonical "is it healthy" command) |
 | `npm run preview` | Preview the built `dist/` output |
 
-There is no test script — don't reference `npm test` or invent one without being asked.
+### Automated tests
+
+Vitest covers `src/data/*.ts` only (auth-v2, session, platform, storefront) — real localStorage-backed functions run under jsdom, not mocked. There are no React component/rendering tests and no React Testing Library; that was a deliberate proportionality call given the repo had zero test infrastructure before 2026-08-14, not an oversight. If you add tests for component behavior, that's a real infra decision (new dependency, rendering harness) — don't add it silently.
+
+`src/test/setup.ts` replaces the global `localStorage`/`sessionStorage` with an in-memory polyfill. This isn't optional plumbing: recent Node versions (this repo's dev environment runs Node 25.x against an engines floor of 20.19.0) ship their own native, non-functional `localStorage` global gated behind an unset `--localstorage-file` flag, which otherwise shadows jsdom's working implementation and makes every `localStorage.setItem(...)` call throw. If tests that touch storage start failing with `"localStorage.setItem is not a function"` after a dependency bump, check this file still runs (`vite.config.ts`'s `test.setupFiles`) before assuming the app code broke.
 
 ## Development conventions already established here
 
