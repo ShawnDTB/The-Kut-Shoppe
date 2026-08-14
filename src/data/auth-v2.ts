@@ -230,6 +230,14 @@ export function updatePlatformRole(actor: PlatformAccount, accountId: string, ro
   if ((role === 'owner' || role === 'developer') && !actorCanAssignElevated) {
     throw new Error('Only an Owner or Developer can assign elevated access.');
   }
+  // A Manager can promote/demote customers and barbers, but must never be
+  // able to touch an existing Owner or Developer account -- not even to
+  // leave their role unchanged -- otherwise a Manager could strip an
+  // Owner's access by reassigning them to 'manager' or 'customer', which
+  // defeats the whole point of elevated roles being owner/developer-only.
+  if ((target.role === 'owner' || target.role === 'developer') && !actorCanAssignElevated) {
+    throw new Error('Only an Owner or Developer can change another Owner or Developer account.');
+  }
   if (target.id === actor.id && role === 'customer') throw new Error('You cannot remove your own access from this preview.');
 
   const updated = savePlatformAccount({

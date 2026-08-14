@@ -90,7 +90,7 @@ function AccessManager({ actor }: { actor: PlatformAccount }) {
         {accounts.map((target) => (
           <article key={target.id}>
             <div><strong>{target.name}</strong><span>{target.email}</span><small>{target.emailVerified ? 'Email verified' : 'Email verification pending'} · {target.staffProfileId ? 'Professional setup linked' : target.role === 'customer' ? 'Customer account' : 'Professional setup pending'}</small></div>
-            <label>Role<select value={target.role} disabled={target.id === actor.id && actor.role === 'owner'} onChange={(event) => changeRole(target.id, event.target.value as PlatformRole)}><option value="customer">Customer</option><option value="barber">Barber</option><option value="manager">Manager</option>{canAssignElevated ? <option value="owner">Owner</option> : null}{canAssignElevated ? <option value="developer">Developer</option> : null}</select></label>
+            <label>Role<select value={target.role} disabled={(target.id === actor.id && actor.role === 'owner') || ((target.role === 'owner' || target.role === 'developer') && !canAssignElevated)} onChange={(event) => changeRole(target.id, event.target.value as PlatformRole)}><option value="customer">Customer</option><option value="barber">Barber</option><option value="manager">Manager</option>{canAssignElevated ? <option value="owner">Owner</option> : null}{canAssignElevated ? <option value="developer">Developer</option> : null}</select></label>
           </article>
         ))}
       </div>
