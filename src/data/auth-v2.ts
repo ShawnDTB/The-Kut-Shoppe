@@ -217,7 +217,13 @@ const capabilityMap: Record<PlatformRole, PlatformCapability[]> = {
 
 export function hasPlatformCapability(account: PlatformAccount | null, capability: PlatformCapability) {
   if (!account) return false;
-  return capabilityMap[account.role].includes(capability) || (account.developerAccess && capability === 'manage-platform');
+  // Wrapped in Boolean(...) so this always returns a real boolean even if
+  // `account` came from a stale/partially-shaped localStorage record (this
+  // is a browser-storage prototype -- a returning visitor can have data from
+  // an earlier schema version) rather than `undefined` when developerAccess
+  // is missing, which every current call site treats as falsy anyway but
+  // shouldn't have to rely on.
+  return Boolean(capabilityMap[account.role].includes(capability) || (account.developerAccess && capability === 'manage-platform'));
 }
 
 export function updatePlatformRole(actor: PlatformAccount, accountId: string, role: PlatformRole) {
