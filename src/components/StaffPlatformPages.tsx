@@ -3,7 +3,6 @@ import { getCurrentAccount, isManagement, isStaff, endSessionEverywhere } from '
 import { formatPhone } from '../data/auth';
 import { readNotifications, type NotificationRecord } from '../data/notifications';
 import {
-  barberServiceOptions,
   claimWalkIn,
   confirmAppointment,
   declineAppointment,
@@ -13,15 +12,12 @@ import {
   proposeAppointmentTime,
   readAppointments,
   readStaffProfiles,
-  saveStaffProfile,
   subscribeToAppointmentChanges,
   timeLabelToMinutes,
   updateAppointment,
-  validateStaffProfile,
   type AppointmentStatus,
   type PlatformAppointment,
   type StaffProfile,
-  type WeeklyWindow,
 } from '../data/platform';
 
 const staffLinks = [
@@ -146,61 +142,6 @@ function StaffShell({
         {children}
       </div>
     </section>
-  );
-}
-
-function FieldError({ message }: { message?: string }) {
-  return message ? <small className="field-error" role="alert">{message}</small> : null;
-}
-
-function StaffSettingsPage({ profile }: { profile: StaffProfile }) {
-  const [draft, setDraft] = useState(profile);
-  const [message, setMessage] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const updateSchedule = (day: WeeklyWindow['day'], patch: Partial<WeeklyWindow>) => {
-    setDraft((current) => ({ ...current, schedule: current.schedule.map((window) => window.day === day ? { ...window, ...patch } : window) }));
-  };
-
-  const save = () => {
-    const validation = validateStaffProfile(draft);
-    setErrors(validation);
-    if (Object.keys(validation).length) return;
-    saveStaffProfile({ ...draft, updatedAt: new Date().toISOString() });
-    setMessage('Staff settings saved. Updated availability is now used by the booking prototype.');
-  };
-
-  return (
-    <StaffShell currentPath="/staff/settings" profile={profile}>
-      <div className="staff-settings-layout">
-        <section className="staff-dashboard-panel">
-          <p className="eyebrow">Profile and contact</p><h2>Public staff details</h2>
-          <div className="staff-form-grid">
-            <label>Professional name<input value={draft.professionalName} onChange={(event) => setDraft({ ...draft, professionalName: event.target.value })} /><FieldError message={errors.professionalName} /></label>
-            <label>Email<input type="email" value={draft.email} readOnly /><small>Contact changes require a new verification through owner support.</small></label>
-            <label>Phone<input type="tel" value={formatPhone(draft.phone)} readOnly /><small>Contact changes require a new verification through owner support.</small></label>
-            <label className="staff-form-wide">Public introduction<textarea rows={4} value={draft.publicBio} onChange={(event) => setDraft({ ...draft, publicBio: event.target.value })} /></label>
-          </div>
-        </section>
-        <section className="staff-dashboard-panel">
-          <p className="eyebrow">Services and rules</p><h2>Booking controls</h2>
-          <div className="staff-service-selector compact">
-            {barberServiceOptions.map((service) => <label className={draft.serviceIds.includes(service.id) ? 'is-selected' : ''} key={service.id}><input type="checkbox" checked={draft.serviceIds.includes(service.id)} onChange={() => setDraft({ ...draft, serviceIds: draft.serviceIds.includes(service.id) ? draft.serviceIds.filter((id) => id !== service.id) : [...draft.serviceIds, service.id] })} /><span><small>{service.category}</small><strong>{service.name}</strong></span></label>)}
-          </div>
-          <div className="staff-toggle-list">
-            <label><input type="checkbox" checked={draft.bookingRules.acceptsNewClients} onChange={(event) => setDraft({ ...draft, bookingRules: { ...draft.bookingRules, acceptsNewClients: event.target.checked } })} /><span><strong>Accept new clients</strong></span></label>
-            <label><input type="checkbox" checked={draft.bookingRules.allowAnyAvailable} onChange={(event) => setDraft({ ...draft, bookingRules: { ...draft.bookingRules, allowAnyAvailable: event.target.checked } })} /><span><strong>Any Available Barber</strong></span></label>
-            <label><input type="checkbox" checked={draft.bookingRules.acceptsWalkIns} onChange={(event) => setDraft({ ...draft, bookingRules: { ...draft.bookingRules, acceptsWalkIns: event.target.checked } })} /><span><strong>Walk-in requests</strong></span></label>
-          </div>
-        </section>
-        <section className="staff-dashboard-panel staff-form-wide">
-          <p className="eyebrow">Work hours</p><h2>Weekly availability</h2>
-          <div className="staff-hours-editor">{draft.schedule.map((window) => <div className={window.enabled ? 'is-enabled' : ''} key={window.day}><label><input type="checkbox" checked={window.enabled} onChange={(event) => updateSchedule(window.day, { enabled: event.target.checked })} />{window.label}</label><input type="time" value={window.start} disabled={!window.enabled} onChange={(event) => updateSchedule(window.day, { start: event.target.value })} /><span>to</span><input type="time" value={window.end} disabled={!window.enabled} onChange={(event) => updateSchedule(window.day, { end: event.target.value })} /></div>)}</div>
-        </section>
-        {message ? <p className="success-message staff-form-wide" role="status">{message}</p> : null}
-        <button className="button staff-form-wide" type="button" onClick={save}>Save staff settings</button>
-      </div>
-    </StaffShell>
   );
 }
 
@@ -511,13 +452,25 @@ function StaffNotificationsPage({ profile, canManageAll }: { profile: StaffProfi
 
 function StaffProtectedRoutes({ path }: { path: string }) {
   const account = getCurrentAccount();
-  const profile = getProfileForSession();
-  if (!account || !isStaff(account) || !profile) {
+  if (!account || !isStaff(account)) {
     return <section className="section staff-login-required platform-pattern platform-pattern-poles"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">Staff sign-in required</p><h1>Open the protected staff portal.</h1><p>Appointment details, customer contact information, schedules, earnings, and payouts are available only after staff verification.</p><a className="button" href="/account">Staff sign in</a></div></div></section>;
   }
 
+  // An account can be authenticated and staff-eligible (barber/manager/owner/
+  // developer) but not yet linked to a StaffProfile -- e.g. a Manager or
+  // Developer promoted through Access Manager who hasn't completed
+  // professional setup. Previously this fell through to the same "Staff
+  // sign-in required" screen above, which told an already-signed-in user to
+  // sign in again -- a confusing dead end reachable straight from their own
+  // dashboard's "Shop operations" links. Route it to the actual next step
+  // instead, matching the "Professional setup required" callout already
+  // shown on that dashboard.
+  const profile = getProfileForSession();
+  if (!profile) {
+    return <section className="section staff-login-required platform-pattern platform-pattern-poles"><div className="container narrow-container"><div className="staff-empty-state"><p className="eyebrow">Professional setup required</p><h1>Finish setting up your professional profile.</h1><p>Add the shop profile, services, hours, and booking rules connected to this account before opening the staff portal.</p><a className="button" href="/staff/setup">Complete setup</a></div></div></section>;
+  }
+
   const canManageAll = isManagement(account);
-  if (path === '/staff/settings') return <StaffSettingsPage profile={profile} />;
   if (path === '/staff/calendar') return <StaffCalendarPage profile={profile} canManageAll={canManageAll} />;
   if (path === '/staff/requests') return <StaffRequestsPage profile={profile} canManageAll={canManageAll} />;
   if (path === '/staff/waitlist') return <StaffWaitlistPage profile={profile} canManageAll={canManageAll} />;
