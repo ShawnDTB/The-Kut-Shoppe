@@ -6,11 +6,14 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2022',
-    sourcemap: true,
+    sourcemap: false,
+  },
+  server: {
+    proxy: { '/api': { target: 'http://localhost:8788', changeOrigin: false } },
   },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
     setupFiles: ['src/test/setup.ts'],
     // These modules read window.localStorage per-call rather than caching a
     // reference, so a real, working Storage implementation is needed for

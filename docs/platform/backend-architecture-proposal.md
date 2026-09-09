@@ -1,5 +1,7 @@
 # Backend Architecture Proposal
 
+**2026-09-09 update:** this is a historical proposal. The protected customer foundation is now implemented on the review branch; see [the deployment runbook](customer-deployment-runbook.md) for actual behavior and remaining gates. Native booking, commerce, staff/owner APIs, and live deployment are still outstanding. The implementation uses supported native scrypt with an OWASP profile, superseding the Argon2-only assumption below.
+
 **Status: proposal only, not implemented.** Written 2026-08-13 as part of a repository-consolidation session, for the owner to review before any backend development begins. Nothing in this document has been built.
 
 ## Why this exists

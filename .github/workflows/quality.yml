@@ -3,7 +3,7 @@ name: Quality
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev-branch]
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Install dependencies
-        run: npm install --no-package-lock
+        run: npm ci
 
       - name: Run project checks
         run: npm run check

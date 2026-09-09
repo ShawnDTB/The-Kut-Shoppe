@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import './styles.css';
 import './refinement.css';
 import './route-refinement.css';
@@ -34,24 +34,17 @@ import './polish-round-4.css';
 import './polish-round-5.css';
 import './polish-round-6.css';
 import './stabilization-v7.css';
+import './customer-account.css';
 import { findRoute } from './data/site';
-import { getPlatformSessionAccount } from './data/auth-v2';
+import { localPlatformPreview } from './data/runtime';
+import { CustomerAccount } from './components/CustomerAccount';
+import { ProductionBooking, ProductionShop } from './components/ProductionAccess';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
-import { Booking, WalkInEntry } from './components/Booking';
-import { StaffPlatformGate } from './components/StaffPlatformGate';
-import { StaffOnboardingV6 } from './components/StaffOnboardingV6';
-import { StaffSettingsV5 } from './components/StaffSettingsV5';
-import { AccountAccessV5 } from './components/AccountAccessV5';
-import { AccountDashboard } from './components/AccountDashboard';
-import { CartPageV4 } from './components/CartPageV4';
-import { StorefrontV5 } from './components/StorefrontV5';
-import { AdminGuard } from './components/AdminAccess';
-import { ProductAdminHubV5 } from './components/ProductAdminHubV5';
-import { OrderAdminV5 } from './components/OrderAdminV5';
-import { CheckoutPageV5, ProductDetailPageV5 } from './components/CommerceCustomerV5';
+
+const LocalPlatformPreview = import.meta.env.DEV ? lazy(() => import('./components/LocalPlatformPreview')) : null;
 
 interface AppProps { url: string }
 
@@ -92,8 +85,9 @@ function useHomepageHashNavigation(url: string) {
 
 function useDevelopmentStorefrontSeed() {
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    void import('./data/development-storefront-seed').then(({ ensureDevelopmentStorefrontSeed }) => ensureDevelopmentStorefrontSeed());
+    if (import.meta.env.DEV && localPlatformPreview) {
+      void import('./data/development-storefront-seed').then(({ ensureDevelopmentStorefrontSeed }) => ensureDevelopmentStorefrontSeed());
+    }
   }, []);
 }
 
@@ -106,6 +100,7 @@ export function App({ url }: AppProps) {
   const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
   const isAdminRoute = normalizedUrl.startsWith('/admin/');
   const productMatch = normalizedUrl.match(/^\/shop\/([^/]+)$/);
+  const operational = ['/account', '/dashboard', '/book', '/book/walk-in', '/shop', '/cart', '/checkout'].includes(normalizedUrl) || isStaffRoute || isAdminRoute || Boolean(productMatch);
   const layoutPath = normalizedUrl === '/dashboard' || normalizedUrl === '/account'
     ? '/account'
     : isStaffRoute
@@ -116,19 +111,10 @@ export function App({ url }: AppProps) {
 
   return <SiteLayout currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
     : normalizedUrl === '/' ? <HomePage />
-    : normalizedUrl === '/book/walk-in' ? <ClientPlatform><WalkInEntry /></ClientPlatform>
-    : normalizedUrl === '/book' ? <ClientPlatform><Booking /></ClientPlatform>
+    : import.meta.env.DEV && localPlatformPreview && LocalPlatformPreview && operational ? <ClientPlatform><Suspense fallback={<p role="status">Opening local preview…</p>}><LocalPlatformPreview path={normalizedUrl} /></Suspense></ClientPlatform>
+    : normalizedUrl === '/account' || normalizedUrl === '/dashboard' || isStaffRoute || isAdminRoute ? <ClientPlatform><CustomerAccount /></ClientPlatform>
+    : normalizedUrl === '/book' || normalizedUrl.startsWith('/book/') ? <ProductionBooking />
+    : normalizedUrl === '/shop' || productMatch || normalizedUrl === '/cart' || normalizedUrl === '/checkout' ? <ProductionShop />
     : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
-    : normalizedUrl === '/shop' ? <ClientPlatform><StorefrontV5 /></ClientPlatform>
-    : productMatch ? <ClientPlatform><ProductDetailPageV5 slug={decodeURIComponent(productMatch[1] ?? '')} /></ClientPlatform>
-    : normalizedUrl === '/cart' ? <ClientPlatform><CartPageV4 /></ClientPlatform>
-    : normalizedUrl === '/checkout' ? <ClientPlatform><CheckoutPageV5 /></ClientPlatform>
-    : normalizedUrl === '/account' ? <ClientPlatform>{getPlatformSessionAccount() ? <AccountDashboard /> : <AccountAccessV5 />}</ClientPlatform>
-    : normalizedUrl === '/dashboard' ? <ClientPlatform><AccountDashboard /></ClientPlatform>
-    : normalizedUrl === '/staff/setup' ? <ClientPlatform><StaffOnboardingV6 /></ClientPlatform>
-    : normalizedUrl === '/staff/settings' ? <ClientPlatform><StaffSettingsV5 /></ClientPlatform>
-    : normalizedUrl === '/admin/products' ? <ClientPlatform><AdminGuard><ProductAdminHubV5 /></AdminGuard></ClientPlatform>
-    : normalizedUrl === '/admin/orders' ? <ClientPlatform><AdminGuard><OrderAdminV5 /></AdminGuard></ClientPlatform>
-    : isStaffRoute ? <ClientPlatform><StaffPlatformGate path={normalizedUrl} /></ClientPlatform>
     : <RoutePage url={url} />}</SiteLayout>;
 }

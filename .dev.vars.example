@@ -1,0 +1,9 @@
+# Copy to .dev.vars for the local Pages runtime. This file contains no secrets.
+# For Vite + Pages API development, APP_ORIGIN must be http://localhost:5173.
+APP_ORIGIN="http://localhost:8788"
+ACCOUNTS_ENABLED="false"
+AUTH_SECRET=""
+TURNSTILE_SITE_KEY=""
+TURNSTILE_SECRET_KEY=""
+RESEND_API_KEY=""
+MAIL_FROM=""

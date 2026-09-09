@@ -3,7 +3,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
-  phone TEXT NOT NULL UNIQUE,
+  phone TEXT UNIQUE,
   display_name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('customer', 'staff', 'manager', 'owner', 'admin')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('invited', 'active', 'suspended', 'disabled')),

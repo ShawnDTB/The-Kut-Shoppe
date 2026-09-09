@@ -1,0 +1,68 @@
+/* Customer accounts are a quiet working surface within the shop's existing
+   black, ivory, and gold identity. No decorative reveals or glass panels. */
+.local-platform-notice { padding: 1rem; margin: 0; background: #493b1a; color: #fff0ce; text-align: center; }
+.customer-account {
+  --account-ink: #f6f3eb;
+  --account-muted: #c1bdb4;
+  --account-line: #514e47;
+  color: var(--account-ink);
+  background: #151515;
+  min-height: 65vh;
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+.customer-account p { color: var(--account-muted); line-height: 1.65; }
+.customer-account h1 { font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.15; letter-spacing: -.025em; }
+.customer-account h2 { font-size: clamp(1.4rem, 3vw, 1.85rem); line-height: 1.25; }
+.customer-account h3 { font-size: 1.15rem; line-height: 1.4; }
+.customer-account a:not(.button), .customer-account .text-button { color: #ecd6a6; text-underline-offset: .22em; }
+.customer-account .button { min-height: 46px; box-shadow: none; opacity: 1; border-radius: 4px; white-space: normal; }
+.customer-account .button:hover:not(:disabled) { opacity: 1; transform: none; filter: none; box-shadow: none; }
+.customer-account .button-secondary { color: var(--account-ink); background: #222; border-color: #777268; }
+.customer-account .button-secondary:hover:not(:disabled) { background: #333; }
+.customer-account button:disabled { cursor: wait; }
+.customer-account :focus-visible { outline: 3px solid #edcb84; outline-offset: 4px; }
+.customer-access { max-width: 520px; margin-inline: auto; }
+.customer-access header { margin-bottom: 1.5rem; }
+.customer-access-nav { display: flex; gap: 1.5rem; border-bottom: 1px solid var(--account-line); margin-bottom: 1.5rem; }
+.customer-access-nav button { min-height: 48px; padding: .7rem .25rem; background: none; border: 0; color: var(--account-muted); border-bottom: 3px solid transparent; border-radius: 0; }
+.customer-access-nav button[aria-current] { color: var(--account-ink); border-bottom-color: #c6a76b; }
+.customer-form { display: grid; gap: 1.3rem; max-width: 760px; }
+.customer-form fieldset { display: grid; gap: 1.15rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.customer-form legend { padding: 0 0 1rem; font-weight: 700; color: var(--account-ink); }
+.customer-form label { display: grid; gap: .5rem; min-width: 0; font-weight: 600; }
+.customer-form input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; border: 1px solid #817b70; border-radius: 4px; color: var(--account-ink); background: #202020; padding: .7rem .8rem; font-size: 16px; line-height: 1.4; }
+.customer-form input[readonly] { border-color: var(--account-line); color: var(--account-muted); }
+.customer-form small, .customer-fine-print { font-size: .875rem; font-weight: 400; line-height: 1.65; color: var(--account-muted); }
+.customer-account .customer-notice { padding: 1rem; border-left: 3px solid #c6a76b; background: #24231f; color: var(--account-ink); }
+.customer-account .form-error { color: #ffb5ac; }
+.customer-home-header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1.75rem; }
+.customer-kicker { font-size: .85rem; letter-spacing: .08em; margin-bottom: .65rem; }
+.customer-nav { display: flex; flex-wrap: wrap; gap: 0 1.75rem; border-bottom: 1px solid var(--account-line); margin-bottom: 2rem; }
+.customer-nav a { display: flex; align-items: center; min-height: 48px; padding: .75rem .15rem; border-bottom: 3px solid transparent; text-decoration: none; }
+.customer-nav a[aria-current] { border-bottom-color: #c6a76b; color: var(--account-ink); }
+.customer-content { min-width: 0; }
+.customer-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.customer-records { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+.customer-records li { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; padding-block: 1.5rem; border-bottom: 1px solid var(--account-line); }
+.customer-records h3, .customer-records p { margin-block: .35rem; }
+.customer-status { color: #ecd6a6; text-transform: capitalize; font-size: .875rem; }
+.customer-empty { padding: clamp(1.25rem, 4vw, 2.5rem); border: 1px solid var(--account-line); background: #1b1b1b; max-width: 800px; margin-block: 1.5rem; }
+.customer-empty p { max-width: 60ch; margin-bottom: 0; }
+.customer-profile fieldset + fieldset { border-top: 1px solid var(--account-line); padding-top: 1.5rem; }
+.customer-address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+.customer-address-grid label:first-child, .customer-address-grid label:nth-child(2) { grid-column: 1 / -1; }
+.customer-security-section { border-top: 1px solid var(--account-line); margin-top: 2rem; padding-top: 1.5rem; max-width: 760px; }
+.customer-security-check { min-width: 0; width: 100%; }
+.customer-booking-options { display: grid; gap: 1.75rem; margin-block: 2rem; }
+.customer-booking-options article { padding-block: 1.25rem; border-block-start: 1px solid var(--account-line); }
+@media (max-width: 600px) {
+  .customer-home-header { align-items: flex-start; }
+  .customer-home-header .button { flex-shrink: 0; padding-inline: .85rem; }
+  .customer-nav { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1rem; }
+  .customer-section-heading, .customer-records li { flex-direction: column; align-items: flex-start; }
+  .customer-address-grid { grid-template-columns: 1fr; }
+  .customer-form > .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .customer-account *, .customer-account *::before, .customer-account *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

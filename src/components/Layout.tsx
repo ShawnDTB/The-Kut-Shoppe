@@ -9,6 +9,10 @@ import {
   type PlatformAccount,
 } from '../data/auth-v2';
 import { readCart, subscribeToStorefrontChanges } from '../data/storefront';
+import { localPlatformPreview } from '../data/runtime';
+import { getCustomerSession, loadCustomerSession, subscribeToCustomerSession } from '../data/customer-api';
+
+type HeaderAccount = Pick<PlatformAccount, 'name' | 'role'>;
 
 const primaryNavigation = [
   ['Services', '/services'],
@@ -27,9 +31,9 @@ function isCurrentRoute(currentPath: string, href: string) {
   return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
-function accountLabel(account: PlatformAccount | null) {
+function accountLabel(account: HeaderAccount | null) {
   if (!account) return 'Account / Login';
-  if (account.role === 'customer') return account.name.trim().split(/\s+/)[0] || 'Account';
+  if (!localPlatformPreview || account.role === 'customer') return account.name.trim().split(/\s+/)[0] || 'Account';
   return `${account.role.charAt(0).toUpperCase()}${account.role.slice(1)} dashboard`;
 }
 
@@ -43,7 +47,7 @@ function CustomerActions({
   mobile = false,
   onNavigate,
 }: {
-  account: PlatformAccount | null;
+  account: HeaderAccount | null;
   cartCount: number;
   mobile?: boolean;
   onNavigate?: () => void;
@@ -51,7 +55,7 @@ function CustomerActions({
   const accountHref = account && account.role !== 'customer' ? '/dashboard' : '/account';
   return (
     <div className={mobile ? 'customer-header-actions customer-header-actions-mobile' : 'customer-header-actions'}>
-      <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a>
+      {localPlatformPreview ? <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a> : null}
       <a className="customer-action customer-action-account" href={accountHref} onClick={onNavigate}>{accountLabel(account)}</a>
       <a className="customer-action customer-action-book" href="/book" onClick={onNavigate}>Book now</a>
     </div>
@@ -64,7 +68,7 @@ function MobileNavigation({
   cartCount,
 }: {
   currentPath: string;
-  account: PlatformAccount | null;
+  account: HeaderAccount | null;
   cartCount: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -172,15 +176,21 @@ function Header({ currentPath }: { currentPath: string }) {
   // a session or cart items, throwing a hydration-mismatch error site-wide.
   // Start from the SSR-safe defaults and pick up the real values in an
   // effect, same as the rest of the app's client-only data reads.
-  const [account, setAccount] = useState<PlatformAccount | null>(null);
+  const [account, setAccount] = useState<HeaderAccount | null>(null);
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
-    setAccount(getPlatformSessionAccount());
-    setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));
-    const unsubscribeAuth = subscribeToPlatformAuth(() => setAccount(getPlatformSessionAccount()));
-    const unsubscribeStore = subscribeToStorefrontChanges(() => setCartCount(readCart().reduce((total, item) => total + item.quantity, 0)));
-    return () => { unsubscribeAuth(); unsubscribeStore(); };
+    if (import.meta.env.DEV && localPlatformPreview) {
+      setAccount(getPlatformSessionAccount());
+      setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));
+      const unsubscribeAuth = subscribeToPlatformAuth(() => setAccount(getPlatformSessionAccount()));
+      const unsubscribeStore = subscribeToStorefrontChanges(() => setCartCount(readCart().reduce((total, item) => total + item.quantity, 0)));
+      return () => { unsubscribeAuth(); unsubscribeStore(); };
+    }
+    const refresh = () => { const current = getCustomerSession(); setAccount(current ? { name: current.profile.name, role: current.role } : null); };
+    const unsubscribe = subscribeToCustomerSession(refresh);
+    void loadCustomerSession().catch(() => undefined);
+    return unsubscribe;
   }, []);
 
   return (

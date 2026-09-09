@@ -40,5 +40,5 @@ class MemoryStorage implements Storage {
 
 for (const property of ['localStorage', 'sessionStorage'] as const) {
   Object.defineProperty(globalThis, property, { value: new MemoryStorage(), configurable: true, writable: true });
-  Object.defineProperty(window, property, { value: globalThis[property], configurable: true, writable: true });
+  if (typeof window !== 'undefined') Object.defineProperty(window, property, { value: globalThis[property], configurable: true, writable: true });
 }

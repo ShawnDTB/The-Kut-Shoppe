@@ -2,6 +2,12 @@
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.
 
+## Customer foundation update (2026-09-09)
+
+Read `docs/platform/customer-foundation-review.md` and `customer-deployment-runbook.md` first for the current customer architecture. The older prototype notes below remain useful for local design-review code, but production accounts now use `server/`, `functions/api/[[path]].ts`, `src/data/customer-api.ts`, and `src/components/CustomerAccount.tsx`. Their identity is a server-validated HttpOnly cookie, never `auth-v2.ts` localStorage. `LocalPlatformPreview.tsx` preserves the old UI only under explicit Vite development preview; do not reconnect it to production routes or add a localStorage fallback on API errors.
+
+`npm run check` also runs SQLite API tests, production-output safety checks, and a real local Workers/D1 smoke test with mocked external delivery. Node 22.13+ is required. `wrangler.toml` is now present but has a placeholder D1 ID and disabled accounts. Nothing was deployed. Database migration 0001 was an unapplied baseline and now permits nullable phone; any environment that applied the old baseline needs a reviewed upgrade migration. No staff/admin mutation APIs are enabled yet.
+
 ## Project identity
 
 **The Kut Shoppe** is a real barbershop on Main Street in downtown Stroudsburg, PA, serving the Poconos area. **Designed to Breakthrough LLC / DTB Solutions** (Shawn Dullen, founder) builds and maintains its digital presence.

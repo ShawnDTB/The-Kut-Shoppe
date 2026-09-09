@@ -5,6 +5,16 @@
   <p>A Designed to Breakthrough transformation from a restricted WordPress website into an accessible, GitHub-managed business platform.</p>
 </div>
 
+## Customer foundation update — 2026-09-09
+
+The current review branch introduces a Cloudflare Pages Functions/D1 customer account service and a shared account screen for appointments, orders, profiles, and security. See the [repository and screenshot assessment](./docs/platform/customer-foundation-review.md) and [deployment runbook](./docs/platform/customer-deployment-runbook.md) before enabling accounts.
+
+**This is not deployed or approved for public account registration yet.** Accounts stay disabled until server settings, an isolated database, Turnstile, and verified email delivery are configured and staging acceptance passes. Native booking, commerce, and staff operations remain separate backend milestones. Production builds use the existing external booking providers and keep online ordering closed.
+
+The original browser-only platform remains available for disposable design review under `npm run dev` with `VITE_LOCAL_PLATFORM_PREVIEW=true`. It is excluded from production JavaScript and is never a fallback for failed API requests. Sections below describing local platform operations refer to that prototype unless explicitly stated otherwise.
+
+Use Node **22.13+**, `npm ci`, and `npm run check`. The checks now include account API integration tests, production safety checks, and a local Cloudflare Workers/D1 runtime test. No cloud account or real email is needed to run those checks.
+
 ## Project overview
 
 The Kut Shoppe is a Main Street barbershop serving downtown Stroudsburg and the wider Poconos community.
@@ -293,7 +303,7 @@ Low-contrast pattern families bring more life to Services, Crew, Gallery, Visit,
 
 ### Requirements
 
-- Node.js `20.19.0` or newer
+- Node.js `22.13.0` or newer
 - npm `10.0.0` or newer
 - Git
 
@@ -494,7 +504,7 @@ The existing public site should remain available until Platform V2 is approved a
 - [Platform V2 review and handoff](./docs/platform/platform-v2-review.md)
 - [Platform integration audit](./docs/platform/platform-integration-audit.md)
 - [Production cutover checklist](./docs/platform/production-cutover-checklist.md)
-- [Backend architecture proposal](./docs/platform/backend-architecture-proposal.md) — not implemented, pending owner review
+- [Backend architecture proposal](./docs/platform/backend-architecture-proposal.md) — historical proposal; customer implementation and current gates are in the deployment runbook
 - [Live-site style audit](./docs/brand/live-site-style-audit.md)
 - [Verification required before production](./docs/foundation/verification-required.md)
 

@@ -1,0 +1,16 @@
+name = "the-kut-shoppe"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-09"
+compatibility_flags = ["nodejs_compat"]
+
+# Safe defaults. Set a real staging origin and bind an isolated staging database
+# before enabling accounts. Never use production customer data for local review.
+[vars]
+APP_ORIGIN = "http://localhost:8788"
+ACCOUNTS_ENABLED = "false"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kut-shoppe-staging"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

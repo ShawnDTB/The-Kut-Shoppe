@@ -12,7 +12,7 @@ const platformRoutes: RouteDefinition[] = [
     eyebrow: 'Walk-ins',
     heading: 'Let the next open chair find you.',
     intro: 'Join the waiting list for barber service in downtown Stroudsburg.',
-    status: 'requires-verification',
+    status: 'placeholder',
   },
   {
     path: '/cart',
@@ -32,6 +32,16 @@ const platformRoutes: RouteDefinition[] = [
     eyebrow: 'Shop',
     heading: 'Submit your order request.',
     intro: 'Orders remain pending until reviewed by the shop.',
+    status: 'placeholder',
+  },
+  {
+    path: '/dashboard',
+    label: 'Dashboard',
+    title: 'Your Account | The Kut Shoppe',
+    description: 'Private access to your Kut Shoppe account.',
+    eyebrow: 'Your account',
+    heading: 'Your account',
+    intro: 'Appointments, orders, profile, and account security.',
     status: 'placeholder',
   },
   {
@@ -240,7 +250,7 @@ const localBusinessJsonLd = JSON.stringify(localBusinessSchema).replaceAll('</',
 export function render(url: string) {
   const route = resolveRoute(url);
   const canonical = `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`;
-  const robots = route.status === 'placeholder'
+  const robots = route.path === '/404' || route.status === 'placeholder'
     ? '<meta name="robots" content="noindex, nofollow" />'
     : '<meta name="robots" content="index, follow" />';
   const head = [
