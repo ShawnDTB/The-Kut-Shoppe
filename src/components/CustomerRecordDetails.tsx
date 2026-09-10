@@ -62,6 +62,7 @@ export function CustomerAppointmentDetails({ id, onBack }: { id: string; onBack:
     {appointment ? <div aria-busy={working || loading}>
       <p className="customer-status">{appointment.withdrawnByCustomer ? 'Request withdrawn' : label(appointment.status)}</p>
       <h3>{appointment.serviceName}</h3>
+      {appointment.status === 'requested' ? <p className="customer-notice">Your request is awaiting shop approval. This visit is not confirmed yet.</p> : null}
       <dl className="customer-detail-facts">
         <div><dt>Professional</dt><dd>{appointment.barberName ?? 'To be assigned'}</dd></div>
         <div><dt>{appointment.status === 'requested' ? 'Requested time' : 'Start'}</dt><dd>{time(appointment.startsAt, appointment.location.timeZone)}</dd></div>

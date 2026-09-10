@@ -6,7 +6,7 @@ Status: review implementation, not deployed. The live WordPress site and product
 
 Use Node 22.13 or newer; `.nvmrc` selects Node 22. Install with `npm ci`, then run `npm run check`.
 
-The check runs TypeScript, ESLint, the original 58 browser-adapter tests plus 29 API integration tests (87 total), static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, signup, one-use verification, login, profile persistence, private history/details, calendar export, session revocation, concurrent dual-inbox email changes, and concurrent request withdrawal. It uses the same Miniflare version pinned by Wrangler.
+The check runs TypeScript, ESLint, 58 browser-adapter tests, 36 API integration tests, and three wall-time tests (97 total), static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, the account lifecycle, history/details, calendar export, concurrent email changes/withdrawal, two-customer slot competition, and duplicate booking submission. It uses the same Miniflare version pinned by Wrangler.
 
 For the static site plus local Pages API:
 
@@ -103,6 +103,12 @@ Confirmed visits with valid offset-qualified start/end times can be downloaded a
 Order details expose saved line-item names, quantities, prices, totals, fulfillment, allowlisted shipping address fields, and a plain tracking number. They exclude internal notes, payment references, and arbitrary stored JSON. Up to 100 line items are shown with an explicit completeness notice; totals remain the whole order's recorded totals. This is not a checkout, refund processor, or proof that payment succeeded.
 
 Current validation: 87 tests (58 existing adapter tests and 29 API tests), including record isolation, stale and invalid withdrawals, transaction rollback, calendar injection/DST handling, historical item snapshots, and bounded shipping disclosure. Workers/D1 also checks concurrent withdrawal idempotency and calendar/detail responses. Browser acceptance and real staging integration remain outstanding.
+
+### Server availability and customer requests
+
+The next customer slice is implemented behind `CUSTOMER_BOOKING_ENABLED=false`. Apply migration `0005_customer_booking_requests.sql` after 0004 before testing it. An environment already through 0004 only needs additive 0005. See [Customer booking requests](customer-booking-engine.md) for the API, schedule rules, retry/transaction model, staging setup, and rollback. The current check covers 97 tests plus real Workers/D1 booking races.
+
+Keep the flag disabled publicly until approved staff can respond to requests, appointment notifications are delivered reliably, operational authentication is accepted, and the native schedule includes all real provider commitments. No appointment notification is sent yet. Browser acceptance remains outstanding. Disabling requests does not erase existing requests or disable account history.
 
 ## Release gates that remain open
 

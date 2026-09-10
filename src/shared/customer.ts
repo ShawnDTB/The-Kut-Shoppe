@@ -60,4 +60,4 @@ export interface CustomerOverview {
   orders: CustomerOrder[];
 }
 export interface CustomerPage<T> { items: T[]; nextCursor: string | null }
-export interface AccountConfig { enabled: boolean; turnstileSiteKey: string }
+export interface AccountConfig { enabled: boolean; turnstileSiteKey: string; bookingEnabled?: boolean }

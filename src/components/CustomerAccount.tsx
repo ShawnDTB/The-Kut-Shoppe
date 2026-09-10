@@ -120,7 +120,7 @@ function SecurityPanel({ account, onSignedOut }: { account: Account; onSignedOut
   </div>;
 }
 
-function AccountHome({ account, onSignedOut }: { account: Account; onSignedOut: (message: string) => void }) {
+function AccountHome({ account, onSignedOut, bookingEnabled }: { account: Account; onSignedOut: (message: string) => void; bookingEnabled: boolean }) {
   const [{ view, record }, setRoute] = useState(readAccountRoute);
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
@@ -140,7 +140,7 @@ function AccountHome({ account, onSignedOut }: { account: Account; onSignedOut: 
     {error ? <p className="form-error" role="alert">{error}</p> : null}
     <div className="customer-content">{view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
       : record ? view === 'appointments' ? <CustomerAppointmentDetails key={record} id={record} onBack={() => select('appointments')} /> : <CustomerOrderDetails key={record} id={record} onBack={() => select('orders')} />
-        : <CustomerHistory key={view} kind={view} onOpen={(id) => select(view, id)} />}</div>
+        : <CustomerHistory key={view} kind={view} bookingEnabled={bookingEnabled} onOpen={(id) => select(view, id)} />}</div>
   </div>;
 }
 
@@ -168,5 +168,5 @@ export function CustomerAccount() {
     return () => { window.removeEventListener('pageshow', refresh); document.removeEventListener('visibilitychange', refresh); };
   }, [config]);
   const signOut = (notice: string) => { setMessage(notice); setCustomerSession(null); };
-  return <section className="section customer-account"><div className="container route-wide">{!ready ? <p role="status">Opening your account…</p> : error ? <div className="customer-access"><h1>We couldn’t open your account</h1><p role="alert">{error}</p><button type="button" className="button" onClick={() => setAttempt((value) => value + 1)}>Try again</button></div> : !config?.enabled ? <div className="customer-access"><h1>Account access is coming soon</h1><p>You can still book with your professional or contact the shop.</p><a className="button" href="/book">Book an appointment</a><p><a href={business.phoneHref}>Call {business.phone}</a></p></div> : account ? <AccountHome key={account.id} account={account} onSignedOut={signOut} /> : <AccountAccess config={config} initialMessage={message} />}</div></section>;
+  return <section className="section customer-account"><div className="container route-wide">{!ready ? <p role="status">Opening your account…</p> : error ? <div className="customer-access"><h1>We couldn’t open your account</h1><p role="alert">{error}</p><button type="button" className="button" onClick={() => setAttempt((value) => value + 1)}>Try again</button></div> : !config?.enabled ? <div className="customer-access"><h1>Account access is coming soon</h1><p>You can still book with your professional or contact the shop.</p><a className="button" href="/book">Book an appointment</a><p><a href={business.phoneHref}>Call {business.phone}</a></p></div> : account ? <AccountHome key={account.id} account={account} bookingEnabled={Boolean(config.bookingEnabled)} onSignedOut={signOut} /> : <AccountAccess config={config} initialMessage={message} />}</div></section>;
 }

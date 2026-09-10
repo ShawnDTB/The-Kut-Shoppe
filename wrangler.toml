@@ -8,6 +8,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 APP_ORIGIN = "http://localhost:8788"
 ACCOUNTS_ENABLED = "false"
+CUSTOMER_BOOKING_ENABLED = "false"
 
 [[d1_databases]]
 binding = "DB"

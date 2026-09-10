@@ -12,6 +12,7 @@ export interface Env {
   DB: Database;
   APP_ORIGIN: string;
   ACCOUNTS_ENABLED?: string;
+  CUSTOMER_BOOKING_ENABLED?: string;
   AUTH_SECRET?: string;
   TURNSTILE_SECRET_KEY?: string;
   TURNSTILE_SITE_KEY?: string;

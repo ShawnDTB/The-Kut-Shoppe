@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { URLSearchParams } from 'node:url';
 import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
@@ -13,7 +15,7 @@ const workerFile = (await readdir('.wrangler/customer-worker')).find((name) => n
 assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true',
+  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true',
     AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
@@ -25,10 +27,15 @@ const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
 }));
 try {
   const db = await worker.getD1Database('DB');
-  // The repository's migrations contain no semicolons inside SQL values.
+  // Trigger migrations delimit whole statements explicitly. The earlier simple
+  // migrations contain no semicolons inside SQL values or compound statements.
   for (const file of (await readdir('migrations')).filter((name) => name.endsWith('.sql')).sort()) {
     const sql = (await readFile(`migrations/${file}`, 'utf8')).replace(/^\s*--.*$/gm, '');
-    for (const statement of sql.split(';').map((value) => value.trim()).filter(Boolean)) await db.prepare(statement).run();
+    const original = await readFile(`migrations/${file}`, 'utf8');
+    const statements = original.includes('-- statement-boundary')
+      ? original.split('-- statement-boundary').map((part) => part.replace(/^\s*--.*$/gm, '').trim()).filter(Boolean)
+      : sql.split(';').map((value) => value.trim()).filter(Boolean);
+    for (const statement of statements) await db.prepare(statement).run();
   }
   const call = (path, body, cookie, method = body ? 'POST' : 'GET') => worker.dispatchFetch(`${origin}/api/v1${path}`, {
     method, headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Kut-Request': '1', 'CF-Connecting-IP': '192.0.2.25', ...(cookie ? { Cookie: cookie.split(';')[0] } : {}) },
@@ -102,5 +109,35 @@ try {
   assert.equal(calendar.status, 200); assert.match(await calendar.text(), /DTSTART:20270110T150000Z/);
   const orderDetail = await call('/me/orders/runtime-order-00', undefined, detailCookie);
   assert.equal(orderDetail.status, 200); assert.equal((await orderDetail.json()).order.totalCents, 2500);
-  console.log('Cloudflare runtime passed: account lifecycle, paginated history, concurrent email change and request withdrawal, private record details, confirmed calendar export.');
+  const secondRegistration = await call('/auth/register', { name: 'Second Customer', email: 'second-runtime@example.test', password: 'Another runtime passphrase 2026', turnstileToken: 'test-only' });
+  assert.equal(secondRegistration.status, 202);
+  const secondVerification = await call('/auth/verify', { challengeId: (await secondRegistration.json()).challengeId, code: deliveries.at(-1).text.match(/code is (\d{8})/)[1] });
+  assert.equal(secondVerification.status, 200);
+  const secondCookie = secondVerification.headers.get('Set-Cookie');
+  await db.prepare("INSERT INTO users(id,email,display_name,role,email_verified_at,created_at,updated_at) VALUES ('runtime-professional','professional@example.test','Professional','staff',?,?,?)").bind(now, now, now).run();
+  await db.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,booking_buffer_minutes,created_at,updated_at) VALUES ('runtime-staff','runtime-professional','Professional','runtime-staff','approved',15,?,?)").bind(now, now).run();
+  await db.prepare("INSERT INTO staff_locations(staff_id,location_id,created_at) VALUES ('runtime-staff',?,?)").bind(location.id, now).run();
+  await db.prepare("INSERT INTO staff_services(staff_id,service_id,created_at,updated_at) VALUES ('runtime-staff','runtime-service',?,?)").bind(now, now).run();
+  await db.prepare("UPDATE locations SET timezone='UTC' WHERE id=?").bind(location.id).run();
+  const bookingDate = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  await db.prepare("INSERT INTO weekly_availability(id,staff_id,location_id,weekday,start_time,end_time,created_at,updated_at) VALUES ('runtime-hours','runtime-staff',?,?,'09:00','17:00',?,?)").bind(location.id, new Date(`${bookingDate}T00:00:00Z`).getUTCDay(), now, now).run();
+  const selection = { staffId: 'runtime-staff', serviceId: 'runtime-service', locationId: location.id, date: bookingDate };
+  const availabilityPath = `/me/booking/availability?${new URLSearchParams(selection)}`;
+  const openings = await call(availabilityPath, undefined, detailCookie);
+  assert.equal(openings.status, 200);
+  const available = await openings.json(); assert.ok(available.slots.length > 1);
+  const firstRequest = { ...selection, startsAt: available.slots[0].startsAt, quote: available.quote, note: '', requestKey: randomUUID() };
+  const race = await Promise.all([call('/me/booking/requests', firstRequest, detailCookie), call('/me/booking/requests', { ...firstRequest, requestKey: randomUUID() }, secondCookie)]);
+  assert.deepEqual(race.map((response) => response.status).sort(), [200, 409], 'Two customers reserved the same opening');
+  const winningIndex = race.findIndex((response) => response.status === 200);
+  const winningId = (await race[winningIndex].json()).appointmentId;
+  const losingCookie = winningIndex === 0 ? secondCookie : detailCookie;
+  assert.equal((await call(`/me/appointments/${winningId}`, undefined, losingCookie)).status, 404);
+  const nextAvailable = await (await call(availabilityPath, undefined, detailCookie)).json();
+  const retryRequest = { ...firstRequest, startsAt: nextAvailable.slots[0].startsAt, quote: nextAvailable.quote, requestKey: randomUUID() };
+  const retries = await Promise.all([call('/me/booking/requests', retryRequest, detailCookie), call('/me/booking/requests', retryRequest, detailCookie)]);
+  for (const response of retries) assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await retries[0].json()).appointmentId, (await retries[1].json()).appointmentId);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_requested_appointment'").first()).n, 2);
+  console.log('Cloudflare runtime passed: account lifecycle, record details, calendar export, concurrent email change, withdrawal, two-customer slot competition, and duplicate booking submission.');
 } finally { await worker.dispose(); }

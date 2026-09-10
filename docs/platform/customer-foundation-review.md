@@ -6,6 +6,8 @@ Follow-up 2026-09-10: the foundation and subsequent customer controls are now ca
 
 Latest customer slice: private appointment/order detail views, static calendar downloads for confirmed visits, and withdrawal of unconfirmed website requests are implemented on `dev-branch`. See the runbook's Appointment and order details section for migration 0004, current 87-test coverage, and operational boundaries. Confirmed cancellations, native booking, notifications, checkout, and deployment remain future gates.
 
+Booking follow-up: server-calculated availability and protected pending requests are now implemented behind a disabled booking flag. The [booking engine handoff](customer-booking-engine.md) supersedes the native-submission gaps below and describes migration 0005, 97-test coverage, and the remaining barber approval/notification launch gates.
+
 ## What the audit found
 
 The repository has a useful product prototype, established shop branding, separate barber/loctician booking destinations, public page metadata, and several rounds of accessibility and code cleanup. The initial `npm run check` passed 58 tests. Initial production assets measured 114.26 KB JavaScript and 32.64 KB CSS, gzip, within the existing budgets.

@@ -3,6 +3,7 @@ import { accountApi } from '../data/customer-api';
 import { business } from '../data/site';
 import type { CustomerAppointment, CustomerOrder, CustomerPage } from '../shared/customer';
 import { followAccountLink } from '../data/customer-navigation';
+import { CustomerBooking } from './CustomerBooking';
 
 type Item = CustomerAppointment | CustomerOrder;
 const statusLabel = (value: string) => value.replaceAll('_', ' ');
@@ -10,7 +11,8 @@ const time = (value: string | null) => value ? new Intl.DateTimeFormat('en-US', 
   timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short',
 }).format(new Date(value)) : 'Time to be arranged';
 
-export function CustomerHistory({ kind, onOpen }: { kind: 'appointments' | 'orders'; onOpen: (id: string) => void }) {
+export function CustomerHistory({ kind, onOpen, bookingEnabled = false }: { kind: 'appointments' | 'orders'; onOpen: (id: string) => void; bookingEnabled?: boolean }) {
+  const [booking, setBooking] = useState(false);
   const [items, setItems] = useState<Item[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -35,8 +37,9 @@ export function CustomerHistory({ kind, onOpen }: { kind: 'appointments' | 'orde
   }, [kind, cursor, attempt]);
   const retry = () => { setWorking(true); setError(''); setAttempt((value) => value + 1); };
   const refresh = () => { setItems(null); setCursor(null); setNextCursor(null); retry(); };
+  if (booking && kind === 'appointments' && bookingEnabled) return <CustomerBooking onOpen={onOpen} onBack={() => { setBooking(false); refresh(); }} />;
   return <section aria-busy={working}>
-    <div className="customer-section-heading"><h2>Your {kind}</h2>{kind === 'appointments' ? <a className="button" href="/book">Book an appointment</a> : null}</div>
+    <div className="customer-section-heading"><h2>Your {kind}</h2>{kind === 'appointments' ? bookingEnabled ? <button className="button" onClick={() => setBooking(true)}>Request an appointment</button> : <a className="button" href="/book">Book an appointment</a> : null}</div>
     {items?.length ? <ul className="customer-records">{items.map((item) => <li key={item.id}>{'serviceName' in item ? <>
       <div><span className="customer-status">{statusLabel(item.status)}</span><h3>{item.serviceName}</h3><p>{time(item.startsAt)} · {item.barberName ?? 'Professional to be assigned'}</p></div>
       <a href={`/account?view=appointments&record=${encodeURIComponent(item.id)}`} onClick={(event) => followAccountLink(event, () => onOpen(item.id))}>View appointment</a>

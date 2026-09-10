@@ -7,6 +7,7 @@ import { finishEmailChange, startEmailChange } from './email-change';
 import { historyPage } from './history';
 import { appointmentDetail, orderDetail, withdrawAppointment } from './customer-records';
 import { appointmentCalendar } from './calendar';
+import { bookingAvailability, bookingOptions, bookingSelection, requestAppointment, requireBooking } from './booking';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -27,7 +28,7 @@ function json(data: unknown, status = 200, sessionCookie?: string) {
 async function route(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
   if (path === '/api/v1/config' && request.method === 'GET') {
-    return json({ enabled: configured(env), turnstileSiteKey: configured(env) ? env.TURNSTILE_SITE_KEY : '' });
+    return json({ enabled: configured(env), turnstileSiteKey: configured(env) ? env.TURNSTILE_SITE_KEY : '', bookingEnabled: configured(env) && env.CUSTOMER_BOOKING_ENABLED === 'true' });
   }
   if (!configured(env)) throw new ApiError(503, 'Account access is temporarily unavailable. You can still book or call the shop.');
   guardRequest(request, env);
@@ -115,6 +116,21 @@ async function route(request: Request, env: Env): Promise<Response> {
   const account = await authenticate(request, env);
   if (action === 'GET /api/v1/me') return json({ account });
   if (action === 'GET /api/v1/me/overview') return json(await overview(env, account.id));
+  if (path.startsWith('/api/v1/me/booking/')) {
+    requireBooking(env);
+    const params = new URL(request.url).searchParams;
+    if (action === 'GET /api/v1/me/booking/options' && params.size === 0) return json(await bookingOptions(env, account.id));
+    if (action === 'GET /api/v1/me/booking/availability') {
+      if ([...params.keys()].some((key) => !['staffId', 'serviceId', 'locationId', 'date'].includes(key) || params.getAll(key).length !== 1)) throw new ApiError(400, 'This availability request is not supported.');
+      await rateLimit(env, `availability:${account.id}`, 60);
+      return json(await bookingAvailability(env, account.id, bookingSelection(Object.fromEntries(params))));
+    }
+    if (action === 'POST /api/v1/me/booking/requests' && params.size === 0) {
+      await rateLimit(env, `booking-request:${account.id}`, 12);
+      return json(await requestAppointment(env, account.id, secretHash(env, sessionToken(request)!), body));
+    }
+    throw new ApiError(404, 'This action is not available.');
+  }
   const record = path.match(/^\/api\/v1\/me\/(appointments|orders)\/([A-Za-z0-9_-]{1,128})(?:\/(calendar|withdraw))?$/);
   if (record) {
     const [, kind, id, operation] = record as [string, 'appointments' | 'orders', string, string | undefined];

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleApi } from './api';
@@ -7,6 +8,7 @@ import { createSession, sendChallenge } from './accounts';
 import { hashPassword, secretHash, verifyPassword } from './security';
 import { canChangeRole } from './permissions';
 import type { Database, Env, Statement } from './types';
+import { wallWindow } from './booking-time';
 
 // Actual SQLite executes the repository migrations and every API query. Only
 // network delivery/bot services are replaced; authorization is never mocked.
@@ -295,6 +297,146 @@ describe('customer record details', () => {
     db.sqlite.exec("UPDATE orders SET fulfillment_type='pickup', shipping_address_json='{}'"); expect((await read()).shippingAddress).toBeNull();
   });
 });
+async function seedBooking() {
+  const alice = await seed('alice'); await seed('professional', 'staff');
+  const now = new Date().toISOString();
+  const date = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const locationId = String(db.sqlite.prepare('SELECT id FROM locations LIMIT 1').get()!.id);
+  db.sqlite.prepare(`INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,booking_buffer_minutes,created_at,updated_at)
+    VALUES ('book-staff','professional','Test professional','book-staff','approved',15,?,?)`).run(now, now);
+  db.sqlite.prepare("INSERT INTO staff_locations(staff_id,location_id,created_at) VALUES ('book-staff',?,?)").run(locationId, now);
+  db.sqlite.prepare("INSERT INTO services(id,name,category,duration_minutes,price_cents,created_at,updated_at) VALUES ('book-service','Test cut','test',30,2500,?,?)").run(now, now);
+  db.sqlite.prepare("INSERT INTO staff_services(staff_id,service_id,custom_duration_minutes,custom_price_cents,created_at,updated_at) VALUES ('book-staff','book-service',45,3200,?,?)").run(now, now);
+  db.sqlite.prepare("INSERT INTO weekly_availability(id,staff_id,location_id,weekday,start_time,end_time,created_at,updated_at) VALUES ('book-hours','book-staff',?,?,'09:00','17:00',?,?)").run(locationId, new Date(`${date}T00:00:00Z`).getUTCDay(), now, now);
+  env.CUSTOMER_BOOKING_ENABLED = 'true';
+  const selection = { staffId: 'book-staff', serviceId: 'book-service', locationId, date };
+  const path = `/me/booking/availability?${new URLSearchParams(selection)}`;
+  const available = async () => {
+    const result = await request(path, undefined, alice); expect(result.status).toBe(200); return result.json();
+  };
+  const page = await available();
+  const payload = { ...selection, startsAt: page.slots[0].startsAt, quote: page.quote, note: 'A test note', requestKey: randomUUID() };
+  return { alice, date, locationId, path, available, payload };
+}
+describe('server customer booking', () => {
+  it('stays disabled by default and lists only approved eligible services', async () => {
+    const { alice } = await seedBooking();
+    delete env.CUSTOMER_BOOKING_ENABLED;
+    expect((await request('/me/booking/options', undefined, alice)).status).toBe(503);
+    expect((await request('/config')).status).toBe(200);
+    env.CUSTOMER_BOOKING_ENABLED = 'true';
+    expect((await request('/me/booking/options')).status).toBe(401);
+    const options = await (await request('/me/booking/options', undefined, alice)).json();
+    expect(options.options).toHaveLength(1); expect(options.options[0].priceCents).toBe(3200);
+    expect(JSON.stringify(options)).not.toMatch(/professional@example|user_id|bufferMinutes|noticeHours/);
+    db.sqlite.exec("UPDATE staff_profiles SET setup_status='pending_review'");
+    expect((await (await request('/me/booking/options', undefined, alice)).json()).options).toEqual([]);
+    db.sqlite.exec("UPDATE staff_profiles SET setup_status='approved',accepts_new_clients=0");
+    expect((await (await request('/me/booking/options', undefined, alice)).json()).options).toEqual([]);
+  });
+  it('uses saved service overrides, buffers, blocks, and active holds without exposing private records', async () => {
+    const { date, available, locationId } = await seedBooking();
+    let page = await available(); expect(page.slots).toHaveLength(29);
+    const opening = wallWindow(date, '09:00', '17:00', 'America/New_York')!;
+    const iso = (minutes: number) => new Date(opening.start + minutes * 60000).toISOString();
+    expect(page.slots[0]).toEqual({ startsAt: iso(0), endsAt: iso(45) });
+    const now = new Date().toISOString();
+    db.sqlite.prepare(`INSERT INTO schedule_exceptions(id,staff_id,starts_at,ends_at,exception_type,note,created_by_user_id,created_at,updated_at)
+      VALUES ('block','book-staff',?,?,'break','PRIVATE BLOCK','professional',?,?)`).run(iso(60), iso(120), now, now);
+    db.sqlite.prepare(`INSERT INTO appointment_holds(id,staff_id,service_id,location_id,starts_at,ends_at,customer_email,expires_at,created_at)
+      VALUES ('hold','book-staff','book-service',?,?,?,'PRIVATE EMAIL',?,?)`).run(locationId, iso(180), iso(210), new Date(Date.now() + 600000).toISOString(), now);
+    page = await available();
+    expect(page.slots.some((slot: { startsAt: string }) => slot.startsAt === iso(0))).toBe(true);
+    expect(page.slots.some((slot: { startsAt: string }) => slot.startsAt === iso(15))).toBe(false);
+    expect(page.slots.some((slot: { startsAt: string }) => slot.startsAt === iso(165))).toBe(false);
+    expect(JSON.stringify(page)).not.toMatch(/PRIVATE|customer_email|hold|break/);
+    db.sqlite.exec("UPDATE appointment_holds SET expires_at='2000-01-01T00:00:00Z'");
+    expect((await available()).slots.some((slot: { startsAt: string }) => slot.startsAt === iso(165))).toBe(true);
+  });
+  it('rejects bad dates, closed services, out-of-window dates and changed quotes', async () => {
+    const { alice, path, payload } = await seedBooking();
+    expect((await request(path.replace(/date=[^&]+/, 'date=2027-02-30'), undefined, alice)).status).toBe(400);
+    expect((await request(`${path}&staffId=other`, undefined, alice)).status).toBe(400);
+    db.sqlite.exec('UPDATE staff_profiles SET booking_window_days=1');
+    expect((await request(path, undefined, alice)).status).toBe(400);
+    db.sqlite.exec('UPDATE staff_profiles SET booking_window_days=30; UPDATE staff_services SET custom_price_cents=3500');
+    expect((await request('/me/booking/requests', payload, alice)).status).toBe(409);
+    db.sqlite.exec('UPDATE services SET active=0');
+    expect((await request(path, undefined, alice)).status).toBe(404);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(0);
+  });
+  it('honors added hours, notice, returning-client eligibility and cross-location commitments', async () => {
+    const { alice, date, available, locationId, path } = await seedBooking();
+    const now = new Date().toISOString();
+    const window = wallWindow(date, '08:00', '09:00', 'America/New_York')!;
+    const start = new Date(window.start).toISOString(); const end = new Date(window.end).toISOString();
+    db.sqlite.prepare(`INSERT INTO schedule_exceptions(id,staff_id,location_id,starts_at,ends_at,exception_type,created_by_user_id,created_at,updated_at)
+      VALUES ('added','book-staff',?,?,?,'added_availability','professional',?,?)`).run(locationId, start, end, now, now);
+    expect((await available()).slots[0].startsAt).toBe(start);
+    db.sqlite.exec('UPDATE staff_profiles SET minimum_notice_hours=2160');
+    expect((await available()).slots).toEqual([]);
+    db.sqlite.exec('UPDATE staff_profiles SET minimum_notice_hours=2, accepts_new_clients=0');
+    expect((await request(path, undefined, alice)).status).toBe(404);
+    db.sqlite.prepare(`INSERT INTO locations(id,name,address_line_1,city,state,postal_code,created_at,updated_at)
+      VALUES ('other-location','Other location','1 Test St','Test','PA','12345',?,?)`).run(now, now);
+    db.sqlite.prepare(`INSERT INTO appointments(id,customer_user_id,assigned_staff_id,service_id,location_id,starts_at,ends_at,price_cents,status,source,created_at,updated_at)
+      VALUES ('other-visit','alice','book-staff','book-service','other-location',?,?,3200,'completed','staff',?,?)`).run(start, end, now, now);
+    expect((await available()).slots[0].startsAt).toBe(start);
+    db.sqlite.exec("UPDATE staff_profiles SET accepts_new_clients=1; UPDATE appointments SET status='confirmed'");
+    expect((await available()).slots.some((slot: { startsAt: string }) => slot.startsAt === start)).toBe(false);
+    db.sqlite.exec("UPDATE appointments SET status='reschedule_proposed', proposed_starts_at='invalid'");
+    expect((await request(path, undefined, alice)).status).toBe(409);
+  });
+  it('persists one owned pending request, safely retries it, and releases its slot on withdrawal', async () => {
+    const { alice, payload, available } = await seedBooking();
+    expect((await request('/me/booking/requests', { ...payload, priceCents: 1, customerId: 'other' }, alice)).status).toBe(400);
+    const result = await request('/me/booking/requests', payload, alice);
+    expect(result.status).toBe(200);
+    const saved = await result.json();
+    expect((await (await request('/me/booking/requests', payload, alice)).json()).appointmentId).toBe(saved.appointmentId);
+    expect((await request('/me/booking/requests', { ...payload, note: 'changed' }, alice)).status).toBe(409);
+    const row = db.sqlite.prepare('SELECT * FROM appointments').get()!;
+    expect(row.customer_user_id).toBe('alice'); expect(row.status).toBe('requested'); expect(row.price_cents).toBe(3200);
+    expect(Date.parse(String(row.reserved_until)) - Date.parse(String(row.ends_at))).toBe(15 * 60000);
+    expect((await available()).slots.some((slot: { startsAt: string }) => slot.startsAt === payload.startsAt)).toBe(false);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_requested_appointment'").get()!.n).toBe(1);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='customer_requested_appointment'").get()!.n).toBe(1);
+    expect((await request(`/me/appointments/${saved.appointmentId}/withdraw`, { updatedAt: row.updated_at }, alice)).status).toBe(200);
+    expect((await available()).slots.some((slot: { startsAt: string }) => slot.startsAt === payload.startsAt)).toBe(true);
+    expect((await (await request('/me/booking/requests', payload, alice)).json()).appointmentId).toBe(saved.appointmentId);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(1);
+  });
+  it('rejects a schedule edit or session revocation made after the availability snapshot', async () => {
+    const { alice, payload } = await seedBooking();
+    const original = db.batch.bind(db);
+    for (const sql of ["UPDATE weekly_availability SET active=0", "UPDATE sessions SET revoked_at='2026-01-01T00:00:00Z' WHERE user_id='alice'"]) {
+      let first = true;
+      const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+        const result = await original<T>(statements);
+        if (first) { first = false; db.sqlite.exec(sql); }
+        return result;
+      });
+      expect((await request('/me/booking/requests', payload, alice)).status).toBe(409);
+      spy.mockRestore();
+      db.sqlite.exec('UPDATE weekly_availability SET active=1');
+    }
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(0);
+  });
+  it('limits pending requests and rolls back when recording the event fails', async () => {
+    const { alice, payload, available } = await seedBooking();
+    db.sqlite.exec("CREATE TRIGGER fail_booking_event BEFORE INSERT ON appointment_events BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request('/me/booking/requests', payload, alice)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(0);
+    db.sqlite.exec('DROP TRIGGER fail_booking_event');
+    for (let index = 0; index < 3; index++) {
+      const page = await available();
+      expect((await request('/me/booking/requests', { ...payload, startsAt: page.slots[0].startsAt, requestKey: randomUUID() }, alice)).status).toBe(200);
+    }
+    const page = await available();
+    expect((await request('/me/booking/requests', { ...payload, startsAt: page.slots[0].startsAt, requestKey: randomUUID() }, alice)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(3);
+  });
+});
 afterEach(() => { db.sqlite.close(); vi.unstubAllGlobals(); });
 
 function request(path: string, body?: unknown, session = '', method = body === undefined ? 'GET' : 'POST', headers: Record<string, string> = {}) {
@@ -320,7 +462,7 @@ async function register(email = 'new@example.test') {
 describe('customer account security boundary', () => {
   it('fails closed when disabled or missing a secret, with no prototype fallback', async () => {
     env.ACCOUNTS_ENABLED = 'false';
-    expect(await (await request('/config')).json()).toEqual({ enabled: false, turnstileSiteKey: '' });
+    expect(await (await request('/config')).json()).toEqual({ enabled: false, turnstileSiteKey: '', bookingEnabled: false });
     expect((await request('/auth/login', {})).status).toBe(503);
     env.ACCOUNTS_ENABLED = 'true'; env.AUTH_SECRET = '';
     expect((await request('/me')).status).toBe(503);
