@@ -6,7 +6,7 @@ Status: review implementation, not deployed. The live WordPress site and product
 
 Use Node 22.13 or newer; `.nvmrc` selects Node 22. Install with `npm ci`, then run `npm run check`.
 
-The check runs TypeScript, ESLint, the original 58 browser-adapter tests plus 16 new API integration tests, static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, signup, one-use verification, login, profile persistence, private history, and session revocation. It uses the same Miniflare version pinned by Wrangler.
+The check runs TypeScript, ESLint, the original 58 browser-adapter tests plus 24 API integration tests (82 total), static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, signup, one-use verification, login, profile persistence, private paginated history, session revocation, and concurrent dual-inbox email changes. It uses the same Miniflare version pinned by Wrangler.
 
 For the static site plus local Pages API:
 
@@ -27,7 +27,7 @@ For real local account testing, copy `.dev.vars.example` to `.dev.vars` and conf
 Complete and review these steps before enabling customer accounts:
 
 1. Create a distinct Cloudflare Pages project or preview environment and an isolated staging D1 database. Replace the all-zero `database_id` placeholder in `wrangler.toml` with the staging database ID. The placeholder is not an existing resource.
-2. Review and apply `migrations/0001_unified_platform.sql` followed by `0002_customer_accounts.sql` to that empty database. The repository explicitly described 0001 as unapplied; this branch changes `users.phone` from NOT NULL to nullable in that baseline. **If any environment has already applied the old baseline, do not treat this as an upgrade migration:** prepare a separately tested table-rebuild migration and backup/restore plan. Do not drop customer tables to make it fit.
+2. Review and apply the migrations in order: `0001_unified_platform.sql`, `0002_customer_accounts.sql`, then `0003_customer_account_controls.sql`. The repository explicitly described 0001 as unapplied; the foundation changed `users.phone` from NOT NULL to nullable in that baseline. **If any environment has already applied the old baseline, do not treat this as an upgrade migration:** prepare a separately tested table-rebuild migration and backup/restore plan. Do not drop customer tables to make it fit. An environment already running the updated 0001 and 0002 only needs additive 0003; back up first and apply it before deploying this code. Existing pending verification/recovery codes become invalid after 0003 because they lack an email snapshot; request new codes. Accounts and history are preserved.
 3. Set `APP_ORIGIN` to the exact HTTPS origin, without a path. Do not derive trusted origin from a browser-supplied host header. Stage behind an access restriction and prevent indexing.
 4. Configure the values below separately for preview and production. Use Cloudflare secrets for private values. Do not copy `.dev.vars` to an artifact or commit it.
 5. Enable `ACCOUNTS_ENABLED=true` only after the database, origin, keys, and mail sender are correct and the staging release gates below are satisfied. Keep it false in the public production environment until release approval.
@@ -55,22 +55,45 @@ The deployment target remains the established Cloudflare Pages + Functions + D1 
 | Session | Cryptographically random 256-bit token; only HMAC stored in D1; `__Host-` cookie with Secure, HttpOnly, SameSite=Lax, Path=/; no Domain attribute |
 | Lifetime | Seven-day absolute expiry; 12-hour customer idle expiry; 30-minute elevated-role idle expiry; account status and role re-read on authenticated requests |
 | Recovery | Eight-digit cryptographically random email code; challenge-specific HMAC; ten-minute expiry; five failed attempts; atomic one-time claim; reset revokes previous sessions and requires a new login |
+| Email changes | Current password plus distinct codes sent to both current/new inboxes; ten-minute expiry; five failed attempts; initiating-session binding; atomic address update and revocation of all sessions and old recovery codes |
 | Mutations | Exact Origin check, custom request header, JSON content type, bounded streaming request body, strict field allowlists, parameterized SQL |
 | Abuse | Turnstile verified server-side including hostname and action; per-IP and per-email throttles before credential hashing; additional password/code limits |
 | Data isolation | `/me` derives immutable user ID from the session; profile writes and history reads are scoped to that ID; no client-selected customer ID, no automatic email/phone claims |
 | Response minimization | Explicit returned fields; no staff/internal notes, guest contact details, payment references, credential fields, or raw SQL errors |
 | Caching | Private/no-store API responses; account/staff/admin cache and indexing headers; no public source maps |
-| Audit | Sign-in, verification, recovery, password changes, profile changes, and session revocation events; no password/code payloads in logs |
+| Audit | Sign-in, verification, recovery, password/email changes, profile changes, and session revocation events; no password/code payloads in logs |
 | Prototype separation | Old account/booking/commerce UI is an explicit development-only import; production output check rejects legacy browser auth keys |
 
 The password choice follows one of [OWASP's scrypt profiles](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html). Cloudflare's [native crypto documentation](https://developers.cloudflare.com/workers/runtime-apis/nodejs/crypto/) excludes native Argon2, so this implementation uses supported native scrypt rather than adding a WASM password library. Runtime CPU/memory must still be measured under staging concurrency before opening signup. The initial proposal's Argon2id requirement is superseded by this specific reviewed choice.
 
 Session design follows the relevant [OWASP session guidance](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html). Atomic code consumption and password/session changes use [D1 batch transactions](https://developers.cloudflare.com/d1/worker-api/d1-database/). Turnstile is checked using its [server-side validation API](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/). Email uses the [Resend send-email API](https://resend.com/docs/api-reference/emails/send-email).
 
+## Customer controls added on dev-branch (2026-09-10)
+
+The customer foundation is carried forward from `codex/customer-foundation`, followed by the email-change/history work directly on `dev-branch`. `main`, the WordPress site, domain settings, and hosted databases are unchanged.
+
+### Email change acceptance
+
+Open Account → Security → Change sign-in email. Supply a new address and the current password. Stay on the same signed-in device and page while checking both inboxes; this UI deliberately does not persist passwords, codes, or challenge IDs in browser storage. Navigation/reload requires starting a new request. Cancel invalidates the pending request; sending a new request replaces earlier codes.
+
+This follows the current-password and dual-inbox confirmation principle in [OWASP's non-MFA email-change guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#changing-a-users-registered-email-address). It is not an MFA implementation or a security certification. Losing the old inbox still requires a separately verified support process; phone/profile data cannot bypass proof of ownership.
+
+The API changes the email only after both codes succeed in one transaction. The immutable user ID remains the same, preserving linked history. It revokes every session and invalidates old verification/recovery codes. Password changes, recovery, and all-device sign-out also invalidate pending email changes. Login/session issuance and new recovery challenges reject stale email/credential snapshots. Confirmation is bound to the initiating session; another signed-in device cannot complete it. Delivery failure leaves no usable change request. Destination collisions leave the losing account unchanged.
+
+Automated coverage checks these boundaries, swapped/incorrect/expired codes, cancellation, replacement, replay, cross-account and cross-session attempts, and two concurrent confirmations in the real Workers runtime. Staging must still verify actual delivery to both inboxes, delayed/failed delivery, mobile email-app switching, password-manager behavior, session expiry mid-flow, and support handling for a lost inbox.
+
+### History acceptance
+
+The customer dashboard now reads `GET /api/v1/me/appointments` and `GET /api/v1/me/orders`, 25 records per page, with Load more and Refresh history controls. Each list has independent loading/error state; a failed next page retains previously loaded records. Sign-out failures are visible from every account section.
+
+Cursor signatures are tied to the authenticated customer and list type. The server still applies `customer_user_id` to every query; a cursor is not an authorization credential. Deterministic date/ID ordering handles equal dates and untimed appointments. Matching SQL indexes are verified with query plans. Tests retrieve 110 owned records without duplicates and exclude another customer and a guest whose email matches. The runtime test verifies that history remains available after changing email. This is live keyset pagination, not a frozen snapshot: if appointment times change while paging, Refresh history starts a fresh list.
+
+The original `/me/overview` endpoint remains a compatibility read capped at 100 per list. New dashboard code does not use it. Do not build new full-history views against that endpoint. Booksy/GlossGenius still do not sync automatically; native changes and guest claims remain future server workflows.
+
 ## Release gates that remain open
 
 - **Real provider delivery:** verify sender identity, SPF/DKIM/DMARC, deliverability, failed/slow delivery, resend behavior, and Turnstile with the actual staging hostname. Local tests do not prove these integrations are configured.
-- **Browser acceptance:** complete signup, recovery, phone/address edits, sign-out, and two-device sessions on desktop and mobile. Check 320/375/390/430/768/1024px and desktop; keyboard order, zoom, password-manager autofill, error feedback, expired sessions, and Turnstile loading under the real CSP. Browser/visual QA was not performed in this turn.
+- **Browser acceptance:** complete signup, recovery, phone/address edits, dual-inbox email changes, history pagination/retries, sign-out, and two-device sessions on desktop and mobile. Check 320/375/390/430/768/1024px and desktop; keyboard order, zoom, password-manager autofill, error feedback, expired sessions, and Turnstile loading under the real CSP. Browser/visual QA has not been performed for these customer changes.
 - **Independent security review:** threat-model and review custom account endpoints, authentication enumeration/timing behavior, concurrent code consumption, replay, cookie handling, throttling at distributed scale, and direct attempts to reach staff/admin APIs. Unit/runtime tests are evidence, not a security certification.
 - **Edge configuration and capacity:** verify forced HTTPS, TLS, origin mapping, public caching behavior, edge rate limits, appropriate Workers CPU allowance, and load/memory behavior for password hashing. Application throttling alone is not a distributed-abuse control.
 - **Privileged access:** do not activate operational staff/admin endpoints before MFA or equivalent step-up authentication, server capability checks, approved staff setup, owner bootstrap, and role-change audit/revocation are implemented. Browser role changes are never authoritative.
@@ -83,11 +106,11 @@ Session design follows the relevant [OWASP session guidance](https://cheatsheets
 
 ## Data retention and recovery notes
 
-The API removes expired throttle entries and expired/revoked sessions during account traffic. Expired challenges are removed after a further day. Account/credential/profile rows and audit events are retained until an approved operational policy is implemented. Unverified account cleanup and any email-provider retention controls still need a scheduled policy before launch. Turning off account access is not data deletion.
+The API removes expired throttle entries and expired/revoked sessions during account traffic. Expired verification/recovery challenges are removed after a further day; expired or completed email-change requests are removed during the next account request. Their current/new addresses are retained until that cleanup; cancellation and password recovery/change remove pending email-change records immediately. Account/credential/profile rows and audit events are retained until an approved operational policy is implemented. Unverified account cleanup and any email-provider retention controls still need a scheduled policy before launch. Turning off account access is not data deletion.
 
 Rotating `AUTH_SECRET` invalidates existing session tokens and challenge hashes; plan a forced re-login, and do not describe it as a seamless rotation. Password recovery invalidates older challenges for that user. Successful password changes and “sign out on every device” revoke sessions server-side.
 
-Current history reads return at most 100 linked appointments and 100 orders. Add pagination before this limit becomes a customer-facing constraint. A guest booking belongs to no account until a server-verified claim establishes ownership. Never infer a claim from an editable email or phone alone.
+Customer-facing history reads are paginated; the original overview endpoint is a bounded compatibility read. A guest booking belongs to no account until a server-verified claim establishes ownership. Never infer a claim from an editable email or phone alone.
 
 ## Rollout and rollback
 

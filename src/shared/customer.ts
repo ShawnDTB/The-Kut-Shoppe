@@ -30,4 +30,5 @@ export interface CustomerOverview {
   appointments: CustomerAppointment[];
   orders: CustomerOrder[];
 }
+export interface CustomerPage<T> { items: T[]; nextCursor: string | null }
 export interface AccountConfig { enabled: boolean; turnstileSiteKey: string }

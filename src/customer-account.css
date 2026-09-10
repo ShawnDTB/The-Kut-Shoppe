@@ -53,6 +53,8 @@
 .customer-address-grid label:first-child, .customer-address-grid label:nth-child(2) { grid-column: 1 / -1; }
 .customer-security-section { border-top: 1px solid var(--account-line); margin-top: 2rem; padding-top: 1.5rem; max-width: 760px; }
 .customer-security-check { min-width: 0; width: 100%; }
+.customer-form-actions, .customer-history-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.customer-form label, .customer-email-address { overflow-wrap: anywhere; }
 .customer-booking-options { display: grid; gap: 1.75rem; margin-block: 2rem; }
 .customer-booking-options article { padding-block: 1.25rem; border-block-start: 1px solid var(--account-line); }
 @media (max-width: 600px) {

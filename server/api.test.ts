@@ -3,7 +3,7 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleApi } from './api';
-import { createSession } from './accounts';
+import { createSession, sendChallenge } from './accounts';
 import { hashPassword, secretHash, verifyPassword } from './security';
 import { canChangeRole } from './permissions';
 import type { Database, Env, Statement } from './types';
@@ -54,6 +54,149 @@ beforeEach(() => {
     if (url === 'https://api.resend.com/emails') { deliveries.push(JSON.parse(String(init.body))); return Response.json({ id: 'test-email' }); }
     throw new Error('Unexpected network request');
   }));
+});
+
+async function emailChange(session: string, email = 'updated@example.test') {
+  const response = await request('/me/email/start', { email, currentPassword: password }, session);
+  expect(response.status).toBe(202);
+  const payload = await response.json();
+  const codes = { challengeId: payload.challengeId as string,
+    currentCode: deliveries.at(-2)!.text.match(/code is (\d{8})/)![1]!, newCode: latestCode() };
+  expect(JSON.stringify(payload)).not.toContain(codes.currentCode);
+  expect(JSON.stringify(payload)).not.toContain(codes.newCode);
+  return codes;
+}
+
+describe('verified email changes', () => {
+  it('requires the password and both inboxes, preserving identity and revoking sessions and old recovery codes', async () => {
+    const alice = await seed('alice'); const second = await createSession(env, 'alice'); const bob = await seed('bob');
+    const recovery = await sendChallenge(env, { id: 'alice', email: 'alice@example.test' }, 'reset_password');
+    const recoveryCode = latestCode();
+    expect((await request('/me/email/start', { email: 'new@example.test', currentPassword: 'wrong' }, alice)).status).toBe(400);
+    const codes = await emailChange(alice, ' NEW@example.test ');
+    expect(deliveries.at(-2)!.to).toEqual(['alice@example.test']);
+    expect(deliveries.at(-1)!.to).toEqual(['new@example.test']);
+    expect(db.sqlite.prepare('SELECT email FROM users WHERE id=?').get('alice')!.email).toBe('alice@example.test');
+    const stored = db.sqlite.prepare('SELECT * FROM account_email_changes').get()!;
+    expect(stored.current_code_hash).not.toBe(codes.currentCode);
+    expect(stored.new_code_hash).not.toBe(codes.newCode);
+    expect(codes.currentCode).not.toBe(codes.newCode);
+    expect((await request('/me/email/confirm', { ...codes, currentCode: 'wrong' }, alice)).status).toBe(400);
+    expect((await request('/me/email/confirm', { ...codes, currentCode: codes.newCode, newCode: codes.currentCode }, alice)).status).toBe(400);
+    const result = await request('/me/email/confirm', codes, alice);
+    expect(result.status).toBe(200); expect(result.headers.get('Set-Cookie')).toContain('Max-Age=0');
+    expect(db.sqlite.prepare('SELECT email,role FROM users WHERE id=?').get('alice')).toEqual({ email: 'new@example.test', role: 'customer' });
+    expect((await request('/me', undefined, second)).status).toBe(401);
+    expect((await request('/me', undefined, bob)).status).toBe(200);
+    expect((await request('/auth/reset', { challengeId: recovery, code: recoveryCode, password })).status).toBe(400);
+    expect((await request('/auth/login', { email: 'alice@example.test', password, turnstileToken: 'test' })).status).toBe(401);
+    const login = await request('/auth/login', { email: 'new@example.test', password, turnstileToken: 'test' });
+    expect(login.status).toBe(200); expect((await login.json()).account.id).toBe('alice');
+    expect((await request('/me/email/confirm', codes, login.headers.get('Set-Cookie')!)).status).toBe(400);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='email_changed'").get()!.n).toBe(1);
+  });
+  it('binds a change to its customer and initiating session, and permits explicit cancellation', async () => {
+    const alice = await seed('alice'); const second = await createSession(env, 'alice'); const bob = await seed('bob');
+    const codes = await emailChange(alice);
+    expect((await request('/me/email/confirm', codes, bob)).status).toBe(400);
+    expect((await request('/me/email/confirm', codes, second)).status).toBe(400);
+    await request('/me/email/cancel', { challengeId: codes.challengeId }, bob);
+    expect(db.sqlite.prepare('SELECT attempts FROM account_email_changes').get()!.attempts).toBe(0);
+    expect((await request('/me/email/cancel', { challengeId: codes.challengeId }, alice)).status).toBe(200);
+    expect((await request('/me/email/confirm', codes, alice)).status).toBe(400);
+    expect(db.sqlite.prepare('SELECT email FROM users WHERE id=?').get('alice')!.email).toBe('alice@example.test');
+  });
+  it('locks after five incorrect attempts and invalidates expired or superseded requests', async () => {
+    const alice = await seed('alice');
+    const codes = await emailChange(alice);
+    const wrong = codes.newCode === '11111111' ? '22222222' : '11111111';
+    for (let i = 0; i < 5; i++) expect((await request('/me/email/confirm', { ...codes, newCode: wrong }, alice)).status).toBe(400);
+    expect((await request('/me/email/confirm', codes, alice)).status).toBe(400);
+    const replacement = await emailChange(alice);
+    expect((await request('/me/email/confirm', codes, alice)).status).toBe(400);
+    db.sqlite.prepare("UPDATE account_email_changes SET expires_at='2000-01-01T00:00:00.000Z'").run();
+    expect((await request('/me/email/confirm', replacement, alice)).status).toBe(400);
+  });
+  it('removes pending email changes after password changes, recovery, or all-device sign-out', async () => {
+    for (const action of ['password', 'reset', 'sessions/revoke']) {
+      const session = await seed(action.replace('/', '-'));
+      const codes = await emailChange(session, `${action.replace('/', '-')}@new.example.test`);
+      if (action === 'reset') {
+        const challengeId = await sendChallenge(env, { id: 'reset', email: 'reset@example.test' }, 'reset_password');
+        expect((await request('/auth/reset', { challengeId, code: latestCode(), password })).status).toBe(200);
+      } else expect((await request(`/me/${action}`, action === 'password' ? { currentPassword: password, password } : {}, session)).status).toBe(200);
+      expect(db.sqlite.prepare('SELECT id FROM account_email_changes WHERE id=?').get(codes.challengeId)).toBeUndefined();
+    }
+  });
+  it('does not change an email if either delivery fails', async () => {
+    const alice = await seed('alice');
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ id: 'sent' })).mockResolvedValueOnce(new Response('', { status: 503 }));
+    const result = await request('/me/email/start', { email: 'new@example.test', currentPassword: password }, alice);
+    expect(result.status).toBe(503);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM account_email_changes').get()!.n).toBe(0);
+    expect(db.sqlite.prepare('SELECT email FROM users WHERE id=?').get('alice')!.email).toBe('alice@example.test');
+  });
+  it('resolves a destination collision without mutating the losing account or revoking its session', async () => {
+    const alice = await seed('alice'); const bob = await seed('bob');
+    const first = await emailChange(alice); const second = await emailChange(bob);
+    expect((await request('/me/email/confirm', first, alice)).status).toBe(200);
+    expect((await request('/me/email/confirm', second, bob)).status).toBe(400);
+    expect((await request('/me', undefined, bob)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT email FROM users WHERE id=?').get('bob')!.email).toBe('bob@example.test');
+  });
+  it('does not issue challenges or sessions against stale credential/email snapshots', async () => {
+    await seed('alice');
+    db.sqlite.prepare("UPDATE users SET email='updated@example.test' WHERE id='alice'").run();
+    await expect(sendChallenge(env, { id: 'alice', email: 'alice@example.test' }, 'reset_password')).rejects.toThrow();
+    await expect(createSession(env, 'alice', { email: 'alice@example.test', passwordHash })).rejects.toThrow();
+    await expect(createSession(env, 'alice', { email: 'updated@example.test', passwordHash: 'stale' })).rejects.toThrow();
+    expect(deliveries).toHaveLength(0);
+  });
+});
+
+describe('private paginated history', () => {
+  it('reads beyond 100 records with tied/null dates and never exposes another customer or guest', async () => {
+    const alice = await seed('alice'); const bob = await seed('bob');
+    const now = new Date().toISOString();
+    db.sqlite.prepare("INSERT INTO services(id,name,category,duration_minutes,price_cents,created_at,updated_at) VALUES ('s','Test service','test',30,2500,?,?)").run(now, now);
+    const location = String(db.sqlite.prepare('SELECT id FROM locations LIMIT 1').get()!.id);
+    for (let i = 0; i < 112; i++) {
+      const owner = i === 110 ? 'bob' : i === 111 ? null : 'alice';
+      const id = String(i).padStart(3, '0');
+      db.sqlite.prepare(`INSERT INTO appointments(id,customer_user_id,guest_email,service_id,location_id,price_cents,status,starts_at,internal_note,created_at,updated_at)
+        VALUES (?,?,'alice@example.test','s',?,2500,'requested',?,'PRIVATE',?,?)`).run(`a-${id}`, owner, location, i < 95 ? now : null, now, now);
+      db.sqlite.prepare(`INSERT INTO orders(id,customer_user_id,status,fulfillment_type,subtotal_cents,total_cents,internal_note,created_at,updated_at)
+        VALUES (?,?,'submitted','pickup',2500,2500,'PRIVATE',?,?)`).run(`o-${id}`, owner, now, now);
+    }
+    for (const kind of ['appointments', 'orders']) {
+      const seen: string[] = [];
+      let cursor: string | null = null;
+      do {
+        const response = await request(`/me/${kind}${cursor ? `?cursor=${cursor}` : ''}`, undefined, alice);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('Cache-Control')).toContain('no-store');
+        const page = await response.json();
+        expect(page.items.length).toBeLessThanOrEqual(25);
+        expect(JSON.stringify(page)).not.toMatch(/PRIVATE|alice@example/);
+        expect(page.items.some((row: { id: string }) => row.id.endsWith('110') || row.id.endsWith('111'))).toBe(false);
+        seen.push(...page.items.map((row: { id: string }) => row.id));
+        cursor = page.nextCursor;
+        if (cursor && seen.length === 25) {
+          expect((await request(`/me/${kind}?cursor=${cursor}`, undefined, bob)).status).toBe(400);
+          expect((await request(`/me/${kind === 'orders' ? 'appointments' : 'orders'}?cursor=${cursor}`, undefined, alice)).status).toBe(400);
+          expect((await request(`/me/${kind}?cursor=${cursor}bad`, undefined, alice)).status).toBe(400);
+        }
+      } while (cursor);
+      expect(seen).toHaveLength(110); expect(new Set(seen).size).toBe(110);
+    }
+    expect((await request('/me/orders?customerId=bob', undefined, alice)).status).toBe(400);
+    expect((await request('/me/orders?cursor=&cursor=x', undefined, alice)).status).toBe(400);
+    for (const [table, sort, index] of [['appointments', "COALESCE(starts_at, '')", 'appointments_customer_history_idx'], ['orders', 'created_at', 'orders_customer_history_idx']]) {
+      const plan = db.sqlite.prepare(`EXPLAIN QUERY PLAN SELECT id FROM ${table} WHERE customer_user_id=? AND (${sort}, id) < (?,?) ORDER BY ${sort} DESC, id DESC LIMIT 26`).all('alice', now, 'o-050');
+      expect(JSON.stringify(plan)).toContain(index);
+      expect(JSON.stringify(plan)).not.toContain('TEMP B-TREE');
+    }
+  });
 });
 afterEach(() => { db.sqlite.close(); vi.unstubAllGlobals(); });
 

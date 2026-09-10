@@ -35,13 +35,14 @@ export async function authenticate(request: Request, env: Env) {
     .bind(now.toISOString(), secretHash(env, token)).run();
   return publicAccount(row);
 }
-export async function createSession(env: Env, userId: string) {
+export async function createSession(env: Env, userId: string, proof?: { email: string; passwordHash: string }) {
   const token = newToken();
   const now = new Date();
   const result = await env.DB.prepare(`INSERT INTO sessions(id, user_id, token_hash, expires_at, created_at, last_seen_at)
-    SELECT ?, id, ?, ?, ?, ? FROM users WHERE id = ? AND status = 'active' AND email_verified_at IS NOT NULL`)
+    SELECT ?, id, ?, ?, ?, ? FROM users WHERE id = ? AND status = 'active' AND email_verified_at IS NOT NULL
+      ${proof ? 'AND email = ? AND EXISTS (SELECT 1 FROM account_credentials c WHERE c.user_id = users.id AND c.password_hash = ?)' : ''}`)
     .bind(randomUUID(), secretHash(env, token), new Date(now.getTime() + SESSION_SECONDS * 1000).toISOString(),
-      now.toISOString(), now.toISOString(), userId).run();
+      now.toISOString(), now.toISOString(), userId, ...(proof ? [proof.email, proof.passwordHash] : [])).run();
   if (result.meta.changes !== 1) throw new ApiError(401, 'Please sign in again.');
   return cookie(token);
 }
@@ -50,22 +51,26 @@ export function audit(env: Env, userId: string, action: string): Statement {
     VALUES (?, ?, ?, 'account', ?, ?)`)
     .bind(randomUUID(), userId, action, userId, new Date().toISOString());
 }
+export async function sendAccountEmail(env: Env, id: string, email: string, subject: string, text: string) {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': id },
+      body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject, text }), signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error('Email delivery failed');
+  } catch { throw new ApiError(503, 'We could not send the email. Please try again shortly.'); }
+}
 export async function sendChallenge(env: Env, user: { id: string; email: string }, purpose: 'verify_email' | 'reset_password') {
   const id = randomUUID();
   const code = newCode();
   const now = new Date();
-  await env.DB.prepare(`INSERT INTO account_challenges(id, user_id, purpose, code_hash, expires_at, created_at)
-    VALUES (?, ?, ?, ?, ?, ?)`).bind(id, user.id, purpose, secretHash(env, `${id}:${code}`),
-      new Date(now.getTime() + 10 * 60000).toISOString(), now.toISOString()).run();
+  const inserted = await env.DB.prepare(`INSERT INTO account_challenges(id, user_id, purpose, code_hash, expires_at, created_at, email)
+    SELECT ?, id, ?, ?, ?, ?, email FROM users WHERE id = ? AND email = ? AND status = 'active'`)
+    .bind(id, purpose, secretHash(env, `${id}:${code}`), new Date(now.getTime() + 10 * 60000).toISOString(), now.toISOString(), user.id, user.email).run();
+  if (inserted.meta.changes !== 1) throw new ApiError(409, 'Your account changed. Please start again.');
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': id },
-      body: JSON.stringify({ from: env.MAIL_FROM, to: [user.email],
-        subject: purpose === 'verify_email' ? 'Verify your Kut Shoppe email' : 'Reset your Kut Shoppe password',
-        text: `Your Kut Shoppe code is ${code}. It expires in 10 minutes and can be used once. Enter it on ${env.APP_ORIGIN}/account. If you did not request this, you can ignore this email. Never share this code.` }),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) throw new Error('Email delivery failed');
+    await sendAccountEmail(env, id, user.email, purpose === 'verify_email' ? 'Verify your Kut Shoppe email' : 'Reset your Kut Shoppe password',
+      `Your Kut Shoppe code is ${code}. It expires in 10 minutes and can be used once. Enter it on ${env.APP_ORIGIN}/account. If you did not request this, you can ignore this email. Never share this code.`);
   } catch {
     await env.DB.prepare('DELETE FROM account_challenges WHERE id = ?').bind(id).run();
     throw new ApiError(503, 'We could not send the email. Please try again shortly.');
@@ -74,9 +79,10 @@ export async function sendChallenge(env: Env, user: { id: string; email: string 
 }
 export async function consumeChallenge(env: Env, id: string, code: string, purpose: string, passwordHash?: string) {
   const now = new Date().toISOString();
-  const challenge = await env.DB.prepare(`SELECT user_id FROM account_challenges
-    WHERE id = ? AND purpose = ? AND code_hash = ? AND consumed_at IS NULL AND expires_at > ? AND attempts < 5`)
-    .bind(id, purpose, secretHash(env, `${id}:${code}`), now).first<{ user_id: string }>();
+  const challenge = await env.DB.prepare(`SELECT ac.user_id, ac.email, c.password_hash FROM account_challenges ac
+    JOIN account_credentials c ON c.user_id = ac.user_id
+    WHERE ac.id = ? AND ac.purpose = ? AND ac.code_hash = ? AND ac.consumed_at IS NULL AND ac.expires_at > ? AND ac.attempts < 5`)
+    .bind(id, purpose, secretHash(env, `${id}:${code}`), now).first<{ user_id: string; email: string; password_hash: string }>();
   if (!challenge) {
     await env.DB.prepare('UPDATE account_challenges SET attempts = attempts + 1 WHERE id = ? AND consumed_at IS NULL AND attempts < 5').bind(id).run();
     throw new ApiError(400, 'That code is invalid or expired. Request a new email and try again.');
@@ -85,7 +91,9 @@ export async function consumeChallenge(env: Env, id: string, code: string, purpo
   const owner = 'SELECT user_id FROM account_challenges WHERE id = ? AND consumed_by = ?';
   const statements = [
     env.DB.prepare(`UPDATE account_challenges SET consumed_at = ?, consumed_by = ?
-      WHERE id = ? AND consumed_at IS NULL AND expires_at > ? AND attempts < 5 RETURNING user_id`)
+      WHERE id = ? AND consumed_at IS NULL AND expires_at > ? AND attempts < 5
+        AND EXISTS (SELECT 1 FROM users u WHERE u.id = account_challenges.user_id AND u.email = account_challenges.email AND u.status = 'active')
+      RETURNING user_id`)
       .bind(now, claim, id, now),
     env.DB.prepare(`UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?), updated_at = ? WHERE id = (${owner})`)
       .bind(now, now, id, claim),
@@ -94,13 +102,14 @@ export async function consumeChallenge(env: Env, id: string, code: string, purpo
     statements.push(
       env.DB.prepare(`UPDATE account_credentials SET password_hash = ?, updated_at = ? WHERE user_id = (${owner})`).bind(passwordHash, now, id, claim),
       env.DB.prepare(`UPDATE sessions SET revoked_at = ? WHERE user_id = (${owner})`).bind(now, id, claim),
+      env.DB.prepare(`DELETE FROM account_email_changes WHERE user_id = (${owner})`).bind(id, claim),
     );
   }
   statements.push(env.DB.prepare(`UPDATE account_challenges SET consumed_at = ? WHERE user_id = (${owner}) AND consumed_at IS NULL`).bind(now, id, claim));
   const results = await env.DB.batch<{ results: { user_id: string }[] }>(statements);
   if (!results[0]?.results.length) throw new ApiError(400, 'That code has already been used.');
   await audit(env, challenge.user_id, purpose === 'verify_email' ? 'email_verified' : 'password_reset').run();
-  return challenge.user_id;
+  return { userId: challenge.user_id, email: challenge.email, passwordHash: challenge.password_hash };
 }
 export function parseProfile(body: Record<string, unknown>): CustomerProfile {
   allowFields(body, ['name', 'phone', 'address']);

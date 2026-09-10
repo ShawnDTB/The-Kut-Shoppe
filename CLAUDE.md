@@ -2,11 +2,13 @@
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.
 
-## Customer foundation update (2026-09-09)
+## Customer account update (2026-09-10)
 
 Read `docs/platform/customer-foundation-review.md` and `customer-deployment-runbook.md` first for the current customer architecture. The older prototype notes below remain useful for local design-review code, but production accounts now use `server/`, `functions/api/[[path]].ts`, `src/data/customer-api.ts`, and `src/components/CustomerAccount.tsx`. Their identity is a server-validated HttpOnly cookie, never `auth-v2.ts` localStorage. `LocalPlatformPreview.tsx` preserves the old UI only under explicit Vite development preview; do not reconnect it to production routes or add a localStorage fallback on API errors.
 
 `npm run check` also runs SQLite API tests, production-output safety checks, and a real local Workers/D1 smoke test with mocked external delivery. Node 22.13+ is required. `wrangler.toml` is now present but has a placeholder D1 ID and disabled accounts. Nothing was deployed. Database migration 0001 was an unapplied baseline and now permits nullable phone; any environment that applied the old baseline needs a reviewed upgrade migration. No staff/admin mutation APIs are enabled yet.
+
+Continue and push on `dev-branch`, not the prior `codex/customer-foundation` review branch or `main`. Customer email changes now live in `server/email-change.ts` and `CustomerEmailChange.tsx`: current password, both inboxes, initiating-session binding, and atomic session/recovery revocation are required. Do not weaken the old-inbox requirement to a notification while MFA is absent. Migration 0003 is additive and invalidates pre-existing pending verification/recovery codes without changing accounts/history. `server/history.ts` and `CustomerHistory.tsx` provide signed, owner-scoped keyset pagination. `/me/overview` is compatibility-only (100-record cap); new full-history UI must use `/me/appointments` and `/me/orders`. `npm run check` currently covers 82 tests and a concurrent Workers/D1 email-change test. Real email/Turnstile, browser acceptance, and security review remain staging gates.
 
 ## Project identity
 
@@ -22,9 +24,9 @@ Conversion goals for the eventual public site: fast trust-building first impress
 - Hand-rolled routing: `src/App.tsx` matches `window.location.pathname` against `src/data/site.ts` — no React Router or framework routing
 - Hand-rolled SSR + static prerendering: `src/entry-server.tsx` (`renderToString`) + `scripts/prerender.mjs` writes one `index.html` per route into `dist/`; `src/entry-client.tsx` hydrates in the browser
 - **ESLint 10** flat config (`eslint.config.js`) with `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`
-- **Vitest** (added 2026-08-14) covers the data layer only (`src/data/*.test.ts`, jsdom environment) — no React component/rendering tests, no React Testing Library. See "Automated tests" below before adding more.
-- Node `>=20.19.0` per `package.json` engines; `.nvmrc` pins `22`
-- Deployment target is **Cloudflare Pages** (`public/_headers`, `public/_redirects`, a D1-ready schema in `migrations/`) — but no `wrangler.toml` or Cloudflare binding exists yet; nothing here is connected to a real database or backend
+- **Vitest** covers browser adapters (`src/data/*.test.ts`, jsdom) and the account API (`server/api.test.ts`, real SQLite); no React component/rendering tests or React Testing Library.
+- Node `>=22.13.0` per `package.json` engines; `.nvmrc` pins `22`
+- Deployment target is **Cloudflare Pages** with Functions and D1 (`wrangler.toml`, `functions/`, `server/`, `migrations/`). Local backend tests work; hosted configuration is not provisioned and accounts remain disabled.
 
 ## Repository architecture
 
@@ -43,7 +45,9 @@ docs/platform/          Extensive audit/handoff docs for the Platform V2 effort 
 migrations/             D1 schema (not yet applied anywhere real)
 ```
 
-### Platform V2: what it actually is
+### Historical Platform V2 prototype notes (development-only)
+
+The account update above supersedes production/auth/routing claims in the historical notes below. These notes describe the retained browser-only preview, not the production account service. Production uses the server account API and external booking links; do not restore prototype routes as a backend fallback.
 
 This codebase has grown well beyond a marketing site into a full multi-role SaaS: customer accounts, barber/manager/owner/developer roles, an internal booking engine with waitlist, a product shop with cart/checkout/inventory, and staff/admin dashboards. This is deliberate, not runaway scope creep — the owner confirmed it's the active direction.
 

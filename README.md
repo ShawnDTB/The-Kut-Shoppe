@@ -5,9 +5,9 @@
   <p>A Designed to Breakthrough transformation from a restricted WordPress website into an accessible, GitHub-managed business platform.</p>
 </div>
 
-## Customer foundation update — 2026-09-09
+## Customer account update — 2026-09-10
 
-The current review branch introduces a Cloudflare Pages Functions/D1 customer account service and a shared account screen for appointments, orders, profiles, and security. See the [repository and screenshot assessment](./docs/platform/customer-foundation-review.md) and [deployment runbook](./docs/platform/customer-deployment-runbook.md) before enabling accounts.
+`dev-branch` contains the Cloudflare Pages Functions/D1 customer account foundation plus verified email changes and paginated appointment/order history. The shared account screen covers appointments, orders, profiles, and security. See the [repository and screenshot assessment](./docs/platform/customer-foundation-review.md) and [deployment runbook](./docs/platform/customer-deployment-runbook.md) before enabling accounts. Apply additive migration `0003_customer_account_controls.sql` after the two foundation migrations; old pending verification/recovery codes must be requested again.
 
 **This is not deployed or approved for public account registration yet.** Accounts stay disabled until server settings, an isolated database, Turnstile, and verified email delivery are configured and staging acceptance passes. Native booking, commerce, and staff operations remain separate backend milestones. Production builds use the existing external booking providers and keep online ordering closed.
 
