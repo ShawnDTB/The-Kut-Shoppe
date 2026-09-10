@@ -26,6 +26,35 @@ export interface CustomerOrder {
   totalCents: number;
   createdAt: string;
 }
+export interface CustomerAppointmentDetail extends CustomerAppointment {
+  endsAt: string | null;
+  proposedStartsAt: string | null;
+  proposedEndsAt: string | null;
+  priceCents: number;
+  customerNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  location: { name: string; address: CustomerProfile['address']; timeZone: string };
+  canWithdraw: boolean;
+  withdrawnByCustomer: boolean;
+  canDownloadCalendar: boolean;
+}
+export interface CustomerOrderItem {
+  id: string;
+  productName: string;
+  variantName: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+export interface CustomerOrderDetail extends CustomerOrder {
+  subtotalCents: number;
+  shippingCents: number;
+  taxCents: number;
+  shippingAddress: CustomerProfile['address'] | null;
+  trackingNumber: string | null;
+  items: CustomerOrderItem[];
+  itemsComplete: boolean;
+}
 export interface CustomerOverview {
   appointments: CustomerAppointment[];
   orders: CustomerOrder[];

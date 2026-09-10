@@ -5,16 +5,21 @@ import { allowFields, configured, cookie, emailField, guardRequest, hashPassword
 import { audit, authenticate, consumeChallenge, createSession, getAccount, overview, parseProfile, sendChallenge } from './accounts';
 import { finishEmailChange, startEmailChange } from './email-change';
 import { historyPage } from './history';
+import { appointmentDetail, orderDetail, withdrawAppointment } from './customer-records';
+import { appointmentCalendar } from './calendar';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
 const dummyHash = `scrypt:32768:8:3:${'0'.repeat(32)}:${'0'.repeat(128)}`;
 
-function json(data: unknown, status = 200, sessionCookie?: string) {
-  const headers = new Headers({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store, private',
+function privateHeaders(contentType = 'application/json; charset=utf-8') {
+  return new Headers({ 'Content-Type': contentType, 'Cache-Control': 'no-store, private',
     'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY',
     'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'", 'Vary': 'Cookie',
     'X-Robots-Tag': 'noindex, nofollow', 'Strict-Transport-Security': 'max-age=31536000' });
+}
+function json(data: unknown, status = 200, sessionCookie?: string) {
+  const headers = privateHeaders();
   if (sessionCookie) headers.set('Set-Cookie', sessionCookie);
   if (status === 429) headers.set('Retry-After', '900');
   return new Response(JSON.stringify(data), { status, headers });
@@ -110,6 +115,24 @@ async function route(request: Request, env: Env): Promise<Response> {
   const account = await authenticate(request, env);
   if (action === 'GET /api/v1/me') return json({ account });
   if (action === 'GET /api/v1/me/overview') return json(await overview(env, account.id));
+  const record = path.match(/^\/api\/v1\/me\/(appointments|orders)\/([A-Za-z0-9_-]{1,128})(?:\/(calendar|withdraw))?$/);
+  if (record) {
+    const [, kind, id, operation] = record as [string, 'appointments' | 'orders', string, string | undefined];
+    if (new URL(request.url).search) throw new ApiError(400, 'This record request is not supported.');
+    if (request.method === 'GET' && !operation) return json(kind === 'appointments'
+      ? { appointment: await appointmentDetail(env, account.id, id) } : { order: await orderDetail(env, account.id, id) });
+    if (request.method === 'GET' && kind === 'appointments' && operation === 'calendar') {
+      const headers = privateHeaders('text/calendar; charset=utf-8');
+      headers.set('Content-Disposition', 'attachment; filename="kut-shoppe-appointment.ics"');
+      return new Response(appointmentCalendar(await appointmentDetail(env, account.id, id)), { headers });
+    }
+    if (request.method === 'POST' && kind === 'appointments' && operation === 'withdraw') {
+      allowFields(body, ['updatedAt']);
+      await rateLimit(env, `withdraw-request:${account.id}`, 20);
+      return json(await withdrawAppointment(env, account.id, secretHash(env, sessionToken(request)!), id, stringField(body, 'updatedAt', 40, 1)));
+    }
+    throw new ApiError(404, 'This action is not available.');
+  }
   if (action === 'GET /api/v1/me/appointments' || action === 'GET /api/v1/me/orders') {
     const kind = path.endsWith('/appointments') ? 'appointments' : 'orders';
     const params = new URL(request.url).searchParams;

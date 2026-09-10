@@ -4,6 +4,8 @@ Reviewed 2026-09-09. Repository: `ShawnDTB/The-Kut-Shoppe`. Base: `dev-branch`, 
 
 Follow-up 2026-09-10: the foundation and subsequent customer controls are now carried on `dev-branch`. The tables and 74-test figures below describe the initial foundation review. For verified email changes, paginated history, the additive 0003 migration, and current 82-test validation coverage, read [the updated deployment runbook](customer-deployment-runbook.md#customer-controls-added-on-dev-branch-2026-09-10). Accounts are still disabled by default and have not been deployed.
 
+Latest customer slice: private appointment/order detail views, static calendar downloads for confirmed visits, and withdrawal of unconfirmed website requests are implemented on `dev-branch`. See the runbook's Appointment and order details section for migration 0004, current 87-test coverage, and operational boundaries. Confirmed cancellations, native booking, notifications, checkout, and deployment remain future gates.
+
 ## What the audit found
 
 The repository has a useful product prototype, established shop branding, separate barber/loctician booking destinations, public page metadata, and several rounds of accessibility and code cleanup. The initial `npm run check` passed 58 tests. Initial production assets measured 114.26 KB JavaScript and 32.64 KB CSS, gzip, within the existing budgets.
@@ -79,7 +81,7 @@ The screenshot points to the educational [build-your-own-x repository](https://g
 
 The new flow is registration → email verification → sign-in → one account with appointments, orders, profile, and security. Phone and delivery address are optional. Saved changes persist in D1 and can be read on a different signed-in device. Password changes and recovery revoke old sessions; customers can also sign out every device explicitly.
 
-History is a real private database read, now paginated through the dashboard. There are no invented appointments or orders. Booksy and GlossGenius do not automatically sync here. Verified email changes are implemented with current-password and dual-inbox confirmation. Online cancellation, rescheduling, native booking submission, order details/checkout, and self-service data export/deletion are not complete. The UI gives the customer a real contact/provider path for those needs.
+History is a real private database read, now paginated through the dashboard with appointment/order detail views. There are no invented appointments or orders. Booksy and GlossGenius do not automatically sync here. Verified email changes are implemented with current-password and dual-inbox confirmation. Customers can withdraw unconfirmed website requests and download confirmed visits as static calendar copies. Confirmed cancellation, rescheduling, native booking submission, checkout, and self-service data export/deletion remain incomplete. The UI gives the customer a real contact/provider path for those needs.
 
 Accounts remain disabled by default. Missing database or service configuration never falls back to browser accounts. The prior browser platform is preserved solely for disposable local design review with `VITE_LOCAL_PLATFORM_PREVIEW=true` under Vite development.
 

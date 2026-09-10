@@ -198,6 +198,103 @@ describe('private paginated history', () => {
     }
   });
 });
+function seedRecords(owner: string | null = 'alice') {
+  const now = new Date().toISOString();
+  db.sqlite.prepare("INSERT OR IGNORE INTO services(id,name,category,duration_minutes,price_cents,created_at,updated_at) VALUES ('detail-service','Test service','test',30,2500,?,?)").run(now, now);
+  const location = String(db.sqlite.prepare('SELECT id FROM locations LIMIT 1').get()!.id);
+  db.sqlite.prepare(`INSERT INTO appointments(id,customer_user_id,service_id,location_id,price_cents,status,source,customer_note,internal_note,created_at,updated_at)
+    VALUES ('detail-appointment',?,'detail-service',?,2500,'requested','website','My private note','SECRET',?,?)`).run(owner, location, now, now);
+  db.sqlite.prepare(`INSERT INTO orders(id,customer_user_id,status,fulfillment_type,subtotal_cents,total_cents,internal_note,created_at,updated_at)
+    VALUES ('detail-order',?,'submitted','shipping',2500,2700,'SECRET',?,?)`).run(owner, now, now);
+  return now;
+}
+describe('customer record details', () => {
+  it('isolates details, downloads, and mutations even for an owner role', async () => {
+    const alice = await seed('alice'); const owner = await seed('owner', 'owner'); seedRecords();
+    for (const kind of ['appointments', 'orders']) {
+      const id = kind === 'orders' ? 'detail-order' : 'detail-appointment';
+      const own = await request(`/me/${kind}/${id}`, undefined, alice);
+      expect(own.status).toBe(200); expect(own.headers.get('Cache-Control')).toContain('no-store');
+      expect(await own.text()).not.toMatch(/SECRET|customer_user_id|internal_note|payment_reference/);
+      const foreign = await request(`/me/${kind}/${id}`, undefined, owner);
+      const missing = await request(`/me/${kind}/missing`, undefined, owner);
+      expect(foreign.status).toBe(404); expect(await foreign.text()).toBe(await missing.text());
+      expect((await request(`/me/${kind}/${id}`)).status).toBe(401);
+      expect((await request(`/me/${kind}/${id}?customerId=alice`, undefined, alice)).status).toBe(400);
+    }
+    expect((await request('/me/appointments/detail-appointment/calendar', undefined, owner)).status).toBe(404);
+    expect((await request('/me/appointments/detail-appointment/withdraw', { updatedAt: 'old' }, owner)).status).toBe(404);
+    db.sqlite.exec('UPDATE appointments SET customer_user_id=NULL; UPDATE orders SET customer_user_id=NULL');
+    expect((await request('/me/appointments/detail-appointment', undefined, alice)).status).toBe(404);
+    expect((await request('/me/orders/detail-order', undefined, alice)).status).toBe(404);
+  });
+  it('withdraws once, rejects stale views and unsupported appointment transitions', async () => {
+    const alice = await seed('alice'); const updatedAt = seedRecords();
+    const path = '/me/appointments/detail-appointment/withdraw';
+    expect((await request(path, { updatedAt: 'stale' }, alice)).status).toBe(409);
+    expect((await request(path, { updatedAt, customerId: 'alice' }, alice)).status).toBe(400);
+    for (const status of ['confirmed', 'reschedule_proposed', 'completed', 'cancelled', 'declined', 'checked_in', 'in_service', 'no_show']) {
+      db.sqlite.prepare('UPDATE appointments SET status=?').run(status);
+      expect((await request(path, { updatedAt }, alice)).status).toBe(409);
+    }
+    db.sqlite.exec("UPDATE appointments SET status='requested', source='staff'");
+    expect((await request(path, { updatedAt }, alice)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET source='website', starts_at='2000-01-01T00:00:00Z'");
+    expect((await request(path, { updatedAt }, alice)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET starts_at=NULL, status='waitlisted'");
+    expect((await request(path, { updatedAt }, alice)).status).toBe(200);
+    expect((await request(path, { updatedAt }, alice)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('cancelled');
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_withdrew_request'").get()!.n).toBe(1);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='customer_withdrew_request'").get()!.n).toBe(1);
+  });
+  it('rolls back withdrawal when its audit transaction cannot complete', async () => {
+    const alice = await seed('alice'); const updatedAt = seedRecords();
+    db.sqlite.exec("CREATE TRIGGER reject_event BEFORE INSERT ON appointment_events BEGIN SELECT RAISE(ABORT, 'test failure'); END;");
+    expect((await request('/me/appointments/detail-appointment/withdraw', { updatedAt }, alice)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT status, customer_withdrawal_id FROM appointments').get()).toEqual({ status: 'requested', customer_withdrawal_id: null });
+  });
+  it('exports only confirmed calendar times, escapes labels, and excludes personal data', async () => {
+    const alice = await seed('alice'); seedRecords();
+    const path = '/me/appointments/detail-appointment/calendar';
+    expect((await request(path, undefined, alice)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET status='confirmed', starts_at='2027-11-07T01:30:00-04:00', ends_at='2027-11-07T01:30:00-05:00'");
+    db.sqlite.prepare('UPDATE services SET name=?').run('剪'.repeat(80) + '\r\nBEGIN:VEVENT\r\nATTENDEE:secret;comma,slash\\');
+    const response = await request(path, undefined, alice);
+    expect(response.status).toBe(200); expect(response.headers.get('Content-Type')).toContain('text/calendar');
+    expect(response.headers.get('Content-Disposition')).toContain('attachment'); expect(response.headers.get('Cache-Control')).toContain('no-store');
+    const raw = await response.text(); const unfolded = raw.replace(/\r\n /g, '');
+    expect(unfolded).toContain('DTSTART:20271107T053000Z\r\nDTEND:20271107T063000Z');
+    expect(unfolded.match(/^BEGIN:VEVENT$/gm)).toHaveLength(1);
+    expect(unfolded).toContain('\\nATTENDEE:secret\\;comma\\,slash\\\\');
+    expect(unfolded).not.toMatch(/My private note|SECRET|alice@example|^ATTENDEE:/m);
+    for (const line of raw.split('\r\n')) expect(Buffer.byteLength(line)).toBeLessThanOrEqual(75);
+    for (const end of [null, 'invalid', '2028-01-01', '2028-01-01T12:00:00', '2020-01-01T00:00:00Z']) {
+      db.sqlite.prepare('UPDATE appointments SET ends_at=?').run(end);
+      expect((await request(path, undefined, alice)).status).toBe(409);
+    }
+  });
+  it('returns saved order amounts and only allowlisted shipping fields', async () => {
+    const alice = await seed('alice'); seedRecords();
+    db.sqlite.prepare('UPDATE orders SET shipping_address_json=?').run(JSON.stringify({ line1: '1 Test St', city: 'Test', state: 'PA', postalCode: '12345', secret: 'SECRET' }));
+    const read = async () => (await (await request('/me/orders/detail-order', undefined, alice)).json()).order;
+    const order = await read();
+    expect(order.totalCents).toBe(2700); expect(order.subtotalCents).toBe(2500);
+    expect(order.shippingAddress).toEqual({ line1: '1 Test St', line2: '', city: 'Test', state: 'PA', postalCode: '12345' });
+    expect(order.itemsComplete).toBe(true); expect(order.items).toEqual([]);
+    const now = new Date().toISOString();
+    db.sqlite.prepare("INSERT INTO products(id,name,slug,category,description,base_sku,created_at,updated_at) VALUES ('p','Current name','p','test','test','p',?,?)").run(now, now);
+    db.sqlite.prepare("INSERT INTO product_variants(id,product_id,name,sku,price_cents,created_at,updated_at) VALUES ('v','p','Current variant','v',9999,?,?)").run(now, now);
+    for (let i = 0; i < 101; i++) db.sqlite.prepare("INSERT INTO order_items(id,order_id,variant_id,product_name,variant_name,sku,quantity,unit_price_cents,created_at) VALUES (?,'detail-order','v','Saved name','Saved variant','PRIVATE-SKU',2,1250,?)").run(`item-${String(i).padStart(3, '0')}`, now);
+    const detailed = await read();
+    expect(detailed.items).toHaveLength(100); expect(detailed.itemsComplete).toBe(false);
+    expect(detailed.items[0]).toEqual({ id: 'item-000', productName: 'Saved name', variantName: 'Saved variant', quantity: 2, unitPriceCents: 1250 });
+    expect(JSON.stringify(detailed)).not.toMatch(/Current name|PRIVATE-SKU|9999/);
+    expect(detailed.totalCents).toBe(2700);
+    db.sqlite.exec("UPDATE orders SET shipping_address_json='invalid'"); expect((await read()).shippingAddress).toBeNull();
+    db.sqlite.exec("UPDATE orders SET fulfillment_type='pickup', shipping_address_json='{}'"); expect((await read()).shippingAddress).toBeNull();
+  });
+});
 afterEach(() => { db.sqlite.close(); vi.unstubAllGlobals(); });
 
 function request(path: string, body?: unknown, session = '', method = body === undefined ? 'GET' : 'POST', headers: Record<string, string> = {}) {

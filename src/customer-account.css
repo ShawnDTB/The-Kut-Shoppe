@@ -55,9 +55,27 @@
 .customer-security-check { min-width: 0; width: 100%; }
 .customer-form-actions, .customer-history-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .customer-form label, .customer-email-address { overflow-wrap: anywhere; }
+.customer-record-detail { max-width: 850px; overflow-wrap: anywhere; }
+.customer-record-detail h2 { margin-block: 1.5rem; }
+.customer-record-detail address { font-style: normal; line-height: 1.65; }
+.customer-detail-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-block: 1.5rem; }
+.customer-detail-facts dt { font-size: .875rem; color: var(--account-muted); margin-bottom: .4rem; }
+.customer-detail-facts dd, .customer-order-totals dd { margin: 0; }
+.customer-record-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.customer-detail-action { margin-block: 1.5rem; }
+.customer-withdraw-confirm { padding: 1rem; background: #24231f; border: 1px solid var(--account-line); }
+.customer-order-items { list-style: none; margin: 1.5rem 0; padding: 0; }
+.customer-order-items li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; padding-block: 1rem; border-bottom: 1px solid var(--account-line); }
+.customer-order-items h4, .customer-order-items p { margin-block: .3rem; font-size: 1rem; }
+.customer-order-totals { max-width: 420px; margin-left: auto; }
+.customer-order-totals > div { display: flex; justify-content: space-between; gap: 1rem; padding-block: .6rem; }
+.customer-order-totals > div:last-child { border-top: 1px solid var(--account-line); font-weight: 700; }
 .customer-booking-options { display: grid; gap: 1.75rem; margin-block: 2rem; }
 .customer-booking-options article { padding-block: 1.25rem; border-block-start: 1px solid var(--account-line); }
 @media (max-width: 600px) {
+  .customer-detail-facts { grid-template-columns: 1fr; }
+  .customer-order-items li { grid-template-columns: minmax(0, 1fr) auto; }
+  .customer-order-items li > div { grid-column: 1 / -1; }
   .customer-home-header { align-items: flex-start; }
   .customer-home-header .button { flex-shrink: 0; padding-inline: .85rem; }
   .customer-nav { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem 1rem; }

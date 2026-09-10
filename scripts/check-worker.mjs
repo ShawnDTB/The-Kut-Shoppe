@@ -83,5 +83,24 @@ try {
   const retainedHistory = await (await call('/me/orders', undefined, changedLogin.headers.get('Set-Cookie'))).json();
   assert.equal(retainedHistory.items.length, 25, 'Email change lost private history');
   assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE action = 'email_changed'").first()).n, 1);
-  console.log('Cloudflare runtime passed: D1 migrations, native scrypt, signup, verification, login, profile, paginated history, session revocation, concurrent dual-inbox email change.');
+  const detailCookie = changedLogin.headers.get('Set-Cookie');
+  await db.prepare("INSERT INTO services(id,name,category,duration_minutes,price_cents,created_at,updated_at) VALUES ('runtime-service','Runtime service','test',30,2500,?,?)").bind(now, now).run();
+  const location = await db.prepare('SELECT id FROM locations LIMIT 1').first();
+  await db.prepare(`INSERT INTO appointments(id,customer_user_id,service_id,location_id,price_cents,status,source,created_at,updated_at)
+    VALUES ('runtime-request',?,'runtime-service',?,2500,'requested','website',?,?)`).bind(account.id, location.id, now, now).run();
+  const withdrawals = await Promise.all([call('/me/appointments/runtime-request/withdraw', { updatedAt: now }, detailCookie), call('/me/appointments/runtime-request/withdraw', { updatedAt: now }, detailCookie)]);
+  for (const response of withdrawals) assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_withdrew_request'").first()).n, 1);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE action='customer_withdrew_request'").first()).n, 1);
+  const withdrawn = await (await call('/me/appointments/runtime-request', undefined, detailCookie)).json();
+  assert.equal(withdrawn.appointment.withdrawnByCustomer, true);
+  assert.equal((await call('/me/appointments/runtime-request/calendar', undefined, detailCookie)).status, 409);
+  await db.prepare(`INSERT INTO appointments(id,customer_user_id,service_id,location_id,price_cents,status,source,starts_at,ends_at,created_at,updated_at)
+    VALUES ('runtime-confirmed',?,'runtime-service',?,2500,'confirmed','website','2027-01-10T15:00:00Z','2027-01-10T15:30:00Z',?,?)`).bind(account.id, location.id, now, now).run();
+  assert.equal((await call('/me/appointments/runtime-confirmed/withdraw', { updatedAt: now }, detailCookie)).status, 409);
+  const calendar = await call('/me/appointments/runtime-confirmed/calendar', undefined, detailCookie);
+  assert.equal(calendar.status, 200); assert.match(await calendar.text(), /DTSTART:20270110T150000Z/);
+  const orderDetail = await call('/me/orders/runtime-order-00', undefined, detailCookie);
+  assert.equal(orderDetail.status, 200); assert.equal((await orderDetail.json()).order.totalCents, 2500);
+  console.log('Cloudflare runtime passed: account lifecycle, paginated history, concurrent email change and request withdrawal, private record details, confirmed calendar export.');
 } finally { await worker.dispose(); }
