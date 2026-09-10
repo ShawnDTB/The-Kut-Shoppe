@@ -27,7 +27,7 @@ export async function historyPage(env: Env, userId: string, kind: HistoryKind, c
   const time = appointments ? "COALESCE(a.starts_at, '')" : 'a.created_at';
   const select = appointments
     ? `SELECT a.id, s.name AS serviceName, sp.professional_name AS barberName, a.starts_at AS startsAt, a.status
-       FROM appointments a JOIN services s ON s.id = a.service_id LEFT JOIN staff_profiles sp ON sp.id = a.assigned_staff_id`
+       FROM appointments a JOIN services s ON s.id = a.service_id LEFT JOIN staff_profiles sp ON sp.id = COALESCE(a.assigned_staff_id,a.requested_staff_id)`
     : `SELECT a.id, a.status, a.fulfillment_type AS fulfillment, a.total_cents AS totalCents, a.created_at AS createdAt FROM orders a`;
   const query = env.DB.prepare(`${select} WHERE a.customer_user_id = ? ${cursor ? `AND (${time}, a.id) < (?, ?)` : ''}
     ORDER BY ${time} DESC, a.id DESC LIMIT ?`);

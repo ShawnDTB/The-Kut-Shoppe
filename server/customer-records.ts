@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { queueAppointmentNotifications } from './appointment-notifications';
 import type { CustomerAppointmentDetail, CustomerOrderDetail, CustomerOrderItem, CustomerProfile } from '../src/shared/customer';
 import { ApiError, type Env } from './types';
 
@@ -60,6 +61,7 @@ export async function withdrawAppointment(env: Env, userId: string, sessionHash:
     env.DB.prepare(`INSERT INTO audit_events(id, actor_user_id, action, entity_type, entity_id, created_at)
       SELECT ?, ?, 'customer_withdrew_request', 'appointment', id, ? FROM appointments WHERE id IN (${changed})`)
       .bind(randomUUID(), userId, now, id, userId, receipt),
+    ...queueAppointmentNotifications(env, receipt),
   ]);
   const appointment = await appointmentDetail(env, userId, id);
   if (results[0]?.meta.changes !== 1 && !appointment.withdrawnByCustomer) {

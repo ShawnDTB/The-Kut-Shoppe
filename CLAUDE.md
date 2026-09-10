@@ -18,6 +18,8 @@ Read `docs/platform/customer-booking-engine.md` before changing scheduling. Migr
 
 ## Project identity
 
+Latest professional slice: read `docs/platform/professional-requests-notifications.md`. Migration 0006 adds decision receipts and a dedicated appointment outbox. `server/staff-requests.ts` protects each professional's own queue and rechecks password/role/profile/session/version at decision time. Confirmation reuses scheduling excluding the request itself. `StaffRequests.tsx` extends the shared account shell; manager/owner roles confer no shop-wide authority here. Keep `STAFF_OPERATIONS_ENABLED=false` publicly: password reauthentication is NOT MFA. `server/notification-worker.ts` is a separate disabled scheduled Worker with leases, frozen provider keys/payloads, and bounded retries. It records provider acceptance, not inbox delivery. Never dispatch the prototype outbox. Current coverage is 107 tests plus offline-bundled Workers/D1 races and scheduled delivery tests. No deployment or browser acceptance.
+
 **The Kut Shoppe** is a real barbershop on Main Street in downtown Stroudsburg, PA, serving the Poconos area. **Designed to Breakthrough LLC / DTB Solutions** (Shawn Dullen, founder) builds and maintains its digital presence.
 
 **Important: this repository is not yet the live website.** The production site today is `https://www.thekutshoppe.com`, running on WordPress — untouched by anything in this repo. This repository is an in-progress React/TypeScript rebuild ("Platform V2") that is meant to eventually replace it. Do not assume anything you change here is visible to real customers until someone confirms a Cloudflare Pages deployment is actually wired to the production domain.

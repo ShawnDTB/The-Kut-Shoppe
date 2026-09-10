@@ -1,21 +1,23 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { URLSearchParams } from 'node:url';
-import { readFile, readdir, mkdir } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
+import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
+import { build } from 'vite';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
+import { migrationStatements } from './migration-statements.mjs';
 
 await mkdir('.wrangler', { recursive: true });
-const built = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'pages', 'functions', 'build',
-  '--outdir', '.wrangler/customer-worker', '--compatibility-date', '2026-09-09', '--compatibility-flag', 'nodejs_compat'], { stdio: 'inherit' });
-assert.equal(built.status, 0, 'Pages Function compilation failed');
+// Offline bundle of the actual Pages handler. No deployment CLI or cloud
+// metadata request is needed to exercise this code in the Workers runtime.
+await writeFile('.wrangler/customer-runtime-entry.ts', "import { onRequest } from '../functions/api/[[path]]';\nexport default { fetch(request, env) { return onRequest({ request, env }); } };\n");
+await build({ configFile: false, logLevel: 'warn', build: { ssr: '.wrangler/customer-runtime-entry.ts', target: 'es2022', outDir: '.wrangler/customer-worker', emptyOutDir: true, rollupOptions: { output: { entryFileNames: 'worker.js' } } } });
 const origin = 'https://account-runtime.example.test';
 const deliveries = [];
 const workerFile = (await readdir('.wrangler/customer-worker')).find((name) => name.endsWith('.js'));
 assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true',
+  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true',
     AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
@@ -30,12 +32,8 @@ try {
   // Trigger migrations delimit whole statements explicitly. The earlier simple
   // migrations contain no semicolons inside SQL values or compound statements.
   for (const file of (await readdir('migrations')).filter((name) => name.endsWith('.sql')).sort()) {
-    const sql = (await readFile(`migrations/${file}`, 'utf8')).replace(/^\s*--.*$/gm, '');
     const original = await readFile(`migrations/${file}`, 'utf8');
-    const statements = original.includes('-- statement-boundary')
-      ? original.split('-- statement-boundary').map((part) => part.replace(/^\s*--.*$/gm, '').trim()).filter(Boolean)
-      : sql.split(';').map((value) => value.trim()).filter(Boolean);
-    for (const statement of statements) await db.prepare(statement).run();
+    for (const statement of migrationStatements(original)) await db.prepare(statement).run();
   }
   const call = (path, body, cookie, method = body ? 'POST' : 'GET') => worker.dispatchFetch(`${origin}/api/v1${path}`, {
     method, headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Kut-Request': '1', 'CF-Connecting-IP': '192.0.2.25', ...(cookie ? { Cookie: cookie.split(';')[0] } : {}) },
@@ -137,7 +135,29 @@ try {
   const retryRequest = { ...firstRequest, startsAt: nextAvailable.slots[0].startsAt, quote: nextAvailable.quote, requestKey: randomUUID() };
   const retries = await Promise.all([call('/me/booking/requests', retryRequest, detailCookie), call('/me/booking/requests', retryRequest, detailCookie)]);
   for (const response of retries) assert.equal(response.status, 200, await response.clone().text());
-  assert.equal((await retries[0].json()).appointmentId, (await retries[1].json()).appointmentId);
+  const retryId = (await retries[0].json()).appointmentId;
+  assert.equal(retryId, (await retries[1].json()).appointmentId);
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_requested_appointment'").first()).n, 2);
-  console.log('Cloudflare runtime passed: account lifecycle, record details, calendar export, concurrent email change, withdrawal, two-customer slot competition, and duplicate booking submission.');
+  await db.prepare("INSERT INTO customer_profiles(user_id,created_at,updated_at) VALUES ('runtime-professional',?,?)").bind(now, now).run();
+  await db.prepare("INSERT INTO account_credentials(user_id,password_hash,updated_at) SELECT 'runtime-professional',password_hash,? FROM account_credentials WHERE user_id=?").bind(now, account.id).run();
+  const staffLogin = await call('/auth/login', { email: 'professional@example.test', password: 'A runtime test passphrase 2026', turnstileToken: 'test-only' });
+  assert.equal(staffLogin.status, 200); const staffCookie = staffLogin.headers.get('Set-Cookie');
+  const staffDetail = await (await call(`/me/professional/requests/${winningId}`, undefined, staffCookie)).json();
+  assert.equal(staffDetail.request.status, 'requested');
+  const winningCookie = winningIndex === 0 ? detailCookie : secondCookie;
+  const decision = { action: 'confirm', updatedAt: staffDetail.request.updatedAt, decisionKey: randomUUID(), currentPassword: 'A runtime test passphrase 2026' };
+  const competingActions = await Promise.all([
+    call(`/me/professional/requests/${winningId}`, decision, staffCookie),
+    call(`/me/appointments/${winningId}/withdraw`, { updatedAt: staffDetail.request.updatedAt }, winningCookie),
+  ]);
+  assert.deepEqual(competingActions.map((response) => response.status).sort(), [200, 409], 'Confirmation and withdrawal both succeeded');
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type IN ('professional_confirmed','customer_withdrew_request')").bind(winningId).first()).n, 1);
+  const nextDetail = await (await call(`/me/professional/requests/${retryId}`, undefined, staffCookie)).json();
+  const decline = { ...decision, action: 'decline', updatedAt: nextDetail.request.updatedAt, decisionKey: randomUUID() };
+  const duplicateDecisions = await Promise.all([call(`/me/professional/requests/${retryId}`, decline, staffCookie), call(`/me/professional/requests/${retryId}`, decline, staffCookie)]);
+  for (const response of duplicateDecisions) assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type='professional_declined'").bind(retryId).first()).n, 1);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.appointment_id=?').bind(retryId).first()).n, 4);
+  assert.equal((await call(`/me/professional/requests/${retryId}`, undefined, detailCookie)).status, 403);
+  console.log('Cloudflare runtime passed: account lifecycle, booking races, professional decision/withdrawal competition, duplicate staff decisions, and transactional notification recipients.');
 } finally { await worker.dispose(); }

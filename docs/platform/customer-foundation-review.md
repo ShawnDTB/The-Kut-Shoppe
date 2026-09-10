@@ -1,5 +1,7 @@
 # Customer foundation review
 
+Latest follow-up: [professional request management and appointment notifications](professional-requests-notifications.md) extend the shared account shell with own-professional access, transactional decisions, and a separately disabled scheduled email Worker. Migration 0006 and current 107-test coverage are documented there. This does not enable public staff access or deploy the site.
+
 Reviewed 2026-09-09. Repository: `ShawnDTB/The-Kut-Shoppe`. Base: `dev-branch`, commit `536bd3676e4cf8826a829d6883b0074bf3396f22`. Changes are proposed on `codex/customer-foundation`; neither `main` nor the WordPress site was changed.
 
 Follow-up 2026-09-10: the foundation and subsequent customer controls are now carried on `dev-branch`. The tables and 74-test figures below describe the initial foundation review. For verified email changes, paginated history, the additive 0003 migration, and current 82-test validation coverage, read [the updated deployment runbook](customer-deployment-runbook.md#customer-controls-added-on-dev-branch-2026-09-10). Accounts are still disabled by default and have not been deployed.

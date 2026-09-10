@@ -5,6 +5,8 @@ const assets = await readdir('dist/assets');
 const defaults = await readFile('wrangler.toml', 'utf8');
 assert.match(defaults, /^ACCOUNTS_ENABLED = "false"$/m, 'Accounts must remain disabled until staging acceptance');
 assert.match(defaults, /^CUSTOMER_BOOKING_ENABLED = "false"$/m, 'Native booking must remain disabled until the operational workflow is approved');
+assert.match(defaults, /^STAFF_OPERATIONS_ENABLED = "false"$/m, 'Staff operations must remain disabled until operational acceptance');
+assert.match(await readFile('wrangler.notifications.toml', 'utf8'), /^APPOINTMENT_EMAIL_ENABLED = "false"$/m, 'Email dispatch must remain disabled until provider acceptance');
 assert.equal(assets.some((file) => file.endsWith('.map')), false, 'Public source maps must not be published');
 const javascript = (await Promise.all(assets.filter((file) => file.endsWith('.js')).map((file) => readFile(`dist/assets/${file}`, 'utf8')))).join('\n');
 for (const forbidden of ['KutShoppeOwner!2026', 'kut-shoppe.accounts.v3', 'kut-shoppe.session.v3', 'Local Owner preview', 'AUTH_SECRET', 'scrypt:32768', 'RESEND_API_KEY']) {

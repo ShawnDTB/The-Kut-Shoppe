@@ -8,6 +8,7 @@ import { historyPage } from './history';
 import { appointmentDetail, orderDetail, withdrawAppointment } from './customer-records';
 import { appointmentCalendar } from './calendar';
 import { bookingAvailability, bookingOptions, bookingSelection, requestAppointment, requireBooking } from './booking';
+import { decideRequest, professionalAccess, staffQueue, staffRequest } from './staff-requests';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -116,6 +117,23 @@ async function route(request: Request, env: Env): Promise<Response> {
   const account = await authenticate(request, env);
   if (action === 'GET /api/v1/me') return json({ account });
   if (action === 'GET /api/v1/me/overview') return json(await overview(env, account.id));
+  if (action === 'GET /api/v1/me/professional') return json(await professionalAccess(env, account.id));
+  if (path.startsWith('/api/v1/me/professional/')) {
+    const params = new URL(request.url).searchParams;
+    if (action === 'GET /api/v1/me/professional/requests') {
+      if ([...params.keys()].some((key) => key !== 'cursor') || params.getAll('cursor').length > 1) throw new ApiError(400, 'This request queue is not supported.');
+      return json(await staffQueue(env, account.id, params.get('cursor')));
+    }
+    const match = path.match(/^\/api\/v1\/me\/professional\/requests\/([A-Za-z0-9_-]{1,128})$/);
+    if (match && params.size === 0) {
+      if (request.method === 'GET') return json({ request: await staffRequest(env, account.id, match[1]!) });
+      if (request.method === 'POST') {
+        await rateLimit(env, `professional-password:${account.id}`, 10);
+        return json(await decideRequest(env, account.id, secretHash(env, sessionToken(request)!), match[1]!, body));
+      }
+    }
+    throw new ApiError(404, 'This action is not available.');
+  }
   if (path.startsWith('/api/v1/me/booking/')) {
     requireBooking(env);
     const params = new URL(request.url).searchParams;

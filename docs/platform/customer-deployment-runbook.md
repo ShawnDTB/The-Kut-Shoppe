@@ -1,12 +1,14 @@
 # Customer deployment runbook
 
+Latest follow-up: apply `0006_staff_requests_notifications.sql` after 0005 before running this version. Read [Professional requests and appointment notices](professional-requests-notifications.md) for staff authorization, the separate scheduled Worker, privacy/retry behavior, and staging/rollback steps. Staff operations and email dispatch remain disabled by default. The current 107-test check also exercises staff decision races and competing scheduled notification runs with offline compilation; real provider and browser acceptance remain outstanding.
+
 Status: review implementation, not deployed. The live WordPress site and production domain have not been changed. `ACCOUNTS_ENABLED=false` is the committed default.
 
 ## Local validation
 
 Use Node 22.13 or newer; `.nvmrc` selects Node 22. Install with `npm ci`, then run `npm run check`.
 
-The check runs TypeScript, ESLint, 58 browser-adapter tests, 36 API integration tests, and three wall-time tests (97 total), static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, the account lifecycle, history/details, calendar export, concurrent email changes/withdrawal, two-customer slot competition, and duplicate booking submission. It uses the same Miniflare version pinned by Wrangler.
+The check runs TypeScript, ESLint, 58 browser-adapter tests, 46 API integration tests, and three wall-time tests (107 total), static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, the account lifecycle, history/details, calendar export, concurrent email changes/withdrawal, two-customer slot competition, and duplicate booking submission. It uses the same Miniflare version pinned by Wrangler.
 
 For the static site plus local Pages API:
 

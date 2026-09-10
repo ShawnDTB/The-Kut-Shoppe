@@ -16,7 +16,7 @@
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run bundlecheck && npm run productioncheck && npm run workercheck",
     "productioncheck": "node scripts/check-production.mjs",
-    "workercheck": "node scripts/check-worker.mjs",
+    "workercheck": "node scripts/check-worker.mjs && node scripts/check-notifications.mjs",
     "dev:api": "wrangler pages dev dist --port 8788",
     "db:local": "wrangler d1 migrations apply DB --local",
     "preview": "vite preview"

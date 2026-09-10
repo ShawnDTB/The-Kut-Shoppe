@@ -3,6 +3,7 @@ import type { BookingAvailability, BookingOption } from '../src/shared/booking';
 import { ApiError, type Env } from './types';
 import { allowFields, secretHash, stringField } from './security';
 import { DAY, MINUTE, localDate, mergeWindows, overlaps, validDate, wallWindow, type Interval } from './booking-time';
+import { queueAppointmentNotifications } from './appointment-notifications';
 
 interface Policy extends BookingOption { bufferMinutes: number; noticeHours: number; windowDays: number }
 interface Selection { staffId: string; serviceId: string; locationId: string; date: string }
@@ -56,7 +57,7 @@ function interval(start: string | null, end: string | null): Interval {
   if (!Number.isFinite(first) || !Number.isFinite(last) || last <= first) throw new ApiError(409, 'The shop needs to review this schedule before it can accept requests.');
   return { start: first, end: last };
 }
-async function schedule(env: Env, userId: string, selection: Selection, now: number) {
+async function schedule(env: Env, userId: string, selection: Selection, now: number, confirmingId: string | null = null) {
   const { staffId, serviceId, locationId, date } = selection;
   const day = Date.parse(`${date}T00:00:00Z`);
   if (day < now - 2 * DAY || day > now + 92 * DAY) throw new ApiError(400, 'Choose a date within the next 90 days.');
@@ -70,11 +71,11 @@ async function schedule(env: Env, userId: string, selection: Selection, now: num
       FROM schedule_exceptions WHERE staff_id=? AND (julianday(ends_at)>=julianday(?) OR julianday(ends_at) IS NULL) LIMIT 1001`).bind(staffId, new Date(day - DAY).toISOString()),
     env.DB.prepare(`SELECT starts_at AS startsAt, ends_at AS endsAt, proposed_starts_at AS proposedStartsAt,
       proposed_ends_at AS proposedEndsAt, reserved_until AS reservedUntil FROM appointments
-      WHERE (assigned_staff_id=? OR (assigned_staff_id IS NULL AND requested_staff_id=?))
+      WHERE (assigned_staff_id=? OR (assigned_staff_id IS NULL AND requested_staff_id=?)) AND (? IS NULL OR id!=?)
         AND status IN ('requested','confirmed','reschedule_proposed','checked_in','in_service')
         AND (ends_at IS NULL OR julianday(ends_at) IS NULL OR julianday(ends_at)>=julianday(?)
           OR julianday(proposed_ends_at)>=julianday(?)
-          OR (proposed_starts_at IS NOT NULL AND (proposed_ends_at IS NULL OR julianday(proposed_ends_at) IS NULL))) LIMIT 1001`).bind(staffId, staffId, new Date(day - DAY).toISOString(), new Date(day - DAY).toISOString()),
+          OR (proposed_starts_at IS NOT NULL AND (proposed_ends_at IS NULL OR julianday(proposed_ends_at) IS NULL))) LIMIT 1001`).bind(staffId, staffId, confirmingId, confirmingId, new Date(day - DAY).toISOString(), new Date(day - DAY).toISOString()),
     env.DB.prepare('SELECT starts_at AS startsAt, ends_at AS endsAt FROM appointment_holds WHERE staff_id=? AND (julianday(expires_at)>julianday(?) OR julianday(expires_at) IS NULL) LIMIT 1001').bind(staffId, new Date(now).toISOString()),
   ]);
   const revision = (result[0]?.results[0] as { version: number } | undefined)?.version;
@@ -111,7 +112,7 @@ async function schedule(env: Env, userId: string, selection: Selection, now: num
   const duration = policy.durationMinutes * MINUTE;
   const buffer = policy.bufferMinutes * MINUTE;
   for (const window of mergeWindows(windows)) {
-    const lower = Math.max(window.start, day - DAY, now + policy.noticeHours * 3_600_000);
+    const lower = Math.max(window.start, day - DAY, now + (confirmingId ? 0 : policy.noticeHours) * 3_600_000);
     // Fifteen-minute UTC grid remains unambiguous through DST's repeated hour.
     for (let start = Math.ceil(lower / (15 * MINUTE)) * 15 * MINUTE; start + duration + buffer <= Math.min(window.end, day + 2 * DAY); start += 15 * MINUTE) {
       if (localDate(start, policy.timeZone) !== date || blocked.some((span) => overlaps({ start, end: start + duration + buffer }, span))) continue;
@@ -123,6 +124,11 @@ async function schedule(env: Env, userId: string, selection: Selection, now: num
 export async function bookingAvailability(env: Env, userId: string, selection: Selection): Promise<BookingAvailability> {
   const snapshot = await schedule(env, userId, selection, Date.now());
   return { option: publicOption(snapshot.policy), date: selection.date, slots: snapshot.slots, quote: secretHash(env, JSON.stringify(snapshot.policy)) };
+}
+export async function confirmationSchedule(env: Env, userId: string, selection: Selection, id: string, startsAt: string, endsAt: string) {
+  const snapshot = await schedule(env, userId, selection, Date.now(), id);
+  if (!snapshot.slots.some((slot) => slot.startsAt === startsAt && slot.endsAt === endsAt)) throw new ApiError(409, 'The requested time no longer fits the schedule. Refresh this request before responding.');
+  return { revision: snapshot.revision, reservedUntil: new Date(Date.parse(endsAt) + snapshot.policy.bufferMinutes * MINUTE).toISOString() };
 }
 export async function requestAppointment(env: Env, userId: string, sessionHash: string, body: Record<string, unknown>) {
   allowFields(body, ['staffId', 'serviceId', 'locationId', 'date', 'startsAt', 'note', 'requestKey', 'quote']);
@@ -149,6 +155,7 @@ export async function requestAppointment(env: Env, userId: string, sessionHash: 
   const slot = snapshot.slots.find((candidate) => candidate.startsAt === startsAt);
   if (!slot) throw new ApiError(409, 'This time is no longer available. Refresh the available times.');
   const id = randomUUID(); const timestamp = new Date().toISOString();
+  const eventId = randomUUID();
   const reservedUntil = new Date(Date.parse(slot.endsAt) + snapshot.policy.bufferMinutes * MINUTE).toISOString();
   // No temporary reservation is promised in the review form. The pending
   // request itself occupies the slot only after this atomic commit succeeds.
@@ -166,9 +173,10 @@ export async function requestAppointment(env: Env, userId: string, sessionHash: 
         reservedUntil, snapshot.policy.priceCents, note || null, requestKey, fingerprint, timestamp, timestamp,
         snapshot.revision, userId, sessionHash, timestamp, userId, slot.startsAt, timestamp, snapshot.policy.noticeHours),
     env.DB.prepare(`INSERT INTO appointment_events(id,appointment_id,actor_user_id,event_type,created_at)
-      SELECT ?,id,?,'customer_requested_appointment',? FROM appointments WHERE id=?`).bind(randomUUID(), userId, timestamp, id),
+      SELECT ?,id,?,'customer_requested_appointment',? FROM appointments WHERE id=?`).bind(eventId, userId, timestamp, id),
     env.DB.prepare(`INSERT INTO audit_events(id,actor_user_id,action,entity_type,entity_id,created_at)
       SELECT ?,?,'customer_requested_appointment','appointment',id,? FROM appointments WHERE id=?`).bind(randomUUID(), userId, timestamp, id),
+    ...queueAppointmentNotifications(env, eventId),
   ]);
   const saved = await existing();
   if (!saved) throw new ApiError(409, 'The schedule changed or you have three requests awaiting a response. Check your appointments, then refresh the available times.');

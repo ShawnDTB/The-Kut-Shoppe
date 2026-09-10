@@ -13,6 +13,8 @@ export interface Env {
   APP_ORIGIN: string;
   ACCOUNTS_ENABLED?: string;
   CUSTOMER_BOOKING_ENABLED?: string;
+  STAFF_OPERATIONS_ENABLED?: string;
+  APPOINTMENT_EMAIL_ENABLED?: string;
   AUTH_SECRET?: string;
   TURNSTILE_SECRET_KEY?: string;
   TURNSTILE_SITE_KEY?: string;

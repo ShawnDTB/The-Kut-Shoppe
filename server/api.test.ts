@@ -9,6 +9,7 @@ import { hashPassword, secretHash, verifyPassword } from './security';
 import { canChangeRole } from './permissions';
 import type { Database, Env, Statement } from './types';
 import { wallWindow } from './booking-time';
+import { deliverAppointmentNotifications } from './appointment-notifications';
 
 // Actual SQLite executes the repository migrations and every API query. Only
 // network delivery/bot services are replaced; authorization is never mocked.
@@ -435,6 +436,137 @@ describe('server customer booking', () => {
     const page = await available();
     expect((await request('/me/booking/requests', { ...payload, startsAt: page.slots[0].startsAt, requestKey: randomUUID() }, alice)).status).toBe(409);
     expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(3);
+  });
+});
+async function staffFixture() {
+  const fixture = await seedBooking();
+  env.STAFF_OPERATIONS_ENABLED = 'true';
+  const staff = await createSession(env, 'professional');
+  const saved = await (await request('/me/booking/requests', fixture.payload, fixture.alice)).json();
+  const path = `/me/professional/requests/${saved.appointmentId}`;
+  const detail = await (await request(path, undefined, staff)).json();
+  const decision = { action: 'confirm', updatedAt: detail.request.updatedAt, decisionKey: randomUUID(), currentPassword: password };
+  return { ...fixture, staff, id: saved.appointmentId as string, detail: detail.request, path, decision };
+}
+describe('professional appointment decisions', () => {
+  it('distinguishes disabled access, setup and approval while preventing cross-role data access', async () => {
+    const { alice, staff, path } = await staffFixture();
+    expect((await request(path, undefined, alice)).status).toBe(403);
+    const owner = await seed('owner', 'owner');
+    expect((await (await request('/me/professional', undefined, owner)).json()).state).toBe('setup_required');
+    expect((await request(path, undefined, owner)).status).toBe(403);
+    const now = new Date().toISOString();
+    db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('owner-chair','owner','Owner','owner','approved',?,?)").run(now, now);
+    const foreign = await request(path, undefined, owner); const missing = await request('/me/professional/requests/missing', undefined, owner);
+    expect(foreign.status).toBe(404); expect(await foreign.text()).toBe(await missing.text());
+    for (const state of ['pending_review', 'disabled']) {
+      db.sqlite.prepare("UPDATE staff_profiles SET setup_status=? WHERE id='book-staff'").run(state);
+      expect((await (await request('/me/professional', undefined, staff)).json()).state).toBe(state);
+      expect((await request(path, undefined, staff)).status).toBe(403);
+    }
+    env.STAFF_OPERATIONS_ENABLED = 'false';
+    expect((await request('/me/professional/requests', undefined, staff)).status).toBe(503);
+  });
+  it('confirms once after reauthentication and leaves one transactional notification per recipient', async () => {
+    const { staff, path, decision, id } = await staffFixture();
+    expect((await request(path, { ...decision, currentPassword: 'wrong' }, staff)).status).toBe(400);
+    expect((await request(path, { ...decision, assignedStaffId: 'other' }, staff)).status).toBe(400);
+    const confirmed = await request(path, decision, staff); expect(confirmed.status).toBe(200);
+    expect((await confirmed.json()).request.status).toBe('confirmed');
+    expect((await request(path, decision, staff)).status).toBe(200);
+    expect((await request(path, { ...decision, action: 'decline', decisionKey: randomUUID() }, staff)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT assigned_staff_id FROM appointments WHERE id=?').get(id)!.assigned_staff_id).toBe('book-staff');
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='professional_confirmed'").get()!.n).toBe(1);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointment_notifications').get()!.n).toBe(4);
+    expect(deliveries).toHaveLength(0);
+  });
+  it('blocks stale decisions and conflicts while allowing a declined request to release its time', async () => {
+    const { staff, path, decision, available, payload, locationId } = await staffFixture();
+    expect((await request(path, { ...decision, updatedAt: 'stale' }, staff)).status).toBe(409);
+    const now = new Date().toISOString();
+    db.sqlite.prepare(`INSERT INTO schedule_exceptions(id,staff_id,location_id,starts_at,ends_at,exception_type,created_by_user_id,created_at,updated_at)
+      VALUES ('late-block','book-staff',?,?,?,'blocked','professional',?,?)`).run(locationId, payload.startsAt, new Date(Date.parse(payload.startsAt) + 3600000).toISOString(), now, now);
+    expect((await request(path, decision, staff)).status).toBe(409);
+    expect((await request(path, { ...decision, action: 'decline' }, staff)).status).toBe(200);
+    db.sqlite.exec("DELETE FROM schedule_exceptions WHERE id='late-block'");
+    expect((await available()).slots.some((slot: { startsAt: string }) => slot.startsAt === payload.startsAt)).toBe(true);
+  });
+  it('rejects authorization removal between schedule validation and the decision write', async () => {
+    const { staff, path, decision } = await staffFixture();
+    const original = db.batch.bind(db); let first = true;
+    const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      const result = await original<T>(statements);
+      if (first) { first = false; db.sqlite.exec("UPDATE users SET role='customer' WHERE id='professional'"); }
+      return result;
+    });
+    expect((await request(path, decision, staff)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('requested');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointment_notifications').get()!.n).toBe(2);
+  });
+  it('paginates only this professional’s requests and ties cursors to the account', async () => {
+    const { staff, locationId } = await staffFixture();
+    const now = new Date().toISOString();
+    for (let index = 0; index < 30; index++) db.sqlite.prepare(`INSERT INTO appointments(id,customer_user_id,requested_staff_id,service_id,location_id,price_cents,status,created_at,updated_at)
+      VALUES (?,'alice','book-staff','book-service',?,3200,'requested',?,?)`).run(`queue-${index}`, locationId, now, now);
+    const first = await (await request('/me/professional/requests', undefined, staff)).json(); expect(first.items).toHaveLength(25);
+    expect(JSON.stringify(first)).not.toMatch(/alice@example|password_hash|internal_note|customer_user_id/);
+    const second = await (await request(`/me/professional/requests?cursor=${first.nextCursor}`, undefined, staff)).json(); expect(second.items).toHaveLength(6);
+    expect(new Set([...first.items, ...second.items].map((item: { id: string }) => item.id)).size).toBe(31);
+    expect((await request(`/me/professional/requests?cursor=${first.nextCursor}bad`, undefined, staff)).status).toBe(400);
+    const other = await seed('other-professional', 'staff');
+    db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('other-chair','other-professional','Other','other','approved',?,?)").run(now, now);
+    expect((await request(`/me/professional/requests?cursor=${first.nextCursor}`, undefined, other)).status).toBe(400);
+    expect((await (await request('/me/professional/requests', undefined, other)).json()).items).toEqual([]);
+  });
+  it('rolls back the decision when its notification cannot be queued', async () => {
+    const { staff, path, decision } = await staffFixture();
+    db.sqlite.exec("CREATE TRIGGER fail_notice BEFORE INSERT ON appointment_notifications BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request(path, decision, staff)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('requested');
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='professional_confirmed'").get()!.n).toBe(0);
+  });
+});
+describe('appointment email outbox', () => {
+  it('does nothing while disabled and records provider acceptance without leaking appointment details', async () => {
+    await staffFixture();
+    await deliverAppointmentNotifications(env); expect(deliveries).toHaveLength(0);
+    env.APPOINTMENT_EMAIL_ENABLED = 'true';
+    const stats = await deliverAppointmentNotifications(env); expect(stats.accepted).toBe(2);
+    expect(deliveries).toHaveLength(2);
+    expect(JSON.stringify(deliveries)).not.toMatch(/A test note|Test cut|Customer alice|3200/);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_notifications WHERE status='accepted' AND payload_json IS NULL AND recipient_email IS NULL").get()!.n).toBe(2);
+    await deliverAppointmentNotifications(env); expect(deliveries).toHaveLength(2);
+  });
+  it('freezes the provider key and payload across uncertain retries, then stops outside its safe window', async () => {
+    await staffFixture(); env.APPOINTMENT_EMAIL_ENABLED = 'true';
+    db.sqlite.exec("DELETE FROM appointment_notifications WHERE audience='professional'");
+    const attempts: { key: string | null; body: string }[] = [];
+    vi.mocked(fetch).mockImplementation(async (_url, init) => { attempts.push({ key: new Headers(init!.headers).get('Idempotency-Key'), body: String(init!.body) }); throw new Error('Timeout after acceptance'); });
+    expect((await deliverAppointmentNotifications(env)).retried).toBe(1);
+    db.sqlite.exec("UPDATE appointment_notifications SET next_attempt_at='2000-01-01T00:00:00Z'");
+    env.MAIL_FROM = 'Changed Sender <changed@example.test>';
+    expect((await deliverAppointmentNotifications(env)).retried).toBe(1);
+    expect(attempts[0]).toEqual(attempts[1]);
+    db.sqlite.exec("UPDATE appointment_notifications SET next_attempt_at='2000-01-01T00:00:00Z',first_attempt_at='2000-01-01T00:00:00Z'");
+    expect((await deliverAppointmentNotifications(env)).failed).toBe(1); expect(attempts).toHaveLength(2);
+  });
+  it('uses the current verified recipient initially and suppresses changed recipients or removed professionals on retry', async () => {
+    await staffFixture(); env.APPOINTMENT_EMAIL_ENABLED = 'true';
+    db.sqlite.exec("UPDATE users SET email='new-alice@example.test' WHERE id='alice'; UPDATE staff_profiles SET setup_status='disabled'");
+    vi.mocked(fetch).mockRejectedValue(new Error('Uncertain response'));
+    const first = await deliverAppointmentNotifications(env); expect(first.retried).toBe(1); expect(first.suppressed).toBe(1);
+    expect(db.sqlite.prepare("SELECT recipient_email FROM appointment_notifications WHERE audience='customer'").get()!.recipient_email).toBe('new-alice@example.test');
+    db.sqlite.exec("UPDATE users SET email='changed-again@example.test' WHERE id='alice'; UPDATE appointment_notifications SET next_attempt_at='2000-01-01T00:00:00Z' WHERE status='retry'");
+    expect((await deliverAppointmentNotifications(env)).suppressed).toBe(1);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+  });
+  it('recovers expired leases and stops retrying permanent provider rejections', async () => {
+    await staffFixture(); env.APPOINTMENT_EMAIL_ENABLED = 'true';
+    db.sqlite.exec("DELETE FROM appointment_notifications WHERE audience='professional'; UPDATE appointment_notifications SET status='sending',lease_token='abandoned',lease_until='2000-01-01T00:00:00Z'");
+    vi.mocked(fetch).mockResolvedValue(new Response('', { status: 422 }));
+    expect((await deliverAppointmentNotifications(env)).failed).toBe(1);
+    expect(db.sqlite.prepare('SELECT status,last_error_code FROM appointment_notifications').get()).toEqual({ status: 'failed', last_error_code: 'provider_rejected' });
+    await deliverAppointmentNotifications(env); expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
   });
 });
 afterEach(() => { db.sqlite.close(); vi.unstubAllGlobals(); });

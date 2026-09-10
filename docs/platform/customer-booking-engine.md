@@ -1,5 +1,7 @@
 # Customer booking requests
 
+Follow-up: the [professional queue and appointment notices](professional-requests-notifications.md) are implemented in migration 0006 behind disabled flags. That handoff supersedes the missing queue/outbox statements below; stronger staff authentication, real delivery acceptance, and public launch remain open gates.
+
 Implemented on `dev-branch`, 2026-09-10. This is an opt-in staging feature, not a production cutover. The public `/book` page continues to use Booksy and GlossGenius. Existing provider appointments do not sync automatically, so a partial imported schedule must never be presented as complete live availability.
 
 ## Customer journey

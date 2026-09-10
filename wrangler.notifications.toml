@@ -1,0 +1,21 @@
+name = "kut-shoppe-appointment-notifications"
+main = "server/notification-worker.ts"
+compatibility_date = "2026-09-09"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+# Provision separately only after staging acceptance. Bind the SAME isolated
+# database as the Pages account API. Set RESEND_API_KEY as a Worker secret.
+[vars]
+APP_ORIGIN = "https://staging.example.invalid"
+MAIL_FROM = ""
+APPOINTMENT_EMAIL_ENABLED = "false"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kut-shoppe-staging"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
