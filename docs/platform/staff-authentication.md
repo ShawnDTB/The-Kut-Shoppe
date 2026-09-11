@@ -1,5 +1,7 @@
 # Staff authenticator verification
 
+Latest follow-up: [professional onboarding and owner review](professional-onboarding.md) now reuses these MFA grants. Apply migration 0008 and its separate setup gate. Current coverage is 135 tests; the 126-test count below records the authenticator slice. Individual schedule management remains next.
+
 Implemented on `dev-branch`, 2026-09-11. Apply additive migration `0007_staff_authenticator.sql` after 0006. This adds staff step-up verification to the existing account session. It does not change customer login or grant a role, approve a professional, enable operations, or deploy the site.
 
 ## Account experience

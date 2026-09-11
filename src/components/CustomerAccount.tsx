@@ -8,10 +8,11 @@ import { CustomerHistory } from './CustomerHistory';
 import { CustomerAppointmentDetails, CustomerOrderDetails } from './CustomerRecordDetails';
 import { StaffRequests } from './StaffRequests';
 import { StaffAuthenticator } from './StaffAuthenticator';
+import { ProfessionalSetup } from './ProfessionalSetup';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
-type View = 'appointments' | 'orders' | 'profile' | 'security' | 'professional';
-const views: Array<[View, string]> = [['appointments', 'Appointments'], ['orders', 'Orders'], ['profile', 'Profile'], ['security', 'Security'], ['professional', 'Professional requests']];
+type View = 'appointments' | 'orders' | 'profile' | 'security' | 'professional' | 'professional-setup' | 'setup-reviews';
+const views: Array<[View, string]> = [['appointments', 'Appointments'], ['orders', 'Orders'], ['profile', 'Profile'], ['security', 'Security'], ['professional', 'Professional requests'], ['professional-setup', 'Professional setup'], ['setup-reviews', 'Setup reviews']];
 function readAccountRoute(): { view: View; record: string | null } {
   const query = new URLSearchParams(window.location.search);
   const requested = query.get('view');
@@ -139,9 +140,9 @@ function AccountHome({ account, onSignedOut, bookingEnabled }: { account: Accoun
     catch (failure) { setError(messageOf(failure)); } finally { setWorking(false); }
   };
   return <div className="customer-home"><header className="customer-home-header"><div><p className="customer-kicker">Your Kut Shoppe account</p><h1>Welcome, {account.profile.name.split(/\s+/)[0]}.</h1></div><button className="button button-secondary" type="button" disabled={working} onClick={() => void logout()}>Sign out</button></header>
-    <nav className="customer-nav" aria-label="Account sections">{views.filter(([key]) => key !== 'professional' || account.role !== 'customer').map(([key, label]) => <a key={key} href={`/account?view=${key}`} aria-current={view === key ? 'page' : undefined} onClick={(event) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); select(key); } }}>{label}</a>)}</nav>
+    <nav className="customer-nav" aria-label="Account sections">{views.filter(([key]) => key === 'setup-reviews' ? ['owner', 'developer'].includes(account.role) : !key.startsWith('professional') || account.role !== 'customer').map(([key, label]) => <a key={key} href={`/account?view=${key}`} aria-current={view === key ? 'page' : undefined} onClick={(event) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); select(key); } }}>{label}</a>)}</nav>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
-    <div className="customer-content">{view === 'professional' ? <StaffRequests /> : view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
+    <div className="customer-content">{view === 'professional-setup' || view === 'setup-reviews' ? <ProfessionalSetup key={view} review={view === 'setup-reviews'} /> : view === 'professional' ? <StaffRequests /> : view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
       : record ? view === 'appointments' ? <CustomerAppointmentDetails key={record} id={record} onBack={() => select('appointments')} /> : <CustomerOrderDetails key={record} id={record} onBack={() => select('orders')} />
         : <CustomerHistory key={view} kind={view} bookingEnabled={bookingEnabled} onOpen={(id) => select(view, id)} />}</div>
   </div>;

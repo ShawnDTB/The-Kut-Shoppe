@@ -588,6 +588,133 @@ describe('staff multi-factor verification', () => {
     expect(db.sqlite.prepare("SELECT * FROM staff_authenticators WHERE user_id='second'").get()).toBeUndefined();
   });
 });
+async function setupFixture() {
+  const booking = await seedBooking(); env.STAFF_SETUP_ENABLED = 'true';
+  const applicant = await seed('applicant', 'staff'); const owner = await seed('reviewer', 'owner');
+  await enrollMfa(applicant); await enrollMfa(owner);
+  const profile = { action: 'submit', version: 0, professionalName: 'Test Applicant', bio: 'Cuts and conversation.\nWelcome to my chair.', locationIds: [booking.locationId], serviceIds: ['book-service'] };
+  const submit = async () => {
+    expect((await request('/me/professional/setup', profile, applicant)).status).toBe(200);
+    const own = await (await request('/me/professional/setup', undefined, applicant)).json();
+    const path = `/me/professional/reviews/${own.submission.id}`;
+    const review = await (await request(path, undefined, owner)).json();
+    return { path, review, decision: { action: 'approve', version: review.submission.version, revision: review.revision, reviewNote: '', currentPassword: password } };
+  };
+  return { ...booking, applicant, owner, profile, submit };
+}
+describe('professional onboarding and owner review', () => {
+  it('saves a draft, submits it, returns feedback, resubmits, and approves without opening hours or changing roles', async () => {
+    const { applicant, owner, profile } = await setupFixture();
+    expect((await request('/me/professional/setup', { ...profile, action: 'save', professionalName: '', serviceIds: [] }, applicant)).status).toBe(200);
+    const draft = await (await request('/me/professional/setup', undefined, applicant)).json(); expect(draft.submission.status).toBe('draft');
+    expect((await request('/me/professional/setup', { ...profile, version: 1 }, applicant)).status).toBe(200);
+    const page = await (await request('/me/professional/setup', undefined, applicant)).json(); expect(page.editable).toBe(false);
+    const path = `/me/professional/reviews/${page.submission.id}`;
+    const review = await (await request(path, undefined, owner)).json();
+    expect((await request(path, { action: 'return', version: 2, revision: review.revision, reviewNote: 'Please confirm your introduction.', currentPassword: password }, owner)).status).toBe(200);
+    const returned = await (await request('/me/professional/setup', undefined, applicant)).json(); expect(returned.editable).toBe(true); expect(returned.submission.reviewNote).toContain('introduction');
+    expect((await request('/me/professional/setup', { ...profile, version: 3 }, applicant)).status).toBe(200);
+    const next = await (await request(path, undefined, owner)).json();
+    expect((await request(path, { action: 'approve', version: 4, revision: next.revision, reviewNote: 'Approved.', currentPassword: password }, owner)).status).toBe(200);
+    const sp = db.sqlite.prepare("SELECT * FROM staff_profiles WHERE user_id='applicant'").get()!;
+    expect(sp.setup_status).toBe('approved'); expect(sp.public_bio).toBe(profile.bio);
+    expect(db.sqlite.prepare('SELECT custom_price_cents FROM staff_services WHERE staff_id=?').get(sp.id as string)!.custom_price_cents).toBeNull();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM weekly_availability WHERE staff_id=?').get(sp.id as string)!.n).toBe(0);
+    expect(db.sqlite.prepare("SELECT role FROM users WHERE id='applicant'").get()!.role).toBe('staff');
+    expect((await request('/me/professional/setup', { ...profile, version: 5 }, applicant)).status).toBe(409);
+    expect(deliveries).toHaveLength(0);
+  });
+  it('requires the feature gate, MFA, and owner capability without requiring an owner barber profile', async () => {
+    const { applicant, owner, alice, profile } = await setupFixture();
+    env.STAFF_SETUP_ENABLED = 'false'; expect((await request('/me/professional/setup', undefined, applicant)).status).toBe(503); env.STAFF_SETUP_ENABLED = 'true';
+    expect((await request('/me/professional/setup', profile, alice)).status).toBe(403);
+    const fresh = await createSession(env, 'applicant'); expect((await request('/me/professional/setup', undefined, fresh)).status).toBe(403);
+    expect((await request('/me/professional/reviews', undefined, applicant)).status).toBe(403);
+    const manager = await seed('manager', 'manager'); await enrollMfa(manager);
+    expect((await request('/me/professional/reviews', undefined, manager)).status).toBe(403);
+    expect((await request('/me/professional/reviews', undefined, owner)).status).toBe(200);
+    expect(db.sqlite.prepare("SELECT * FROM staff_profiles WHERE user_id='reviewer'").get()).toBeUndefined();
+  });
+  it('rejects identity/role injection, incomplete selections, duplicates, and stale saves', async () => {
+    const { applicant, profile } = await setupFixture();
+    for (const extra of [{ role: 'owner' }, { setupStatus: 'approved' }, { userId: 'reviewer' }, { priceCents: 1 }]) expect((await request('/me/professional/setup', { ...profile, ...extra }, applicant)).status).toBe(400);
+    for (const serviceIds of [[], ['missing'], ['book-service', 'book-service']]) expect([400, 409]).toContain((await request('/me/professional/setup', { ...profile, serviceIds }, applicant)).status);
+    expect((await request('/me/professional/setup', { ...profile, action: 'save' }, applicant)).status).toBe(200);
+    expect((await request('/me/professional/setup', profile, applicant)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT version FROM professional_submissions').get()!.version).toBe(1);
+  });
+  it('freezes submissions, prevents self approval, and returns identical missing/foreign details to ordinary staff', async () => {
+    const { applicant, owner, profile, submit } = await setupFixture(); const { path } = await submit();
+    expect((await request('/me/professional/setup', { ...profile, version: 1 }, applicant)).status).toBe(409);
+    expect((await request(path, undefined, applicant)).status).toBe(403);
+    expect((await request('/me/professional/setup', profile, owner)).status).toBe(200);
+    const own = await (await request('/me/professional/setup', undefined, owner)).json();
+    const ownPath = `/me/professional/reviews/${own.submission.id}`;
+    expect((await request(ownPath, undefined, owner)).status).toBe(404);
+    const queue = await (await request('/me/professional/reviews', undefined, owner)).json(); expect(queue.items).toHaveLength(1);
+    expect((await request(ownPath, { action: 'approve', version: 1, revision: own.revision, reviewNote: '', currentPassword: password }, owner)).status).toBe(409);
+  });
+  it('requires fresh review of catalog changes and accepts a decision only once', async () => {
+    const { owner, submit } = await setupFixture(); const { path, decision } = await submit();
+    expect((await request(path, { ...decision, currentPassword: 'wrong' }, owner)).status).toBe(400);
+    db.sqlite.exec("UPDATE services SET price_cents=4000 WHERE id='book-service'");
+    expect((await request(path, decision, owner)).status).toBe(409);
+    const refreshed = await (await request(path, undefined, owner)).json();
+    expect((await request(path, { ...decision, revision: refreshed.revision }, owner)).status).toBe(200);
+    expect((await request(path, { ...decision, revision: refreshed.revision }, owner)).status).toBe(409);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='professional_setup_approved'").get()!.n).toBe(1);
+  });
+  it('paginates review submissions without account contact fields and excludes ineligible targets', async () => {
+    const { owner, locationId } = await setupFixture();
+    const now = new Date().toISOString();
+    for (let i = 0; i < 28; i++) {
+      const id = randomUUID();
+      db.sqlite.prepare("INSERT INTO users(id,email,display_name,role,email_verified_at,created_at,updated_at) VALUES (?,?,'Private name','staff',?,?,?)").run(id, `staff-${i}@example.test`, now, now, now);
+      db.sqlite.prepare("INSERT INTO professional_submissions(id,user_id,professional_name,bio,location_ids,service_ids,status,submitted_at,updated_at,last_receipt) VALUES (?,?,'Public professional','Public bio',?,'[\"book-service\"]','submitted',?,?,?)").run(randomUUID(), id, JSON.stringify([locationId]), now, now, randomUUID());
+      if (i === 27) db.sqlite.prepare("UPDATE users SET status='disabled' WHERE id=?").run(id);
+    }
+    const first = await (await request('/me/professional/reviews', undefined, owner)).json(); expect(first.items).toHaveLength(25);
+    expect(JSON.stringify(first)).not.toMatch(/example.test|Private name|user_id|Public bio/);
+    const second = await (await request(`/me/professional/reviews?after=${first.nextCursor}`, undefined, owner)).json(); expect(second.items).toHaveLength(2);
+    expect(new Set([...first.items, ...second.items].map((item: { id: string }) => item.id)).size).toBe(27);
+    expect((await request('/me/professional/reviews?after=invalid', undefined, owner)).status).toBe(400);
+  });
+  it('refuses approval of unavailable selections but still lets the owner return feedback', async () => {
+    const { owner, applicant, submit } = await setupFixture(); const { path, decision } = await submit();
+    expect((await (await request('/me/professional', undefined, applicant)).json()).state).toBe('pending_review');
+    db.sqlite.exec("UPDATE services SET active=0 WHERE id='book-service'");
+    const page = await (await request(path, undefined, owner)).json();
+    expect((await request(path, { ...decision, revision: page.revision }, owner)).status).toBe(409);
+    expect((await request(path, { ...decision, action: 'return', revision: page.revision, reviewNote: 'Select an available service.' }, owner)).status).toBe(200);
+    expect((await (await request('/me/professional', undefined, applicant)).json()).state).toBe('setup_required');
+  });
+  it('blocks disabled targets and preserves legacy schedules instead of silently approving them', async () => {
+    const { applicant, owner, submit, locationId } = await setupFixture(); const { path, decision } = await submit();
+    const now = new Date().toISOString();
+    db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('legacy','applicant','Legacy','legacy','draft',?,?)").run(now, now);
+    db.sqlite.prepare("INSERT INTO weekly_availability(id,staff_id,location_id,weekday,start_time,end_time,created_at,updated_at) VALUES ('legacy-hours','legacy',?,1,'09:00','17:00',?,?)").run(locationId, now, now);
+    const refreshed = await (await request(path, undefined, owner)).json();
+    expect((await request(path, { ...decision, revision: refreshed.revision }, owner)).status).toBe(409);
+    expect(db.sqlite.prepare("SELECT active FROM weekly_availability WHERE id='legacy-hours'").get()!.active).toBe(1);
+    db.sqlite.exec("UPDATE staff_profiles SET setup_status='disabled' WHERE id='legacy'");
+    expect((await request(path, undefined, owner)).status).toBe(404);
+    expect((await (await request('/me/professional/setup', undefined, applicant)).json()).editable).toBe(false);
+  });
+  it('rechecks the owner grant at the final transaction and rolls back failed audit writes', async () => {
+    const { owner, submit } = await setupFixture(); const { path, decision } = await submit();
+    const original = db.batch.bind(db);
+    const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='reviewer'"); return original<T>(statements);
+    });
+    expect((await request(path, decision, owner)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare("SELECT * FROM staff_profiles WHERE user_id='applicant'").get()).toBeUndefined();
+    db.sqlite.prepare("UPDATE sessions SET mfa_until=? WHERE user_id='reviewer'").run(new Date(Date.now() + 60000).toISOString());
+    db.sqlite.exec("CREATE TRIGGER fail_setup_audit BEFORE INSERT ON audit_events WHEN NEW.action='professional_setup_approved' BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request(path, decision, owner)).status).toBe(500);
+    expect(db.sqlite.prepare("SELECT * FROM staff_profiles WHERE user_id='applicant'").get()).toBeUndefined();
+    expect(db.sqlite.prepare('SELECT status FROM professional_submissions').get()!.status).toBe('submitted');
+  });
+});
 describe('professional appointment decisions', () => {
   it('distinguishes disabled access, setup and approval while preventing cross-role data access', async () => {
     const { alice, staff, path } = await staffFixture();

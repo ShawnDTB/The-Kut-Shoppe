@@ -93,5 +93,5 @@ export function StaffRequests() {
   if (!access) return <p role="status">Checking professional access…</p>;
   if (access.state === 'approved' && access.enabled) return <StaffAuthenticator><Queue /></StaffAuthenticator>;
   const messages = { not_eligible: 'This account does not have professional access.', setup_required: 'Your professional setup needs to be completed and approved by the shop.', pending_review: 'Your professional profile is awaiting shop approval.', disabled: 'Your professional profile is currently disabled.', approved: 'Professional request management is not open yet.' };
-  return <section><h2>Professional access</h2><p>{messages[access.state]}</p><p>Your personal appointments, profile, and security controls remain available.</p><a href={business.phoneHref}>Contact the shop</a></section>;
+  return <section><h2>Professional access</h2><p>{messages[access.state]}</p>{access.setupEnabled && ['setup_required', 'pending_review'].includes(access.state) ? <p><a className="button" href="/account?view=professional-setup">Open professional setup</a></p> : null}<p>Your personal appointments, profile, and security controls remain available.</p><a href={business.phoneHref}>Contact the shop</a></section>;
 }

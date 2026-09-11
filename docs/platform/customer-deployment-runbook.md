@@ -1,6 +1,6 @@
 # Customer deployment runbook
 
-Latest follow-up: apply `0007_staff_authenticator.sql` after 0006 before running this version. Read [Staff authenticator verification](staff-authentication.md) for the new `MFA_ENCRYPTION_KEY` server secret, enrollment/recovery, short-lived staff grants, and rollback constraints. [Professional requests and appointment notices](professional-requests-notifications.md) covers the separate notification Worker. Staff operations and email dispatch remain disabled by default. The current 126-test check also exercises MFA, staff decision, and scheduled notification races with offline compilation; real provider and browser acceptance remain outstanding.
+Latest follow-up: apply `0008_professional_setup.sql` after 0007 before running this version. Read [Professional setup and owner review](professional-onboarding.md) for submission/approval, the independent `STAFF_SETUP_ENABLED=false` gate, and rollback behavior. [Staff authenticator verification](staff-authentication.md) covers the required `MFA_ENCRYPTION_KEY` server secret. The current 135-test check also exercises MFA, onboarding, staff decision, and scheduled notification races with offline compilation; real provider and browser acceptance remain outstanding.
 
 Status: review implementation, not deployed. The live WordPress site and production domain have not been changed. `ACCOUNTS_ENABLED=false` is the committed default.
 
@@ -8,7 +8,7 @@ Status: review implementation, not deployed. The live WordPress site and product
 
 Use Node 22.13 or newer; `.nvmrc` selects Node 22. Install with `npm ci`, then run `npm run check`.
 
-The check runs TypeScript, ESLint, 58 browser-adapter tests, 57 API integration tests, three wall-time tests, and eight authenticator tests (126 total), static prerendering, the existing bundle budgets, production output checks, and real local Cloudflare Workers/D1 runtime tests. External Turnstile/email delivery is replaced with test responses; no real email is sent and no cloud database is created. Coverage includes native scrypt and AES-GCM, the account lifecycle, MFA enrollment/code races, history/details, calendar export, concurrent email changes/withdrawal, two-customer slot competition, duplicate booking/staff decisions, and scheduled notices. It uses the same Miniflare version pinned by Wrangler.
+The check runs TypeScript, ESLint, 58 browser-adapter tests, 66 API integration tests, three wall-time tests, and eight authenticator tests (135 total), static prerendering, bundle budgets, production output checks, and real local Cloudflare Workers/D1 runtime tests. External Turnstile/email delivery is replaced with test responses; no real email is sent and no cloud database is created. Coverage includes the account/MFA lifecycle, professional submission/approval races, customer records, booking/staff decisions, and scheduled notices. It uses the same Miniflare version pinned by Wrangler.
 
 For the static site plus local Pages API:
 

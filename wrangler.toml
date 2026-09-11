@@ -10,6 +10,7 @@ APP_ORIGIN = "http://localhost:8788"
 ACCOUNTS_ENABLED = "false"
 CUSTOMER_BOOKING_ENABLED = "false"
 STAFF_OPERATIONS_ENABLED = "false"
+STAFF_SETUP_ENABLED = "false"
 
 [[d1_databases]]
 binding = "DB"

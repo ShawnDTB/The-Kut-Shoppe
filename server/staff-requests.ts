@@ -7,14 +7,15 @@ import { localDate } from './booking-time';
 import { queueAppointmentNotifications } from './appointment-notifications';
 import { requireStaffMfa, staffMfaGate } from './staff-mfa';
 
-const professionalSelect = `SELECT sp.id,sp.professional_name AS name,sp.setup_status AS setup,u.role
-  FROM users u LEFT JOIN staff_profiles sp ON sp.user_id=u.id WHERE u.id=? AND u.status='active' AND u.email_verified_at IS NOT NULL`;
-type Professional = { id: string | null; name: string | null; setup: string | null; role: string };
+const professionalSelect = `SELECT sp.id,sp.professional_name AS name,sp.setup_status AS setup,u.role,ps.status AS submission
+  FROM users u LEFT JOIN staff_profiles sp ON sp.user_id=u.id LEFT JOIN professional_submissions ps ON ps.user_id=u.id
+  WHERE u.id=? AND u.status='active' AND u.email_verified_at IS NOT NULL`;
+type Professional = { id: string | null; name: string | null; setup: string | null; role: string; submission: string | null };
 const staffRoles = ['staff', 'manager', 'owner', 'admin'];
 export async function professionalAccess(env: Env, userId: string): Promise<ProfessionalAccess> {
   const row = await env.DB.prepare(professionalSelect).bind(userId).first<Professional>();
-  const state = !row || !staffRoles.includes(row.role) ? 'not_eligible' : !row.id || row.setup === 'draft' ? 'setup_required' : row.setup === 'approved' ? 'approved' : row.setup === 'disabled' ? 'disabled' : 'pending_review';
-  return { enabled: env.STAFF_OPERATIONS_ENABLED === 'true', state, ...(row?.name ? { professionalName: row.name } : {}) };
+  const state = !row || !staffRoles.includes(row.role) ? 'not_eligible' : row.setup === 'disabled' ? 'disabled' : row.setup === 'approved' ? 'approved' : row.submission === 'submitted' || row.setup === 'pending_review' ? 'pending_review' : 'setup_required';
+  return { enabled: env.STAFF_OPERATIONS_ENABLED === 'true', setupEnabled: env.STAFF_SETUP_ENABLED === 'true', canReview: Boolean(row && ['owner', 'admin'].includes(row.role)), state, ...(row?.name ? { professionalName: row.name } : {}) };
 }
 async function requireProfessional(env: Env, userId: string, sessionHash: string) {
   if (env.STAFF_OPERATIONS_ENABLED !== 'true') throw new ApiError(503, 'Professional request management is not open yet.');

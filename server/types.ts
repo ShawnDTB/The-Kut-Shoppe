@@ -14,6 +14,7 @@ export interface Env {
   ACCOUNTS_ENABLED?: string;
   CUSTOMER_BOOKING_ENABLED?: string;
   STAFF_OPERATIONS_ENABLED?: string;
+  STAFF_SETUP_ENABLED?: string;
   APPOINTMENT_EMAIL_ENABLED?: string;
   AUTH_SECRET?: string;
   MFA_ENCRYPTION_KEY?: string;

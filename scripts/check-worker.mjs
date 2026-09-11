@@ -18,7 +18,7 @@ const workerFile = (await readdir('.wrangler/customer-worker')).find((name) => n
 assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true',
+  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
     AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', MFA_ENCRYPTION_KEY: '12'.repeat(32), TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
@@ -148,9 +148,9 @@ try {
   assert.equal(enrollment.status, 200); const setup = await enrollment.json();
   // Independent RFC 4226/6238 calculation exercises the Worker's real AES and
   // TOTP validation without exposing a testing bypass in the application.
-  const bits = [...setup.setupKey].map((char) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(char).toString(2).padStart(5, '0')).join('');
-  const secretBytes = Buffer.from(bits.match(/.{8}/g).map((part) => parseInt(part, 2)));
-  const authenticatorCode = () => {
+  const authenticatorCode = (setupKey = setup.setupKey) => {
+    const bits = [...setupKey].map((char) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(char).toString(2).padStart(5, '0')).join('');
+    const secretBytes = Buffer.from(bits.match(/.{8}/g).map((part) => parseInt(part, 2)));
     const counter = Buffer.alloc(8); counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
     const digest = createHmac('sha1', secretBytes).update(counter).digest();
     return String((digest.readUInt32BE(digest.at(-1) & 15) & 0x7fffffff) % 1000000).padStart(6, '0');
@@ -189,5 +189,30 @@ try {
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type='professional_declined'").bind(retryId).first()).n, 1);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.appointment_id=?').bind(retryId).first()).n, 4);
   assert.equal((await call(`/me/professional/requests/${retryId}`, undefined, detailCookie)).status, 403);
-  console.log('Cloudflare runtime passed: account lifecycle, booking races, MFA enrollment and code-consumption races, professional decisions, and transactional notifications.');
+  await db.prepare("INSERT INTO users(id,email,display_name,role,email_verified_at,created_at,updated_at) VALUES ('runtime-applicant','applicant@example.test','Applicant','staff',?,?,?)").bind(now, now, now).run();
+  await db.prepare("INSERT INTO customer_profiles(user_id,created_at,updated_at) VALUES ('runtime-applicant',?,?)").bind(now, now).run();
+  await db.prepare("INSERT INTO account_credentials(user_id,password_hash,updated_at) SELECT 'runtime-applicant',password_hash,? FROM account_credentials WHERE user_id='runtime-professional'").bind(now).run();
+  const applicantLogin = await call('/auth/login', { email: 'applicant@example.test', password: 'A runtime test passphrase 2026', turnstileToken: 'test-only' });
+  assert.equal(applicantLogin.status, 200); const applicantCookie = applicantLogin.headers.get('Set-Cookie');
+  const applicantStart = await call('/me/mfa/enroll/start', { currentPassword: 'A runtime test passphrase 2026' }, applicantCookie);
+  assert.equal(applicantStart.status, 200); const applicantSetup = await applicantStart.json();
+  assert.equal((await call('/me/mfa/enroll/confirm', { enrollmentId: applicantSetup.enrollmentId, code: authenticatorCode(applicantSetup.setupKey) }, applicantCookie)).status, 200);
+  const setupPage = await (await call('/me/professional/setup', undefined, applicantCookie)).json();
+  const setupDraft = { action: 'submit', version: 0, professionalName: 'Runtime Applicant', bio: 'Test introduction.', locationIds: [setupPage.locations[0].id], serviceIds: [setupPage.services[0].id] };
+  const submissions = await Promise.all([call('/me/professional/setup', setupDraft, applicantCookie), call('/me/professional/setup', setupDraft, applicantCookie)]);
+  assert.deepEqual(submissions.map((response) => response.status).sort(), [200, 409], 'Concurrent submission should save once');
+  const submission = (await (await call('/me/professional/setup', undefined, applicantCookie)).json()).submission;
+  await db.prepare("UPDATE users SET role='owner' WHERE id='runtime-professional'").run();
+  assert.equal((await call('/me/mfa/unlock', { currentPassword: 'A runtime test passphrase 2026', code: recoveryCodes[1] }, staffCookie)).status, 200);
+  const reviewPath = `/me/professional/reviews/${submission.id}`;
+  const reviewPage = await (await call(reviewPath, undefined, staffCookie)).json();
+  const reviewDecision = { action: 'approve', version: submission.version, revision: reviewPage.revision, reviewNote: '', currentPassword: 'A runtime test passphrase 2026' };
+  const approvals = await Promise.all([call(reviewPath, reviewDecision, staffCookie), call(reviewPath, reviewDecision, staffCookie)]);
+  assert.deepEqual(approvals.map((response) => response.status).sort(), [200, 409], 'Concurrent owner approvals must have one winner');
+  const approved = await db.prepare("SELECT id,setup_status FROM staff_profiles WHERE user_id='runtime-applicant'").first();
+  assert.equal(approved.setup_status, 'approved');
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM staff_services WHERE staff_id=? AND active=1').bind(approved.id).first()).n, 1);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM weekly_availability WHERE staff_id=?').bind(approved.id).first()).n, 0);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE entity_id=? AND action='professional_setup_approved'").bind(submission.id).first()).n, 1);
+  console.log('Cloudflare runtime passed: account/MFA lifecycle, professional submission and approval races, booking/decision races, and transactional notifications.');
 } finally { await worker.dispose(); }

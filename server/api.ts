@@ -10,6 +10,7 @@ import { appointmentCalendar } from './calendar';
 import { bookingAvailability, bookingOptions, bookingSelection, requestAppointment, requireBooking } from './booking';
 import { decideRequest, professionalAccess, staffQueue, staffRequest } from './staff-requests';
 import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } from './staff-mfa';
+import { reviewQueue, reviewSetup, saveSetup, setupPage } from './professional-setup';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -136,6 +137,25 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (action === 'GET /api/v1/me/professional') return json(await professionalAccess(env, account.id));
   if (path.startsWith('/api/v1/me/professional/')) {
     const params = new URL(request.url).searchParams;
+    if (path === '/api/v1/me/professional/setup' && params.size === 0) {
+      if (request.method === 'GET') return json(await setupPage(env, account.id, sessionHash));
+      if (request.method === 'POST') {
+        await rateLimit(env, `professional-setup:${account.id}`, 20);
+        return json(await saveSetup(env, account.id, sessionHash, body));
+      }
+    }
+    if (path === '/api/v1/me/professional/reviews' && request.method === 'GET') {
+      if ([...params.keys()].some((key) => key !== 'after') || params.getAll('after').length > 1) throw new ApiError(400, 'Refresh the review queue.');
+      return json(await reviewQueue(env, account.id, sessionHash, params.get('after')));
+    }
+    const review = path.match(/^\/api\/v1\/me\/professional\/reviews\/([a-f0-9-]{36})$/);
+    if (review && params.size === 0) {
+      if (request.method === 'GET') return json(await setupPage(env, account.id, sessionHash, review[1]!));
+      if (request.method === 'POST') {
+        await rateLimit(env, `professional-review:${account.id}`, 10);
+        return json(await reviewSetup(env, account.id, sessionHash, review[1]!, body));
+      }
+    }
     if (action === 'GET /api/v1/me/professional/requests') {
       if ([...params.keys()].some((key) => key !== 'cursor') || params.getAll('cursor').length > 1) throw new ApiError(400, 'This request queue is not supported.');
       return json(await staffQueue(env, account.id, sessionHash, params.get('cursor')));
