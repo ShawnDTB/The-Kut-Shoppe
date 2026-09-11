@@ -1,6 +1,6 @@
 # Customer foundation review
 
-Latest follow-up: [professional request management and appointment notifications](professional-requests-notifications.md) extend the shared account shell with own-professional access, transactional decisions, and a separately disabled scheduled email Worker. Migration 0006 and current 107-test coverage are documented there. This does not enable public staff access or deploy the site.
+Latest follow-up: [staff authenticator verification](staff-authentication.md) adds encrypted TOTP enrollment, one-use recovery codes, and short-lived staff grants to the shared account shell. Apply migration 0007 after the [professional request and notification](professional-requests-notifications.md) migration 0006. The current suite contains 126 tests plus real local Workers/D1 race checks. Public access remains disabled; nothing is deployed.
 
 Reviewed 2026-09-09. Repository: `ShawnDTB/The-Kut-Shoppe`. Base: `dev-branch`, commit `536bd3676e4cf8826a829d6883b0074bf3396f22`. Changes are proposed on `codex/customer-foundation`; neither `main` nor the WordPress site was changed.
 

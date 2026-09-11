@@ -16,6 +16,7 @@ export interface Env {
   STAFF_OPERATIONS_ENABLED?: string;
   APPOINTMENT_EMAIL_ENABLED?: string;
   AUTH_SECRET?: string;
+  MFA_ENCRYPTION_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;
   TURNSTILE_SITE_KEY?: string;
   RESEND_API_KEY?: string;

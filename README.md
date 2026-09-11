@@ -1,6 +1,6 @@
 <div align="center">
 
-The [professional request queue and appointment notices](./docs/platform/professional-requests-notifications.md) are now implemented on `dev-branch` behind disabled staff/email flags. Apply migration 0006 after 0005. The shared account shell now supports each approved professional’s own confirm/decline workflow with password reauthentication and transactional notification records. Public staff access still requires stronger authentication; the scheduled email Worker must be separately configured and deployed.
+The [professional request queue and appointment notices](./docs/platform/professional-requests-notifications.md) are implemented on `dev-branch` behind disabled staff/email flags. [Staff authenticator verification](./docs/platform/staff-authentication.md) now protects queue reads and decisions with a 15-minute session grant, encrypted authenticator enrollment, and one-use recovery codes. Apply migrations through 0007 and configure the separate server-only `MFA_ENCRYPTION_KEY` before staging staff access. Professional onboarding, hosted acceptance, and operational security review remain launch gates; the scheduled email Worker must be separately configured and deployed.
   <img src="https://www.thekutshoppe.com/wp-content/uploads/2023/11/a2e8fdecb672406ba74a28a19b4063-the-kut-shoppe-llc-logo-5175fdd512c54b42b4da939b84353a-booksy.png" alt="The Kut Shoppe logo" width="112" height="112" />
   <h1>The Kut Shoppe Platform</h1>
   <p><strong>Fresh cuts. Great conversations. Right here on Main Street.</strong></p>

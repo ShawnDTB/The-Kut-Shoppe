@@ -9,6 +9,7 @@ import { appointmentDetail, orderDetail, withdrawAppointment } from './customer-
 import { appointmentCalendar } from './calendar';
 import { bookingAvailability, bookingOptions, bookingSelection, requestAppointment, requireBooking } from './booking';
 import { decideRequest, professionalAccess, staffQueue, staffRequest } from './staff-requests';
+import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } from './staff-mfa';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -40,6 +41,7 @@ async function route(request: Request, env: Env): Promise<Response> {
   await env.DB.prepare('DELETE FROM account_challenges WHERE expires_at <= ?').bind(new Date(Date.now() - 86400000).toISOString()).run();
   await env.DB.prepare('DELETE FROM account_email_changes WHERE expires_at <= ? OR consumed_at IS NOT NULL').bind(new Date().toISOString()).run();
   await env.DB.prepare('DELETE FROM sessions WHERE expires_at <= ? OR revoked_at IS NOT NULL').bind(new Date().toISOString()).run();
+  await env.DB.prepare("DELETE FROM staff_mfa_enrollments WHERE julianday(expires_at)<=julianday('now')").run();
   const body = request.method === 'GET' ? {} : await readBody(request);
   const action = `${request.method} ${path}`;
 
@@ -115,6 +117,20 @@ async function route(request: Request, env: Env): Promise<Response> {
   }
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
+  const sessionHash = secretHash(env, sessionToken(request)!);
+  if (path === '/api/v1/me/mfa' && request.method === 'GET') return json(await mfaStatus(env, account.id, sessionHash));
+  if (path.startsWith('/api/v1/me/mfa/') && request.method === 'POST') {
+    if (path !== '/api/v1/me/mfa/lock') await rateLimit(env, `staff-mfa:${account.id}`, 10);
+    if (path === '/api/v1/me/mfa/enroll/start') return json(await startMfaEnrollment(env, account.id, sessionHash, body));
+    if (path === '/api/v1/me/mfa/enroll/confirm') return json(await confirmMfaEnrollment(env, account.id, sessionHash, body));
+    if (path === '/api/v1/me/mfa/unlock') return json(await unlockStaffMfa(env, account.id, sessionHash, body));
+    if (path === '/api/v1/me/mfa/lock') {
+      allowFields(body, []);
+      await env.DB.prepare('UPDATE sessions SET mfa_until=NULL,mfa_version=NULL,mfa_role=NULL WHERE token_hash=?').bind(sessionHash).run();
+      return json({ message: 'Staff access locked on this device.' });
+    }
+    throw new ApiError(404, 'This action is not available.');
+  }
   if (action === 'GET /api/v1/me') return json({ account });
   if (action === 'GET /api/v1/me/overview') return json(await overview(env, account.id));
   if (action === 'GET /api/v1/me/professional') return json(await professionalAccess(env, account.id));
@@ -122,11 +138,11 @@ async function route(request: Request, env: Env): Promise<Response> {
     const params = new URL(request.url).searchParams;
     if (action === 'GET /api/v1/me/professional/requests') {
       if ([...params.keys()].some((key) => key !== 'cursor') || params.getAll('cursor').length > 1) throw new ApiError(400, 'This request queue is not supported.');
-      return json(await staffQueue(env, account.id, params.get('cursor')));
+      return json(await staffQueue(env, account.id, sessionHash, params.get('cursor')));
     }
     const match = path.match(/^\/api\/v1\/me\/professional\/requests\/([A-Za-z0-9_-]{1,128})$/);
     if (match && params.size === 0) {
-      if (request.method === 'GET') return json({ request: await staffRequest(env, account.id, match[1]!) });
+      if (request.method === 'GET') return json({ request: await staffRequest(env, account.id, sessionHash, match[1]!) });
       if (request.method === 'POST') {
         await rateLimit(env, `professional-password:${account.id}`, 10);
         return json(await decideRequest(env, account.id, secretHash(env, sessionToken(request)!), match[1]!, body));

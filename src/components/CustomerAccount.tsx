@@ -7,6 +7,7 @@ import { CustomerEmailChange } from './CustomerEmailChange';
 import { CustomerHistory } from './CustomerHistory';
 import { CustomerAppointmentDetails, CustomerOrderDetails } from './CustomerRecordDetails';
 import { StaffRequests } from './StaffRequests';
+import { StaffAuthenticator } from './StaffAuthenticator';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
 type View = 'appointments' | 'orders' | 'profile' | 'security' | 'professional';
@@ -116,6 +117,7 @@ function SecurityPanel({ account, onSignedOut }: { account: Account; onSignedOut
   };
   return <div className="customer-security"><h2>Account security</h2><form className="customer-form" onSubmit={(event) => { event.preventDefault(); void perform(false); }}><fieldset disabled={working}><legend>Change password</legend><label>Current password<input required type="password" autoComplete="current-password" maxLength={128} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label><label>New password<input required type="password" autoComplete="new-password" minLength={15} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} /><small>Use 15 to 128 characters.</small></label><label>Confirm new password<input required type="password" autoComplete="new-password" maxLength={128} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label><button className="button" disabled={working}>{working ? 'Please wait…' : 'Change password'}</button></fieldset><p>Changing your password signs you out on every device.</p></form>
     <CustomerEmailChange currentEmail={account.email} onSignedOut={onSignedOut} />
+    {account.role !== 'customer' ? <div className="customer-security-section"><StaffAuthenticator><p>Your authenticator is ready. <a href="/account?view=professional">Open professional requests</a>.</p></StaffAuthenticator></div> : null}
     <section className="customer-security-section"><h3>Signed-in devices</h3><p>Using a shared device, or concerned about access? End every active session, including this one.</p><button className="button button-secondary" disabled={working} type="button" onClick={() => void perform(true)}>Sign out on every device</button></section>
     <section className="customer-security-section"><h3>Your information</h3><p>For a copy of your information, a correction, or an account deletion request, <a href={business.phoneHref}>call {business.phone}</a>. See the <a href="/privacy">privacy policy</a> for details.</p></section>{error ? <p role="alert" className="form-error">{error}</p> : null}
   </div>;

@@ -2,6 +2,10 @@
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.
 
+## Latest staff authentication update (2026-09-11)
+
+Read `docs/platform/staff-authentication.md` for the current milestone, superseding older password-only staff notes below. Migration 0007 and `server/staff-mfa.ts`/`totp.ts` add encrypted TOTP, one-use recovery codes, and per-session fifteen-minute staff grants. `MFA_ENCRYPTION_KEY` is a separate server-only secret; never export it through Vite. `StaffAuthenticator.tsx` is shared by Security and Professional requests. Preserve MFA checks in final customer-data queries and appointment writes, not only early guards or UI. Replacing MFA requires an existing grant plus password, preserves the old authenticator until confirmed, and invalidates old grants/recovery codes atomically. Password/email recovery never removes MFA; keep the dual-inbox email-change flow. Current check: 126 tests plus Workers/D1 enrollment/code races and existing appointment/notification runtime tests. All launch flags remain disabled. No deployment/browser acceptance. Next: approved professional onboarding and own-schedule management, with separately authorized manager/owner review and verified bootstrap.
+
 ## Customer account update (2026-09-10)
 
 Read `docs/platform/customer-foundation-review.md` and `customer-deployment-runbook.md` first for the current customer architecture. The older prototype notes below remain useful for local design-review code, but production accounts now use `server/`, `functions/api/[[path]].ts`, `src/data/customer-api.ts`, and `src/components/CustomerAccount.tsx`. Their identity is a server-validated HttpOnly cookie, never `auth-v2.ts` localStorage. `LocalPlatformPreview.tsx` preserves the old UI only under explicit Vite development preview; do not reconnect it to production routes or add a localStorage fallback on API errors.

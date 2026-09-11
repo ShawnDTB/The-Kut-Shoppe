@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { accountApi } from '../data/customer-api';
 import { business } from '../data/site';
 import type { ProfessionalAccess, StaffQueue, StaffRequest } from '../shared/staff';
+import { StaffAuthenticator } from './StaffAuthenticator';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
 const time = (value: string | null, zone: string) => {
@@ -90,7 +91,7 @@ export function StaffRequests() {
   }, [attempt]);
   if (error) return <section><p role="alert" className="form-error">{error}</p><button className="button" onClick={() => setAttempt((value) => value + 1)}>Try again</button></section>;
   if (!access) return <p role="status">Checking professional access…</p>;
-  if (access.state === 'approved' && access.enabled) return <Queue />;
+  if (access.state === 'approved' && access.enabled) return <StaffAuthenticator><Queue /></StaffAuthenticator>;
   const messages = { not_eligible: 'This account does not have professional access.', setup_required: 'Your professional setup needs to be completed and approved by the shop.', pending_review: 'Your professional profile is awaiting shop approval.', disabled: 'Your professional profile is currently disabled.', approved: 'Professional request management is not open yet.' };
   return <section><h2>Professional access</h2><p>{messages[access.state]}</p><p>Your personal appointments, profile, and security controls remain available.</p><a href={business.phoneHref}>Contact the shop</a></section>;
 }

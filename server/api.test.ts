@@ -10,6 +10,7 @@ import { canChangeRole } from './permissions';
 import type { Database, Env, Statement } from './types';
 import { wallWindow } from './booking-time';
 import { deliverAppointmentNotifications } from './appointment-notifications';
+import { totp } from './totp';
 
 // Actual SQLite executes the repository migrations and every API query. Only
 // network delivery/bot services are replaced; authorization is never mocked.
@@ -50,6 +51,7 @@ beforeEach(() => {
   db = new SqliteDatabase();
   for (const file of readdirSync('migrations').filter((name) => name.endsWith('.sql')).sort()) db.sqlite.exec(readFileSync(`migrations/${file}`, 'utf8'));
   env = { DB: db, APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', AUTH_SECRET: 'test-only-secret-with-more-than-32-characters',
+    MFA_ENCRYPTION_KEY: '12'.repeat(32),
     TURNSTILE_SECRET_KEY: 'test-only', TURNSTILE_SITE_KEY: 'test-only', RESEND_API_KEY: 'test-only', MAIL_FROM: 'Test <no-reply@example.test>' };
   deliveries = [];
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
@@ -438,16 +440,154 @@ describe('server customer booking', () => {
     expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointments').get()!.n).toBe(3);
   });
 });
+async function enrollMfa(session: string) {
+  const start = await request('/me/mfa/enroll/start', { currentPassword: password }, session);
+  expect(start.status).toBe(200);
+  const setup = await start.json();
+  const confirm = await request('/me/mfa/enroll/confirm', { enrollmentId: setup.enrollmentId, code: totp(setup.setupKey, Math.floor(Date.now() / 30000)) }, session);
+  expect(confirm.status).toBe(200);
+  return { ...setup, ...await confirm.json() } as { setupKey: string; enrollmentId: string; recoveryCodes: string[]; unlockedUntil: string };
+}
 async function staffFixture() {
   const fixture = await seedBooking();
   env.STAFF_OPERATIONS_ENABLED = 'true';
   const staff = await createSession(env, 'professional');
+  await enrollMfa(staff);
   const saved = await (await request('/me/booking/requests', fixture.payload, fixture.alice)).json();
   const path = `/me/professional/requests/${saved.appointmentId}`;
   const detail = await (await request(path, undefined, staff)).json();
   const decision = { action: 'confirm', updatedAt: detail.request.updatedAt, decisionKey: randomUUID(), currentPassword: password };
   return { ...fixture, staff, id: saved.appointmentId as string, detail: detail.request, path, decision };
 }
+describe('staff multi-factor verification', () => {
+  it('blocks customers, fails closed without the encryption key, and reveals no secrets in status', async () => {
+    const customer = await seed('alice');
+    expect((await request('/me/mfa', undefined, customer)).status).toBe(403);
+    expect((await request('/me/mfa/enroll/start', { currentPassword: password }, customer)).status).toBe(400);
+    const staff = await seed('staff', 'staff');
+    expect(await (await request('/me/mfa', undefined, staff)).json()).toEqual({ configured: true, enrolled: false, unlockedUntil: null });
+    delete env.MFA_ENCRYPTION_KEY;
+    expect((await request('/me/mfa/enroll/start', { currentPassword: password }, staff)).status).toBe(503);
+    expect((await (await request('/me/mfa', undefined, staff)).json()).configured).toBe(false);
+  });
+  it('binds pending setup to its session, expires it, and allows five code attempts', async () => {
+    const staff = await seed('staff', 'staff'); const other = await createSession(env, 'staff');
+    const setup = await (await request('/me/mfa/enroll/start', { currentPassword: password }, staff)).json();
+    const proof = { enrollmentId: setup.enrollmentId, code: totp(setup.setupKey, Math.floor(Date.now() / 30000)) };
+    expect((await request('/me/mfa/enroll/confirm', proof, other)).status).toBe(400);
+    expect(db.sqlite.prepare('SELECT attempts FROM staff_mfa_enrollments').get()!.attempts).toBe(0);
+    for (let attempt = 0; attempt < 5; attempt++) expect((await request('/me/mfa/enroll/confirm', { ...proof, code: 'badbad' }, staff)).status).toBe(400);
+    expect((await request('/me/mfa/enroll/confirm', proof, staff)).status).toBe(400);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM staff_authenticators').get()!.n).toBe(0);
+    db.sqlite.exec("DELETE FROM auth_rate_limits; UPDATE staff_mfa_enrollments SET expires_at='2000-01-01',attempts=0");
+    expect((await request('/me/mfa/enroll/confirm', proof, staff)).status).toBe(400);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM staff_mfa_enrollments').get()!.n).toBe(0);
+  });
+  it('stores encrypted seeds and hashed recovery codes, rejects replays, and unlocks only one session', async () => {
+    const staff = await seed('staff', 'staff'); const other = await createSession(env, 'staff');
+    const setup = await enrollMfa(staff);
+    const stored = JSON.stringify(db.sqlite.prepare('SELECT * FROM staff_authenticators').all());
+    expect(stored).not.toContain(setup.setupKey);
+    const codes = JSON.stringify(db.sqlite.prepare('SELECT * FROM staff_mfa_recovery_codes').all());
+    expect(setup.recoveryCodes).toHaveLength(8);
+    for (const code of setup.recoveryCodes) expect(codes).not.toContain(code.replaceAll('-', ''));
+    expect((await (await request('/me/mfa', undefined, other)).json()).unlockedUntil).toBeNull();
+    expect((await request('/me/mfa/unlock', { currentPassword: password, code: totp(setup.setupKey, Math.floor(Date.now() / 30000)) }, other)).status).toBe(400);
+    const proof = { currentPassword: password, code: setup.recoveryCodes[0] };
+    expect((await request('/me/mfa/unlock', proof, other)).status).toBe(200);
+    expect((await request('/me/mfa/unlock', proof, staff)).status).toBe(400);
+    expect((await request('/me/mfa/lock', {}, other)).status).toBe(200);
+    expect((await (await request('/me/mfa', undefined, other)).json()).unlockedUntil).toBeNull();
+    expect((await (await request('/me/mfa', undefined, staff)).json()).unlockedUntil).not.toBeNull();
+  });
+  it('accepts a fresh authenticator code once and rejects a wrong password without consuming it', async () => {
+    const staff = await seed('staff', 'staff'); const setup = await enrollMfa(staff);
+    // Advance only the stored replay floor; the next proof still uses real time.
+    db.sqlite.exec('UPDATE staff_authenticators SET last_counter=last_counter-1');
+    const code = totp(setup.setupKey, Math.floor(Date.now() / 30000));
+    expect((await request('/me/mfa/unlock', { currentPassword: 'wrong', code }, staff)).status).toBe(400);
+    expect((await request('/me/mfa/unlock', { currentPassword: password, code }, staff)).status).toBe(200);
+    expect((await request('/me/mfa/unlock', { currentPassword: password, code }, staff)).status).toBe(400);
+  });
+  it('requires a fresh staff grant for replacement and invalidates other grants and all old recovery codes', async () => {
+    const staff = await seed('staff', 'staff'); const other = await createSession(env, 'staff');
+    const original = await enrollMfa(staff);
+    expect((await request('/me/mfa/enroll/start', { currentPassword: password }, other)).status).toBe(403);
+    expect((await request('/me/mfa/unlock', { currentPassword: password, code: original.recoveryCodes[0] }, other)).status).toBe(200);
+    const replacement = await enrollMfa(other);
+    expect((await (await request('/me/mfa', undefined, staff)).json()).unlockedUntil).toBeNull();
+    db.sqlite.exec('DELETE FROM auth_rate_limits');
+    expect((await request('/me/mfa/unlock', { currentPassword: password, code: original.recoveryCodes[1] }, staff)).status).toBe(400);
+    expect((await request('/me/mfa/unlock', { currentPassword: password, code: replacement.recoveryCodes[0] }, staff)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM staff_mfa_enrollments').get()!.n).toBe(0);
+  });
+  it('keeps the current authenticator until replacement confirmation and blocks expired replacement grants', async () => {
+    const staff = await seed('staff', 'staff'); await enrollMfa(staff);
+    const original = db.sqlite.prepare('SELECT version FROM staff_authenticators').get()!.version;
+    const setup = await (await request('/me/mfa/enroll/start', { currentPassword: password }, staff)).json();
+    expect(db.sqlite.prepare('SELECT version FROM staff_authenticators').get()!.version).toBe(original);
+    db.sqlite.exec("UPDATE sessions SET mfa_until='2000-01-01'");
+    expect((await request('/me/mfa/enroll/confirm', { enrollmentId: setup.enrollmentId, code: totp(setup.setupKey, Math.floor(Date.now() / 30000)) }, staff)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT version FROM staff_authenticators').get()!.version).toBe(original);
+  });
+  it('blocks staff reads and decisions with no grant, an expired grant, a missing key, or a changed role', async () => {
+    const { staff, path, decision } = await staffFixture();
+    const other = await createSession(env, 'professional');
+    for (const endpoint of [path, '/me/professional/requests']) expect((await request(endpoint, undefined, other)).status).toBe(403);
+    expect((await request(path, decision, other)).status).toBe(403);
+    delete env.MFA_ENCRYPTION_KEY;
+    expect((await request(path, undefined, staff)).status).toBe(503); env.MFA_ENCRYPTION_KEY = '12'.repeat(32);
+    db.sqlite.exec("UPDATE sessions SET mfa_until='2000-01-01'");
+    expect((await request(path, undefined, staff)).status).toBe(403);
+    expect((await request(path, decision, staff)).status).toBe(403);
+    db.sqlite.exec("UPDATE users SET role='manager' WHERE id='professional'; UPDATE users SET role='staff' WHERE id='professional'");
+    expect(db.sqlite.prepare("SELECT mfa_version FROM sessions WHERE user_id='professional' AND mfa_version IS NOT NULL").get()).toBeUndefined();
+  });
+  it('rechecks the staff grant at the final appointment write', async () => {
+    const { staff, path, decision } = await staffFixture();
+    const original = db.batch.bind(db); let first = true;
+    const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      const result = await original<T>(statements);
+      if (first) { first = false; db.sqlite.exec("UPDATE sessions SET mfa_until='2000-01-01'"); }
+      return result;
+    });
+    expect((await request(path, decision, staff)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('requested');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointment_events').get()!.n).toBe(1);
+  });
+  it('rechecks verification at the customer-data query after the early access check', async () => {
+    const { staff, path } = await staffFixture();
+    const original = db.prepare.bind(db);
+    const spy = vi.spyOn(db, 'prepare').mockImplementation((sql: string) => {
+      if (sql.includes('FROM appointments a JOIN users u')) db.sqlite.exec("UPDATE sessions SET mfa_until=NULL");
+      return original(sql);
+    });
+    const response = await request(path, undefined, staff); spy.mockRestore();
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain('customerName');
+  });
+  it('rolls back authenticator activation if recovery-code storage fails', async () => {
+    const staff = await seed('staff', 'staff');
+    const setup = await (await request('/me/mfa/enroll/start', { currentPassword: password }, staff)).json();
+    db.sqlite.exec("CREATE TRIGGER fail_recovery BEFORE INSERT ON staff_mfa_recovery_codes BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request('/me/mfa/enroll/confirm', { enrollmentId: setup.enrollmentId, code: totp(setup.setupKey, Math.floor(Date.now() / 30000)) }, staff)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM staff_authenticators').get()!.n).toBe(0);
+    expect(db.sqlite.prepare('SELECT mfa_version FROM sessions').get()!.mfa_version).toBeNull();
+    expect(db.sqlite.prepare('SELECT consumed_receipt FROM staff_mfa_enrollments').get()!.consumed_receipt).toBeNull();
+  });
+  it('does not remove the authenticator after password recovery or accept a stale enrollment credential', async () => {
+    const staff = await seed('staff', 'staff'); await enrollMfa(staff);
+    const reset = await sendChallenge(env, { id: 'staff', email: 'staff@example.test' }, 'reset_password');
+    expect((await request('/auth/reset', { challengeId: reset, code: latestCode(), password: 'My changed passphrase 2026' })).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM staff_authenticators').get()!.n).toBe(1);
+    expect((await request('/me/mfa', undefined, staff)).status).toBe(401);
+    const second = await seed('second', 'staff');
+    const setup = await (await request('/me/mfa/enroll/start', { currentPassword: password }, second)).json();
+    db.sqlite.prepare("UPDATE account_credentials SET password_hash='changed' WHERE user_id='second'").run();
+    expect((await request('/me/mfa/enroll/confirm', { enrollmentId: setup.enrollmentId, code: totp(setup.setupKey, Math.floor(Date.now() / 30000)) }, second)).status).toBe(409);
+    expect(db.sqlite.prepare("SELECT * FROM staff_authenticators WHERE user_id='second'").get()).toBeUndefined();
+  });
+});
 describe('professional appointment decisions', () => {
   it('distinguishes disabled access, setup and approval while preventing cross-role data access', async () => {
     const { alice, staff, path } = await staffFixture();
@@ -457,6 +597,7 @@ describe('professional appointment decisions', () => {
     expect((await request(path, undefined, owner)).status).toBe(403);
     const now = new Date().toISOString();
     db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('owner-chair','owner','Owner','owner','approved',?,?)").run(now, now);
+    await enrollMfa(owner);
     const foreign = await request(path, undefined, owner); const missing = await request('/me/professional/requests/missing', undefined, owner);
     expect(foreign.status).toBe(404); expect(await foreign.text()).toBe(await missing.text());
     for (const state of ['pending_review', 'disabled']) {
@@ -515,6 +656,7 @@ describe('professional appointment decisions', () => {
     expect((await request(`/me/professional/requests?cursor=${first.nextCursor}bad`, undefined, staff)).status).toBe(400);
     const other = await seed('other-professional', 'staff');
     db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('other-chair','other-professional','Other','other','approved',?,?)").run(now, now);
+    await enrollMfa(other);
     expect((await request(`/me/professional/requests?cursor=${first.nextCursor}`, undefined, other)).status).toBe(400);
     expect((await (await request('/me/professional/requests', undefined, other)).json()).items).toEqual([]);
   });

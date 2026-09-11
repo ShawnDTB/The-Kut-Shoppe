@@ -1,6 +1,6 @@
 # Customer deployment runbook
 
-Latest follow-up: apply `0006_staff_requests_notifications.sql` after 0005 before running this version. Read [Professional requests and appointment notices](professional-requests-notifications.md) for staff authorization, the separate scheduled Worker, privacy/retry behavior, and staging/rollback steps. Staff operations and email dispatch remain disabled by default. The current 107-test check also exercises staff decision races and competing scheduled notification runs with offline compilation; real provider and browser acceptance remain outstanding.
+Latest follow-up: apply `0007_staff_authenticator.sql` after 0006 before running this version. Read [Staff authenticator verification](staff-authentication.md) for the new `MFA_ENCRYPTION_KEY` server secret, enrollment/recovery, short-lived staff grants, and rollback constraints. [Professional requests and appointment notices](professional-requests-notifications.md) covers the separate notification Worker. Staff operations and email dispatch remain disabled by default. The current 126-test check also exercises MFA, staff decision, and scheduled notification races with offline compilation; real provider and browser acceptance remain outstanding.
 
 Status: review implementation, not deployed. The live WordPress site and production domain have not been changed. `ACCOUNTS_ENABLED=false` is the committed default.
 
@@ -8,7 +8,7 @@ Status: review implementation, not deployed. The live WordPress site and product
 
 Use Node 22.13 or newer; `.nvmrc` selects Node 22. Install with `npm ci`, then run `npm run check`.
 
-The check runs TypeScript, ESLint, 58 browser-adapter tests, 46 API integration tests, and three wall-time tests (107 total), static prerendering, the existing bundle budgets, production output checks, and a real local Cloudflare Workers/D1 runtime test. The runtime test replaces only outbound Turnstile/email delivery with test responses; no real email is sent, and no cloud database is created. It exercises native scrypt, the account lifecycle, history/details, calendar export, concurrent email changes/withdrawal, two-customer slot competition, and duplicate booking submission. It uses the same Miniflare version pinned by Wrangler.
+The check runs TypeScript, ESLint, 58 browser-adapter tests, 57 API integration tests, three wall-time tests, and eight authenticator tests (126 total), static prerendering, the existing bundle budgets, production output checks, and real local Cloudflare Workers/D1 runtime tests. External Turnstile/email delivery is replaced with test responses; no real email is sent and no cloud database is created. Coverage includes native scrypt and AES-GCM, the account lifecycle, MFA enrollment/code races, history/details, calendar export, concurrent email changes/withdrawal, two-customer slot competition, duplicate booking/staff decisions, and scheduled notices. It uses the same Miniflare version pinned by Wrangler.
 
 For the static site plus local Pages API:
 
@@ -40,12 +40,13 @@ Complete and review these steps before enabling customer accounts:
 | `APP_ORIGIN` | Server environment | Exact browser/API origin and allowed HTTPS host |
 | `ACCOUNTS_ENABLED` | Server environment | Explicit operational account gate |
 | `AUTH_SECRET` | Server secret, random and at least 32 characters | HMACs for session tokens, challenge codes, and throttle keys; generate with a cryptographic random source |
+| `MFA_ENCRYPTION_KEY` | Separate Pages server secret, 32 random bytes encoded as 64 hex characters | Encrypts staff authenticator seeds; required before MFA setup or staff access; preserve restricted backups |
 | `TURNSTILE_SITE_KEY` | Server environment, intentionally returned by `/api/v1/config` | Public widget key for the configured hostname |
 | `TURNSTILE_SECRET_KEY` | Server secret | Validates widget tokens with Cloudflare |
 | `RESEND_API_KEY` | Server secret, email-send scope | Transactional verification and recovery delivery |
 | `MAIL_FROM` | Server environment | Approved sender on a verified domain |
 
-The API exposes the site key only. It never returns private keys, token hashes, password hashes, or codes. `VITE_*` variables are public browser configuration; they are not a secret store.
+Public configuration exposes only the intended public settings/site key. It never returns server secrets, token hashes, or password hashes. Protected MFA setup deliberately returns the user's setup seed and, after confirmation, recovery codes once in no-store responses. `VITE_*` variables are public browser configuration; they are not a secret store.
 
 The deployment target remains the established Cloudflare Pages + Functions + D1 architecture. `public/_routes.json` sends only `/api/*` into Functions. Static pages are prerendered into `dist`. No new Sites deployment or other cloud vendor was created by this work. Email is implemented through Resend; switching providers should replace the server mail adapter, without changing customer identity.
 
@@ -56,6 +57,7 @@ The deployment target remains the established Cloudflare Pages + Functions + D1 
 | Passwords | Server-only native scrypt, N=32768, r=8, p=3, random 16-byte salt, 64-byte result, timing-safe comparison; 15–128-character new passwords; no client hashes accepted |
 | Session | Cryptographically random 256-bit token; only HMAC stored in D1; `__Host-` cookie with Secure, HttpOnly, SameSite=Lax, Path=/; no Domain attribute |
 | Lifetime | Seven-day absolute expiry; 12-hour customer idle expiry; 30-minute elevated-role idle expiry; account status and role re-read on authenticated requests |
+| Staff MFA | Encrypted TOTP, one-use recovery codes, 15-minute session grants, database-enforced role/version/expiry checks; password recovery preserves enrollment |
 | Recovery | Eight-digit cryptographically random email code; challenge-specific HMAC; ten-minute expiry; five failed attempts; atomic one-time claim; reset revokes previous sessions and requires a new login |
 | Email changes | Current password plus distinct codes sent to both current/new inboxes; ten-minute expiry; five failed attempts; initiating-session binding; atomic address update and revocation of all sessions and old recovery codes |
 | Mutations | Exact Origin check, custom request header, JSON content type, bounded streaming request body, strict field allowlists, parameterized SQL |

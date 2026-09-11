@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 import { URLSearchParams } from 'node:url';
 import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { build } from 'vite';
@@ -18,7 +19,7 @@ assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
   d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true',
-    AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', TURNSTILE_SECRET_KEY: 'runtime-test',
+    AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', MFA_ENCRYPTION_KEY: '12'.repeat(32), TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
   outboundService: async (request) => {
@@ -142,6 +143,35 @@ try {
   await db.prepare("INSERT INTO account_credentials(user_id,password_hash,updated_at) SELECT 'runtime-professional',password_hash,? FROM account_credentials WHERE user_id=?").bind(now, account.id).run();
   const staffLogin = await call('/auth/login', { email: 'professional@example.test', password: 'A runtime test passphrase 2026', turnstileToken: 'test-only' });
   assert.equal(staffLogin.status, 200); const staffCookie = staffLogin.headers.get('Set-Cookie');
+  assert.equal((await call(`/me/professional/requests/${winningId}`, undefined, staffCookie)).status, 403, 'Password alone exposed a customer request');
+  const enrollment = await call('/me/mfa/enroll/start', { currentPassword: 'A runtime test passphrase 2026' }, staffCookie);
+  assert.equal(enrollment.status, 200); const setup = await enrollment.json();
+  // Independent RFC 4226/6238 calculation exercises the Worker's real AES and
+  // TOTP validation without exposing a testing bypass in the application.
+  const bits = [...setup.setupKey].map((char) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(char).toString(2).padStart(5, '0')).join('');
+  const secretBytes = Buffer.from(bits.match(/.{8}/g).map((part) => parseInt(part, 2)));
+  const authenticatorCode = () => {
+    const counter = Buffer.alloc(8); counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+    const digest = createHmac('sha1', secretBytes).update(counter).digest();
+    return String((digest.readUInt32BE(digest.at(-1) & 15) & 0x7fffffff) % 1000000).padStart(6, '0');
+  };
+  const enrollmentProof = { enrollmentId: setup.enrollmentId, code: authenticatorCode() };
+  const enrollmentResults = await Promise.all([call('/me/mfa/enroll/confirm', enrollmentProof, staffCookie), call('/me/mfa/enroll/confirm', enrollmentProof, staffCookie)]);
+  assert.equal(enrollmentResults.filter((result) => result.status === 200).length, 1, 'Concurrent enrollment must have only one winner');
+  assert.ok(enrollmentResults.every((result) => [200, 400, 409].includes(result.status)));
+  const { recoveryCodes } = await enrollmentResults.find((result) => result.status === 200).json();
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM staff_mfa_recovery_codes').first()).n, 8);
+  const secondStaffLogin = await call('/auth/login', { email: 'professional@example.test', password: 'A runtime test passphrase 2026', turnstileToken: 'test-only' });
+  assert.equal(secondStaffLogin.status, 200); const secondStaffCookie = secondStaffLogin.headers.get('Set-Cookie');
+  const recoveryProof = { currentPassword: 'A runtime test passphrase 2026', code: recoveryCodes[0] };
+  const recoveryResults = await Promise.all([call('/me/mfa/unlock', recoveryProof, staffCookie), call('/me/mfa/unlock', recoveryProof, secondStaffCookie)]);
+  assert.deepEqual(recoveryResults.map((result) => result.status).sort(), [200, 400], 'A recovery code must only be consumed once across devices');
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM staff_mfa_recovery_codes WHERE used_receipt IS NOT NULL').first()).n, 1);
+  await db.prepare('DELETE FROM auth_rate_limits').run();
+  await db.prepare('UPDATE staff_authenticators SET last_counter=?').bind(Math.floor(Date.now() / 30000) - 1).run();
+  const totpProof = { currentPassword: 'A runtime test passphrase 2026', code: authenticatorCode() };
+  const totpResults = await Promise.all([call('/me/mfa/unlock', totpProof, staffCookie), call('/me/mfa/unlock', totpProof, secondStaffCookie)]);
+  assert.deepEqual(totpResults.map((result) => result.status).sort(), [200, 400], 'An authenticator code must only be consumed once across devices');
   const staffDetail = await (await call(`/me/professional/requests/${winningId}`, undefined, staffCookie)).json();
   assert.equal(staffDetail.request.status, 'requested');
   const winningCookie = winningIndex === 0 ? detailCookie : secondCookie;
@@ -159,5 +189,5 @@ try {
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type='professional_declined'").bind(retryId).first()).n, 1);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.appointment_id=?').bind(retryId).first()).n, 4);
   assert.equal((await call(`/me/professional/requests/${retryId}`, undefined, detailCookie)).status, 403);
-  console.log('Cloudflare runtime passed: account lifecycle, booking races, professional decision/withdrawal competition, duplicate staff decisions, and transactional notification recipients.');
+  console.log('Cloudflare runtime passed: account lifecycle, booking races, MFA enrollment and code-consumption races, professional decisions, and transactional notifications.');
 } finally { await worker.dispose(); }

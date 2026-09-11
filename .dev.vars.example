@@ -5,6 +5,8 @@ ACCOUNTS_ENABLED="false"
 CUSTOMER_BOOKING_ENABLED="false"
 STAFF_OPERATIONS_ENABLED="false"
 AUTH_SECRET=""
+# Separate 32-byte key, encoded as 64 hex characters. Server only; preserve backups.
+MFA_ENCRYPTION_KEY=""
 TURNSTILE_SITE_KEY=""
 TURNSTILE_SECRET_KEY=""
 RESEND_API_KEY=""

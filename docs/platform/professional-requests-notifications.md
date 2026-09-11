@@ -2,6 +2,8 @@
 
 Implemented on `dev-branch`, 2026-09-10. Apply additive migration `0006_staff_requests_notifications.sql` after 0005. No deployment, real email, role assignment, or provider cutover was performed.
 
+Follow-up, 2026-09-11: [staff authenticator verification](staff-authentication.md) now requires a short-lived MFA grant for queue/detail reads and final decisions. Apply 0007 and configure its server key. The current suite contains 126 tests; the 107-test description below records the original notification slice.
+
 ## Shared account experience
 
 Staff/manager/owner/admin accounts have a Professional requests section beside their personal account sections. The server independently checks the current role, active verified account, and approved professional profile. Missing/draft setup, pending approval, disabled profiles, and ineligible accounts have distinct states. Setup directs the person to the shop; self-service professional onboarding is not implemented yet.
@@ -23,7 +25,7 @@ Confirmation reuses server scheduling, excluding only the request itself from co
 
 The final transaction rechecks schedule revision for confirmation, appointment scope/status/version, current professional approval/role, active verified session, and the credential hash just verified. It saves assignment/status/receipt, appointment and audit events, and recipient notifications together. Notification insertion failure rolls back the decision. Confirmation racing customer withdrawal permits one transition.
 
-`STAFF_OPERATIONS_ENABLED=false` remains the committed default. Fresh-password checks are defense in depth for restricted staging, **not MFA**. Public operational access still requires stronger staff authentication. No browser role editor, owner bootstrap, or shop-wide mutation API was added.
+`STAFF_OPERATIONS_ENABLED=false` remains the committed default. Decisions now require the session's current MFA grant as well as a fresh password. Public access still requires onboarding, security review, and hosted acceptance. No browser role editor, owner bootstrap, or shop-wide mutation API was added.
 
 ## Appointment notices
 
@@ -41,8 +43,8 @@ States: `queued`, `sending`, `retry`, `accepted`, `failed`, `suppressed`. **Acce
 
 ## Restricted staging and rollback
 
-1. Apply migrations through 0006, configure the account service, and use synthetic customers with explicitly approved test professionals. The migration seeds no real staff, appointments, or notifications.
-2. Enable `STAFF_OPERATIONS_ENABLED` only in restricted staging. `CUSTOMER_BOOKING_ENABLED` separately controls new requests. Public staff access must wait for stronger authentication.
+1. Apply migrations through 0007, configure the account service and MFA server key, and use synthetic customers with explicitly approved test professionals. The migrations seed no real staff, appointments, or notifications.
+2. Enable `STAFF_OPERATIONS_ENABLED` only in restricted staging after authenticator enrollment. `CUSTOMER_BOOKING_ENABLED` separately controls new requests. Public staff access must wait for security/onboarding and hosted acceptance.
 3. Configure the notification Worker's DB binding to the same isolated database, a trusted HTTPS `APP_ORIGIN`, approved `MAIL_FROM`, and server-only `RESEND_API_KEY`. It needs no customer authentication secret. Enable `APPOINTMENT_EMAIL_ENABLED` only for approved test recipients/sender.
 4. Deploy the scheduled Worker separately when authorized. A Pages deploy does not deploy this Worker. Verify its [Cron Trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/), monitor redacted batch counters and queue backlog/status, and test real delivery, rejection, delay, recipient changes, and failure review. Hosting/secrets were not provisioned here.
 
@@ -56,4 +58,4 @@ Runtime tests bundle the actual Pages `onRequest` handler and scheduled Worker o
 
 Browser acceptance remains outstanding for mobile/keyboard navigation, pagination, password managers, expired access, uncertain decisions, and refresh. No visual/browser testing was performed.
 
-Next: stronger staff authentication and approved professional onboarding/schedule management, followed by separately authorized manager/owner operations. Before public native booking, finish real sender/delivery acceptance, schedule completeness, business policies, and monitoring. Payments, refunds, and rescheduling remain separate workflows.
+Next: approved professional onboarding/schedule management, followed by separately authorized manager/owner operations. Staff MFA is implemented in the linked follow-up. Before public native booking, finish real sender/delivery acceptance, schedule completeness, business policies, and monitoring. Payments, refunds, and rescheduling remain separate workflows.
