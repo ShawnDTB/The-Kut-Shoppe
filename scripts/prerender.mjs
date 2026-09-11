@@ -31,10 +31,10 @@ await writeFile(
 );
 
 // robots.txt points crawlers at /sitemap.xml, so keep this file's inclusion
-// rule identical to the per-route robots meta logic above ('placeholder'
-// routes are noindex and are therefore left out of the sitemap too).
+// rule identical to the per-route robots meta logic above (placeholder and
+// private routes are noindex and are left out of the sitemap too).
 const sitemapUrls = serverEntry.staticRoutes
-  .filter((route) => route.status !== 'placeholder')
+  .filter((route) => route.status !== 'placeholder' && route.status !== 'private')
   .map((route) => `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`);
 
 const sitemap = [

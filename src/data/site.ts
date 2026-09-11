@@ -2,6 +2,7 @@ export type VerificationStatus =
   | 'verified-live-site'
   | 'verified-booking-platform'
   | 'requires-verification'
+  | 'private'
   | 'placeholder';
 
 export type BookingType = 'barber' | 'styling';
@@ -345,12 +346,12 @@ export const routes: RouteDefinition[] = [
     label: 'Account',
     title: 'Customer Account | The Kut Shoppe',
     description:
-      'Customer account access for future orders, saved details, and preferences.',
+      'Manage your profile, appointment requests, visit history, and account security.',
     eyebrow: 'Account',
-    heading: 'Your future customer account.',
+    heading: 'Your account.',
     intro:
-      'Account access will become available when first-party online ordering is enabled.',
-    status: 'placeholder',
+      'Sign in to manage your details and appointments.',
+    status: 'private',
   },
   {
     path: '/about',

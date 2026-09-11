@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "review": "npm run build && node scripts/review.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build": "node scripts/build.mjs",

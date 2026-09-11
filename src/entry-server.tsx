@@ -48,11 +48,11 @@ const platformRoutes: RouteDefinition[] = [
     path: '/account',
     label: 'Account',
     title: 'Customer Account | The Kut Shoppe',
-    description: 'Private customer access to barber appointments, waitlist requests, orders, and updates.',
+    description: 'Manage your profile, appointment requests, visit history, and account security.',
     eyebrow: 'Customer account',
     heading: 'Appointments and orders in one place.',
     intro: 'Verified customer tools for The Kut Shoppe.',
-    status: 'placeholder',
+    status: 'private',
   },
   {
     path: '/admin/access',
@@ -250,7 +250,7 @@ const localBusinessJsonLd = JSON.stringify(localBusinessSchema).replaceAll('</',
 export function render(url: string) {
   const route = resolveRoute(url);
   const canonical = `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`;
-  const robots = route.path === '/404' || route.status === 'placeholder'
+  const robots = route.path === '/404' || route.status === 'placeholder' || route.status === 'private'
     ? '<meta name="robots" content="noindex, nofollow" />'
     : '<meta name="robots" content="index, follow" />';
   const head = [

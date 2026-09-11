@@ -2,6 +2,8 @@
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.
 
+Local activation follow-up: `npm run review` now builds and serves the actual account API with persistent isolated D1 and generated local credentials. Read `docs/platform/local-review.md`. The script is loopback-only; its email sink, test Turnstile response, and local role bootstrap must never enter application modules or deployment entrypoints. Hosted resources and unfinished workflows remain outstanding.
+
 ## Latest assigned-visits update
 
 Read `docs/platform/staff-visits.md`. `server/staff-visits.ts` and `StaffVisits.tsx` add read-only assigned upcoming/active visits and scoped details. Preserve actor/profile/session/MFA guards in each final query, assigned-staff-only ownership, minimized list fields, signed instant/ID cursors, and the malformed-time count. Only accepted website records are included; no provider import, status transitions, or shop-wide authority. No migration after 0008 or deployment. Current suite: 147 tests plus Workers/D1 visit-isolation and existing runtime checks. Next: customer cancellation/rescheduling requests with staff review; do not invent cancellation fees, notice periods, refunds or automatic approval rules.
