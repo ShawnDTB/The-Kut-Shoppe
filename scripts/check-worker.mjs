@@ -51,6 +51,9 @@ try {
   assert.ok(cookie.includes('HttpOnly') && cookie.includes('Secure'));
   const me = await call('/me', undefined, cookie);
   assert.equal(me.status, 200);
+  const dashboard = await call('/me/dashboard', undefined, cookie);
+  assert.equal(dashboard.status, 200);
+  assert.deepEqual((await dashboard.json()).counts, { upcoming: 0, pending: 0, completed: 0, orders: 0 });
   const profile = { name: 'Updated Customer', phone: '', address: { line1: '', line2: '', city: '', state: '', postalCode: '' } };
   assert.equal((await call('/me/profile', profile, cookie, 'PATCH')).status, 200);
   const overview = await call('/me/overview', undefined, cookie);

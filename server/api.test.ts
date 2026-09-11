@@ -160,6 +160,25 @@ describe('verified email changes', () => {
 });
 
 describe('private paginated history', () => {
+  it('builds an owner-scoped dashboard with uncapped counts and the nearest active visit', async () => {
+    const alice = await seed('alice'); const bob = await seed('bob');
+    const now = new Date().toISOString(); const future = new Date(Date.now() + 86400000).toISOString(); const later = new Date(Date.now() + 2 * 86400000).toISOString();
+    db.sqlite.prepare("INSERT INTO services(id,name,category,duration_minutes,price_cents,created_at,updated_at) VALUES ('s','Test service','test',30,2500,?,?)").run(now, now);
+    const location = String(db.sqlite.prepare('SELECT id FROM locations LIMIT 1').get()!.id);
+    const insert = db.sqlite.prepare("INSERT INTO appointments(id,customer_user_id,service_id,location_id,price_cents,status,starts_at,ends_at,customer_note,internal_note,created_at,updated_at) VALUES (?,?,'s',?,2500,?,?,?,'PRIVATE CUSTOMER','PRIVATE STAFF',?,?)");
+    for (let index = 0; index < 105; index++) insert.run(`pending-${index}`, 'alice', location, 'requested', future, later, now, now);
+    insert.run('nearest', 'alice', location, 'confirmed', future, later, now, now);
+    insert.run('completed', 'alice', location, 'completed', now, now, now, now);
+    insert.run('foreign', 'bob', location, 'confirmed', now, later, now, now);
+    const response = await request('/me/dashboard', undefined, alice); expect(response.status).toBe(200);
+    const data = await response.json(); expect(data.counts).toEqual({ upcoming: 1, pending: 105, completed: 1, orders: 0 });
+    expect(data.nextVisit.id).toBe('nearest'); expect(data.recentAppointments).toHaveLength(4); expect(JSON.stringify(data)).not.toMatch(/PRIVATE|foreign|password|email/);
+    expect((await (await request('/me/dashboard', undefined, bob)).json()).nextVisit.id).toBe('foreign');
+    db.sqlite.prepare("UPDATE users SET role='owner' WHERE id='alice'").run();
+    expect((await (await request('/me/dashboard', undefined, alice)).json()).counts.pending).toBe(105);
+    expect((await request('/me/dashboard?user=bob', undefined, alice)).status).toBe(400);
+    expect((await request('/me/dashboard')).status).toBe(401);
+  });
   it('reads beyond 100 records with tied/null dates and never exposes another customer or guest', async () => {
     const alice = await seed('alice'); const bob = await seed('bob');
     const now = new Date().toISOString();

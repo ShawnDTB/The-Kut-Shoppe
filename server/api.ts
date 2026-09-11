@@ -13,6 +13,7 @@ import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } f
 import { reviewQueue, reviewSetup, saveSetup, setupPage } from './professional-setup';
 import { changeSchedule, schedulePage } from './professional-schedule';
 import { staffVisit, staffVisits } from './staff-visits';
+import { customerDashboard } from './customer-dashboard';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -121,6 +122,10 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (path === '/api/v1/me/dashboard' && request.method === 'GET') {
+    if (new URL(request.url).searchParams.size) throw new ApiError(400, 'This dashboard request is not supported.');
+    return json(await customerDashboard(env, account.id));
+  }
   if (path === '/api/v1/me/mfa' && request.method === 'GET') return json(await mfaStatus(env, account.id, sessionHash));
   if (path.startsWith('/api/v1/me/mfa/') && request.method === 'POST') {
     if (path !== '/api/v1/me/mfa/lock') await rateLimit(env, `staff-mfa:${account.id}`, 10);

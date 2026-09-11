@@ -1,5 +1,7 @@
 # Working local review
 
+Latest: `/book` opens the native booking journey in this environment; after sign-in, select the service, professional, location, date and time. `/account` now opens the dashboard overview. See [functionality restoration](functionality-restoration.md) for the comparison with the earlier UI and the remaining features.
+
 ```sh
 git switch dev-branch
 git pull origin dev-branch

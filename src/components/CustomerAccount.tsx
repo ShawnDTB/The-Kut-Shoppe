@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { accountApi, getCustomerSession, loadCustomerSession, setCustomerSession, subscribeToCustomerSession } from '../data/customer-api';
-import { business } from '../data/site';
+import { bookingPaths, business } from '../data/site';
 import type { AccountConfig, CustomerAccount as Account, CustomerProfile } from '../shared/customer';
 import { AccountSecurityCheck } from './AccountSecurityCheck';
 import { CustomerEmailChange } from './CustomerEmailChange';
@@ -11,14 +11,16 @@ import { StaffAuthenticator } from './StaffAuthenticator';
 import { ProfessionalSetup } from './ProfessionalSetup';
 import { ProfessionalSchedule } from './ProfessionalSchedule';
 import { StaffVisits } from './StaffVisits';
+import { CustomerOverview } from './CustomerOverview';
+import { CustomerBooking } from './CustomerBooking';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
-type View = 'appointments' | 'orders' | 'profile' | 'security' | 'professional' | 'professional-visits' | 'professional-setup' | 'professional-schedule' | 'setup-reviews';
-const views: Array<[View, string]> = [['appointments', 'Appointments'], ['orders', 'Orders'], ['profile', 'Profile'], ['security', 'Security'], ['professional', 'Professional requests'], ['professional-visits', 'Your visits'], ['professional-schedule', 'Availability'], ['professional-setup', 'Professional setup'], ['setup-reviews', 'Setup reviews']];
+type View = 'overview' | 'booking' | 'appointments' | 'orders' | 'profile' | 'security' | 'professional' | 'professional-visits' | 'professional-setup' | 'professional-schedule' | 'setup-reviews';
+const views: Array<[View, string]> = [['overview', 'Overview'], ['booking', 'Book a visit'], ['appointments', 'Appointments'], ['orders', 'Orders'], ['profile', 'Profile'], ['security', 'Security'], ['professional', 'Professional requests'], ['professional-visits', 'Your visits'], ['professional-schedule', 'Availability'], ['professional-setup', 'Professional setup'], ['setup-reviews', 'Setup reviews']];
 function readAccountRoute(): { view: View; record: string | null } {
   const query = new URLSearchParams(window.location.search);
   const requested = query.get('view');
-  const view = views.some(([key]) => key === requested) ? requested as View : 'appointments';
+  const view = window.location.pathname.replace(/\/$/, '') === '/book' ? 'booking' : views.some(([key]) => key === requested) ? requested as View : 'overview';
   return { view, record: view === 'appointments' || view === 'orders' ? query.get('record') : null };
 }
 
@@ -77,7 +79,7 @@ function AccountAccess({ config, initialMessage }: { config: AccountConfig; init
       {error ? <p className="form-error" role="alert">{error}</p> : null}{message ? <p className="customer-notice" role="status">{message}</p> : null}
     </form>
     {challenge ? <p><button type="button" className="text-button" disabled={working} onClick={() => switchMode(challenge.reset ? 'recover' : 'login')}>Need a new code? Start again</button></p> : mode === 'login' ? <p><button type="button" className="text-button" onClick={() => switchMode('recover')}>Forgot password?</button></p> : null}
-    <p className="customer-fine-print">Review our <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a>. You can <a href="/book">book an appointment</a> without making an account.</p>
+    <p className="customer-fine-print">Review our <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a>. Prefer to book without a website account? {bookingPaths.map((path, index) => <span key={path.id}>{index ? ' · ' : ''}<a href={path.href} rel="noopener noreferrer">{path.provider}</a></span>)}</p>
   </div>;
 }
 
@@ -144,7 +146,7 @@ function AccountHome({ account, onSignedOut, bookingEnabled }: { account: Accoun
   return <div className="customer-home"><header className="customer-home-header"><div><p className="customer-kicker">Your Kut Shoppe account</p><h1>Welcome, {account.profile.name.split(/\s+/)[0]}.</h1></div><button className="button button-secondary" type="button" disabled={working} onClick={() => void logout()}>Sign out</button></header>
     <nav className="customer-nav" aria-label="Account sections">{views.filter(([key]) => key === 'setup-reviews' ? ['owner', 'developer'].includes(account.role) : !key.startsWith('professional') || account.role !== 'customer').map(([key, label]) => <a key={key} href={`/account?view=${key}`} aria-current={view === key ? 'page' : undefined} onClick={(event) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); select(key); } }}>{label}</a>)}</nav>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
-    <div className="customer-content">{view === 'professional-visits' ? <StaffVisits /> : view === 'professional-schedule' ? <ProfessionalSchedule /> : view === 'professional-setup' || view === 'setup-reviews' ? <ProfessionalSetup key={view} review={view === 'setup-reviews'} /> : view === 'professional' ? <StaffRequests /> : view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
+    <div className="customer-content">{view === 'overview' ? <CustomerOverview account={account} bookingEnabled={bookingEnabled} /> : view === 'booking' ? bookingEnabled ? <CustomerBooking onBack={() => select('overview')} onOpen={(id) => select('appointments', id)} /> : <p>Website booking is not open. <a href="/book">View booking providers</a>.</p> : view === 'professional-visits' ? <StaffVisits /> : view === 'professional-schedule' ? <ProfessionalSchedule /> : view === 'professional-setup' || view === 'setup-reviews' ? <ProfessionalSetup key={view} review={view === 'setup-reviews'} /> : view === 'professional' ? <StaffRequests /> : view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
       : record ? view === 'appointments' ? <CustomerAppointmentDetails key={record} id={record} onBack={() => select('appointments')} /> : <CustomerOrderDetails key={record} id={record} onBack={() => select('orders')} />
         : <CustomerHistory key={view} kind={view} bookingEnabled={bookingEnabled} onOpen={(id) => select(view, id)} />}</div>
   </div>;

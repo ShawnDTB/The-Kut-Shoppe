@@ -1,5 +1,7 @@
 <div align="center">
 
+**Functionality restoration:** [Analysis and feature inventory](docs/platform/functionality-restoration.md) compares the earlier platform experience with the current backend. `/book` now opens native booking when enabled, with separate service/professional/date/time choices. Accounts open to an informative overview backed by real scoped dashboard data.
+
 **Run the implemented features:** `npm run review` builds the site and starts its real account API with persistent local D1. It enables customer booking requests, staff setup, availability, and visits, with local customer/staff/owner sign-ins and an account-email inbox. See [working local review](docs/platform/local-review.md) for credentials, review steps, and remaining hosted-release requirements. `npm run dev` alone starts only the frontend.
 
 [Your visits](./docs/platform/staff-visits.md) now gives each approved professional a protected list of assigned upcoming/active website appointments and private visit details. Current coverage is 147 tests plus real local Workers/D1 checks. Public staff operations remain disabled, and no migration after 0008 or deployment was added.

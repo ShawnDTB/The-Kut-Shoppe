@@ -98,3 +98,22 @@
 @media (prefers-reduced-motion: reduce) {
   .customer-account *, .customer-account *::before, .customer-account *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+.customer-overview-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.customer-overview-stats > div, .customer-overview-panel { border: 1px solid #555; padding: 1.25rem; border-radius: .35rem; min-width: 0; }
+.customer-overview-stats dt { font-size: .9rem; }
+.customer-overview-stats dd { margin: .4rem 0 0; font-size: 2rem; font-weight: 700; }
+.customer-overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+.customer-overview-panel p { overflow-wrap: anywhere; }
+.customer-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.customer-form .customer-choice { display: flex; align-items: center; gap: .8rem; border: 1px solid #777; border-radius: .35rem; padding: 1rem; cursor: pointer; }
+.customer-choice:has(input:checked) { border-color: #d6bc76; background: #39352b; }
+.customer-form .customer-choice input { width: 1.15rem; height: 1.15rem; min-height: 1.15rem; padding: 0; flex: 0 0 auto; accent-color: #d6bc76; }
+.customer-choice span { display: grid; gap: .35rem; }
+.customer-date-shortcuts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.customer-date-shortcuts button { min-height: 44px; padding: .65rem; background: transparent; color: inherit; border: 1px solid #777; border-radius: .25rem; cursor: pointer; }
+.customer-date-shortcuts button[aria-pressed="true"] { background: #d6bc76; color: #191919; border-color: #d6bc76; }
+.customer-booking button:focus-visible, .customer-choice:has(input:focus-visible) { outline: 2px solid #d6bc76; outline-offset: 3px; }
+@media (max-width: 680px) {
+  .customer-overview-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .customer-overview-grid, .customer-choice-grid { grid-template-columns: 1fr; }
+}

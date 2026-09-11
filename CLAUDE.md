@@ -2,6 +2,8 @@
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.
 
+Restore functional parity as well as backend safety. Read `docs/platform/functionality-restoration.md` before the next feature slice. `/book` now uses native account booking when enabled; `CustomerOverview` is the account default and `/me/dashboard` provides scoped counts/recent records. Do not remove the restored experience while refining security. Remaining priorities include change/cancel/proposals, guest-first booking, any-professional selection, and richer operational summaries.
+
 Local activation follow-up: `npm run review` now builds and serves the actual account API with persistent isolated D1 and generated local credentials. Read `docs/platform/local-review.md`. The script is loopback-only; its email sink, test Turnstile response, and local role bootstrap must never enter application modules or deployment entrypoints. Hosted resources and unfinished workflows remain outstanding.
 
 ## Latest assigned-visits update
