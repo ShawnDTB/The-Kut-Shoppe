@@ -2,6 +2,10 @@
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.
 
+## Latest assigned-visits update
+
+Read `docs/platform/staff-visits.md`. `server/staff-visits.ts` and `StaffVisits.tsx` add read-only assigned upcoming/active visits and scoped details. Preserve actor/profile/session/MFA guards in each final query, assigned-staff-only ownership, minimized list fields, signed instant/ID cursors, and the malformed-time count. Only accepted website records are included; no provider import, status transitions, or shop-wide authority. No migration after 0008 or deployment. Current suite: 147 tests plus Workers/D1 visit-isolation and existing runtime checks. Next: customer cancellation/rescheduling requests with staff review; do not invent cancellation fees, notice periods, refunds or automatic approval rules.
+
 ## Latest professional scheduling update
 
 Read `docs/platform/professional-scheduling.md`. `server/professional-schedule.ts` and `ProfessionalSchedule.tsx` implement own weekly hours and time off behind the existing staff-operations gate and MFA. No new migration. Preserve consistent snapshots, final revision/role/profile/session/MFA checks, receipt-conditioned mutations, and audit metadata. Recheck that the professional ID is unchanged before returning a read snapshot. Time off protects active/proposed appointments, holds and cleanup buffers across locations; removing hours must preserve their support for visits. Reject unsupported timezone/legacy cases rather than guessing. No appointment rescheduling/cancellation, pricing or shop-wide overrides. Current suite: 143 tests plus real Workers/D1 schedule/booking races. No deployment/browser acceptance. Next: customer cancellation/rescheduling policy, confirmed staff visit views and restricted-staging rehearsal.

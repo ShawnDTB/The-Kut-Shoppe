@@ -816,6 +816,62 @@ describe('professional availability management', () => {
     expect(response.status).toBe(403); expect(await response.text()).not.toContain('book-hours');
   });
 });
+describe('assigned professional visits', () => {
+  const path = '/me/professional/visits';
+  it('lists accepted website visits and reveals the customer note only in the scoped detail', async () => {
+    const fixture = await staffFixture();
+    expect((await request(fixture.path, fixture.decision, fixture.staff)).status).toBe(200);
+    const page = await (await request(path, undefined, fixture.staff)).json(); expect(page.items).toHaveLength(1); expect(page.needsTimeReview).toBe(0);
+    expect(JSON.stringify(page)).not.toMatch(/customerNote|priceCents|sortAt|alice@example|password|internal_note/);
+    const detail = await (await request(`${path}/${fixture.id}`, undefined, fixture.staff)).json();
+    expect(detail.visit.customerNote).toBe('A test note'); expect(detail.visit.priceCents).toBe(3200);
+    expect(JSON.stringify(detail)).not.toMatch(/alice@example|customer_user_id|password|internal_note/);
+    expect((await request(`${path}/${fixture.id}`, {}, fixture.staff)).status).toBe(404);
+    db.sqlite.exec("UPDATE appointments SET source='migration'");
+    expect((await request(`${path}/${fixture.id}`, undefined, fixture.staff)).status).toBe(404);
+  });
+  it('excludes completed, past, unassigned and requested records while flagging invalid times', async () => {
+    const { staff, locationId } = await staffFixture(); const now = new Date().toISOString();
+    const future = new Date(Date.now() + 86400000).toISOString(); const end = new Date(Date.now() + 90000000).toISOString();
+    for (const [id, state, start, finish, assigned] of [
+      ['future', 'confirmed', future, end, 'book-staff'], ['old-active', 'in_service', '2000-01-01T09:00:00Z', '2000-01-01T10:00:00Z', 'book-staff'],
+      ['past', 'confirmed', '2000-01-01T09:00:00Z', '2000-01-01T10:00:00Z', 'book-staff'], ['completed', 'completed', future, end, 'book-staff'],
+      ['unassigned', 'confirmed', future, end, null], ['invalid', 'confirmed', null, null, 'book-staff'],
+    ] as const) db.sqlite.prepare("INSERT INTO appointments(id,customer_user_id,requested_staff_id,assigned_staff_id,service_id,location_id,price_cents,status,starts_at,ends_at,created_at,updated_at) VALUES (?,'alice','book-staff',?,'book-service',?,3200,?,?,?,?,?)").run(id, assigned, locationId, state, start, finish, now, now);
+    const page = await (await request(path, undefined, staff)).json(); expect(page.items.map((item: { id: string }) => item.id)).toEqual(['old-active', 'future']); expect(page.needsTimeReview).toBe(1);
+    expect((await request(`${path}/completed`, undefined, staff)).status).toBe(404);
+  });
+  it('paginates equal-time visits by ID and binds the cursor to the professional', async () => {
+    const { staff, locationId } = await staffFixture(); const now = new Date().toISOString();
+    const start = new Date(Date.now() + 86400000).toISOString(); const end = new Date(Date.now() + 90000000).toISOString();
+    for (let i = 0; i < 30; i++) db.sqlite.prepare("INSERT INTO appointments(id,customer_user_id,assigned_staff_id,service_id,location_id,price_cents,status,starts_at,ends_at,created_at,updated_at) VALUES (?,'alice','book-staff','book-service',?,3200,'confirmed',?,?,?,?)").run(`visit-${String(i).padStart(2, '0')}`, locationId, start, end, now, now);
+    const first = await (await request(path, undefined, staff)).json(); expect(first.items).toHaveLength(25);
+    const second = await (await request(`${path}?cursor=${first.nextCursor}`, undefined, staff)).json(); expect(second.items).toHaveLength(5); expect(second.nextCursor).toBeNull();
+    expect(new Set([...first.items, ...second.items].map((item: { id: string }) => item.id)).size).toBe(30);
+    expect((await request(`${path}?cursor=${first.nextCursor}bad`, undefined, staff)).status).toBe(400);
+    const other = await seed('other-visitor', 'owner'); await enrollMfa(other);
+    db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('other-chair','other-visitor','Other','other-visits','approved',?,?)").run(now, now);
+    expect((await request(`${path}?cursor=${first.nextCursor}`, undefined, other)).status).toBe(400);
+    const foreign = await request(`${path}/visit-00`, undefined, other); const absent = await request(`${path}/missing`, undefined, other);
+    expect(foreign.status).toBe(404); expect(await foreign.text()).toBe(await absent.text());
+    db.sqlite.exec("UPDATE appointments SET assigned_staff_id='other-chair',requested_staff_id='book-staff' WHERE id='visit-00'");
+    expect((await request(`${path}/visit-00`, undefined, staff)).status).toBe(404);
+  });
+  it('enforces the operations gate, current MFA, and final query authorization', async () => {
+    const fixture = await staffFixture(); expect((await request(fixture.path, fixture.decision, fixture.staff)).status).toBe(200);
+    const fresh = await createSession(env, 'professional');
+    expect((await request(path, undefined, fresh)).status).toBe(403);
+    expect((await request(path, undefined, fixture.alice)).status).toBe(403);
+    env.STAFF_OPERATIONS_ENABLED = 'false'; expect((await request(path, undefined, fixture.staff)).status).toBe(503); env.STAFF_OPERATIONS_ENABLED = 'true';
+    const original = db.batch.bind(db);
+    const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='professional'"); return original<T>(statements);
+    });
+    const result = await (await request(path, undefined, fixture.staff)).json(); spy.mockRestore();
+    expect(result.items).toEqual([]); expect(result.needsTimeReview).toBe(0);
+    expect((await request(`${path}/${fixture.id}`, undefined, fixture.staff)).status).toBe(403);
+  });
+});
 describe('professional appointment decisions', () => {
   it('distinguishes disabled access, setup and approval while preventing cross-role data access', async () => {
     const { alice, staff, path } = await staffFixture();

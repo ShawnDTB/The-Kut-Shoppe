@@ -232,5 +232,17 @@ try {
   const offCount = (await db.prepare("SELECT count(*) AS n FROM schedule_exceptions WHERE staff_id=? AND exception_type='time_off'").bind(approved.id).first()).n;
   const visitCount = (await db.prepare('SELECT count(*) AS n FROM appointments WHERE requested_staff_id=?').bind(approved.id).first()).n;
   assert.equal(offCount + visitCount, 1);
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, staff decisions, and transactional notifications.');
+  const visitOpening = await (await call(availabilityPath, undefined, detailCookie)).json();
+  const visitRequest = await call('/me/booking/requests', { ...firstRequest, startsAt: visitOpening.slots[0].startsAt, quote: visitOpening.quote, requestKey: randomUUID() }, detailCookie);
+  assert.equal(visitRequest.status, 200); const visitId = (await visitRequest.json()).appointmentId;
+  const visitBefore = await (await call(`/me/professional/requests/${visitId}`, undefined, staffCookie)).json();
+  assert.equal((await call(`/me/professional/requests/${visitId}`, { action: 'confirm', updatedAt: visitBefore.request.updatedAt, decisionKey: randomUUID(), currentPassword: 'A runtime test passphrase 2026' }, staffCookie)).status, 200);
+  const visitList = await (await call('/me/professional/visits', undefined, staffCookie)).json();
+  assert.ok(visitList.items.some((item) => item.id === visitId));
+  assert.ok(!JSON.stringify(visitList).includes('customerNote'));
+  const visitDetails = await call(`/me/professional/visits/${visitId}`, undefined, staffCookie);
+  assert.equal(visitDetails.status, 200); assert.equal((await visitDetails.json()).visit.status, 'confirmed');
+  assert.equal((await call(`/me/professional/visits/${visitId}`, undefined, applicantCookie)).status, 404);
+  assert.equal((await call('/me/professional/visits', undefined, detailCookie)).status, 403);
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, assigned visit isolation, and transactional notifications.');
 } finally { await worker.dispose(); }

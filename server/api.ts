@@ -12,6 +12,7 @@ import { decideRequest, professionalAccess, staffQueue, staffRequest } from './s
 import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } from './staff-mfa';
 import { reviewQueue, reviewSetup, saveSetup, setupPage } from './professional-setup';
 import { changeSchedule, schedulePage } from './professional-schedule';
+import { staffVisit, staffVisits } from './staff-visits';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -138,6 +139,12 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (action === 'GET /api/v1/me/professional') return json(await professionalAccess(env, account.id));
   if (path.startsWith('/api/v1/me/professional/')) {
     const params = new URL(request.url).searchParams;
+    if (action === 'GET /api/v1/me/professional/visits') {
+      if ([...params.keys()].some((key) => key !== 'cursor') || params.getAll('cursor').length > 1) throw new ApiError(400, 'Reload your visits.');
+      return json(await staffVisits(env, account.id, sessionHash, params.get('cursor')));
+    }
+    const visit = path.match(/^\/api\/v1\/me\/professional\/visits\/([A-Za-z0-9_-]{1,128})$/);
+    if (visit && request.method === 'GET' && params.size === 0) return json({ visit: await staffVisit(env, account.id, sessionHash, visit[1]!) });
     if (path === '/api/v1/me/professional/schedule' && params.size === 0) {
       if (request.method === 'GET') return json(await schedulePage(env, account.id, sessionHash));
       if (request.method === 'POST') {

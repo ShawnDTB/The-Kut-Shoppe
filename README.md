@@ -1,5 +1,7 @@
 <div align="center">
 
+[Your visits](./docs/platform/staff-visits.md) now gives each approved professional a protected list of assigned upcoming/active website appointments and private visit details. Current coverage is 147 tests plus real local Workers/D1 checks. Public staff operations remain disabled, and no migration after 0008 or deployment was added.
+
 The [professional Availability editor](./docs/platform/professional-scheduling.md) now supports weekly hours and time off with MFA, appointment/hold protection, and atomic booking-revision checks. Current validation covers 143 tests plus real Workers/D1 races. It uses existing migrations through 0008 and the disabled staff-operations gate. Nothing is deployed.
 
 The [professional setup and owner-review workflow](./docs/platform/professional-onboarding.md) now supports drafts, submission, feedback, resubmission, and atomic approval of services/locations behind `STAFF_SETUP_ENABLED=false`. Apply migrations through 0008. [Staff authenticator verification](./docs/platform/staff-authentication.md) protects setup, review, and professional requests; configure its separate server key before restricted staging. Individual schedule management is next. Hosted acceptance, verified role/bootstrap procedures, and operational security review remain launch gates. Nothing is deployed.

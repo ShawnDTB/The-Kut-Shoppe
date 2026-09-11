@@ -1,5 +1,7 @@
 # Professional availability management
 
+Follow-up: [Assigned professional visits](staff-visits.md) now provides the staff list/detail view for accepted website appointments. Current coverage is 147 tests; customer cancellation/rescheduling requests remain next.
+
 The shared account dashboard now has an **Availability** section for approved professionals. It uses the existing `STAFF_OPERATIONS_ENABLED` gate and staff MFA grant. No new migration is needed; apply existing migrations through 0008. Public defaults remain disabled. No deployment or browser acceptance was performed.
 
 ## Workflow
