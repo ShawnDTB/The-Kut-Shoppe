@@ -214,5 +214,23 @@ try {
   assert.equal((await db.prepare('SELECT count(*) AS n FROM staff_services WHERE staff_id=? AND active=1').bind(approved.id).first()).n, 1);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM weekly_availability WHERE staff_id=?').bind(approved.id).first()).n, 0);
   assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE entity_id=? AND action='professional_setup_approved'").bind(submission.id).first()).n, 1);
-  console.log('Cloudflare runtime passed: account/MFA lifecycle, professional submission and approval races, booking/decision races, and transactional notifications.');
+  await db.prepare("UPDATE locations SET timezone='UTC' WHERE id=?").bind(setupDraft.locationIds[0]).run();
+  const schedulePath = '/me/professional/schedule';
+  const schedule = await (await call(schedulePath, undefined, applicantCookie)).json();
+  const hours = { action: 'add_hours', revision: schedule.revision, locationId: setupDraft.locationIds[0], weekday: new Date(`${bookingDate}T00:00:00Z`).getUTCDay(), startTime: '09:00', endTime: '17:00' };
+  const hoursRace = await Promise.all([call(schedulePath, hours, applicantCookie), call(schedulePath, hours, applicantCookie)]);
+  assert.deepEqual(hoursRace.map((response) => response.status).sort(), [200, 409], 'Concurrent weekly updates must save once');
+  const newSelection = { staffId: approved.id, locationId: setupDraft.locationIds[0], serviceId: setupDraft.serviceIds[0], date: bookingDate };
+  const newAvailable = await (await call(`/me/booking/availability?${new URLSearchParams(newSelection)}`, undefined, detailCookie)).json();
+  assert.ok(newAvailable.slots.length, 'Approved weekly hours did not create openings');
+  const scheduleRevision = (await (await call(schedulePath, undefined, applicantCookie)).json()).revision;
+  const offVsBooking = await Promise.all([
+    call(schedulePath, { action: 'add_time_off', revision: scheduleRevision, locationId: newSelection.locationId, date: bookingDate, startTime: '09:00', endTime: '17:00' }, applicantCookie),
+    call('/me/booking/requests', { ...newSelection, startsAt: newAvailable.slots[0].startsAt, quote: newAvailable.quote, note: '', requestKey: randomUUID() }, detailCookie),
+  ]);
+  assert.deepEqual(offVsBooking.map((response) => response.status).sort(), [200, 409], 'Time off and a conflicting booking both saved');
+  const offCount = (await db.prepare("SELECT count(*) AS n FROM schedule_exceptions WHERE staff_id=? AND exception_type='time_off'").bind(approved.id).first()).n;
+  const visitCount = (await db.prepare('SELECT count(*) AS n FROM appointments WHERE requested_staff_id=?').bind(approved.id).first()).n;
+  assert.equal(offCount + visitCount, 1);
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, staff decisions, and transactional notifications.');
 } finally { await worker.dispose(); }

@@ -1,5 +1,7 @@
 <div align="center">
 
+The [professional Availability editor](./docs/platform/professional-scheduling.md) now supports weekly hours and time off with MFA, appointment/hold protection, and atomic booking-revision checks. Current validation covers 143 tests plus real Workers/D1 races. It uses existing migrations through 0008 and the disabled staff-operations gate. Nothing is deployed.
+
 The [professional setup and owner-review workflow](./docs/platform/professional-onboarding.md) now supports drafts, submission, feedback, resubmission, and atomic approval of services/locations behind `STAFF_SETUP_ENABLED=false`. Apply migrations through 0008. [Staff authenticator verification](./docs/platform/staff-authentication.md) protects setup, review, and professional requests; configure its separate server key before restricted staging. Individual schedule management is next. Hosted acceptance, verified role/bootstrap procedures, and operational security review remain launch gates. Nothing is deployed.
   <img src="https://www.thekutshoppe.com/wp-content/uploads/2023/11/a2e8fdecb672406ba74a28a19b4063-the-kut-shoppe-llc-logo-5175fdd512c54b42b4da939b84353a-booksy.png" alt="The Kut Shoppe logo" width="112" height="112" />
   <h1>The Kut Shoppe Platform</h1>

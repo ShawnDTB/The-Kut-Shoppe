@@ -11,6 +11,7 @@ import { bookingAvailability, bookingOptions, bookingSelection, requestAppointme
 import { decideRequest, professionalAccess, staffQueue, staffRequest } from './staff-requests';
 import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } from './staff-mfa';
 import { reviewQueue, reviewSetup, saveSetup, setupPage } from './professional-setup';
+import { changeSchedule, schedulePage } from './professional-schedule';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -137,6 +138,13 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (action === 'GET /api/v1/me/professional') return json(await professionalAccess(env, account.id));
   if (path.startsWith('/api/v1/me/professional/')) {
     const params = new URL(request.url).searchParams;
+    if (path === '/api/v1/me/professional/schedule' && params.size === 0) {
+      if (request.method === 'GET') return json(await schedulePage(env, account.id, sessionHash));
+      if (request.method === 'POST') {
+        await rateLimit(env, `professional-schedule:${account.id}`, 20);
+        return json(await changeSchedule(env, account.id, sessionHash, body));
+      }
+    }
     if (path === '/api/v1/me/professional/setup' && params.size === 0) {
       if (request.method === 'GET') return json(await setupPage(env, account.id, sessionHash));
       if (request.method === 'POST') {

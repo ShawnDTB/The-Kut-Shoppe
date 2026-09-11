@@ -1,5 +1,7 @@
 # Customer deployment runbook
 
+Latest scheduling follow-up: [Professional availability management](professional-scheduling.md) adds weekly windows/time off behind the existing staff-operations and MFA gates. No migration after 0008 is required. Current coverage is 143 tests plus real local Workers/D1 concurrency checks, including time off racing a customer booking. Saved availability remains effective if staff editing is disabled; disable native booking separately to stop new requests.
+
 Latest follow-up: apply `0008_professional_setup.sql` after 0007 before running this version. Read [Professional setup and owner review](professional-onboarding.md) for submission/approval, the independent `STAFF_SETUP_ENABLED=false` gate, and rollback behavior. [Staff authenticator verification](staff-authentication.md) covers the required `MFA_ENCRYPTION_KEY` server secret. The current 135-test check also exercises MFA, onboarding, staff decision, and scheduled notification races with offline compilation; real provider and browser acceptance remain outstanding.
 
 Status: review implementation, not deployed. The live WordPress site and production domain have not been changed. `ACCOUNTS_ENABLED=false` is the committed default.

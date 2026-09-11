@@ -1,5 +1,7 @@
 # Professional setup and owner review
 
+Follow-up: [professional availability management](professional-scheduling.md) now lets approved professionals add weekly hours and time off with conflict protection. This supersedes the schedule-management backlog below; current total coverage is 143 tests plus local Workers/D1 runtime checks.
+
 Implemented on `dev-branch`, 2026-09-11. Apply `0008_professional_setup.sql` after 0007. `STAFF_SETUP_ENABLED=false` is a new independent server gate. No live account roles were assigned, no existing operational schedules were changed, and nothing was deployed.
 
 ## Complete setup workflow

@@ -17,7 +17,7 @@ export async function professionalAccess(env: Env, userId: string): Promise<Prof
   const state = !row || !staffRoles.includes(row.role) ? 'not_eligible' : row.setup === 'disabled' ? 'disabled' : row.setup === 'approved' ? 'approved' : row.submission === 'submitted' || row.setup === 'pending_review' ? 'pending_review' : 'setup_required';
   return { enabled: env.STAFF_OPERATIONS_ENABLED === 'true', setupEnabled: env.STAFF_SETUP_ENABLED === 'true', canReview: Boolean(row && ['owner', 'admin'].includes(row.role)), state, ...(row?.name ? { professionalName: row.name } : {}) };
 }
-async function requireProfessional(env: Env, userId: string, sessionHash: string) {
+export async function requireProfessional(env: Env, userId: string, sessionHash: string) {
   if (env.STAFF_OPERATIONS_ENABLED !== 'true') throw new ApiError(503, 'Professional request management is not open yet.');
   const row = await env.DB.prepare(professionalSelect).bind(userId).first<Professional>();
   if (!row?.id || row.setup !== 'approved' || !staffRoles.includes(row.role)) throw new ApiError(403, 'An approved professional account is required.');

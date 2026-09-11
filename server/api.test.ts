@@ -715,6 +715,107 @@ describe('professional onboarding and owner review', () => {
     expect(db.sqlite.prepare('SELECT status FROM professional_submissions').get()!.status).toBe('submitted');
   });
 });
+describe('professional availability management', () => {
+  const path = '/me/professional/schedule';
+  it('adds and removes own weekly windows and time off with revision and audit updates', async () => {
+    const { staff, locationId, date } = await staffFixture();
+    const read = async () => (await request(path, undefined, staff)).json();
+    const initial = await read();
+    const weekday = (new Date(`${date}T00:00:00Z`).getUTCDay() + 1) % 7;
+    expect((await request(path, { action: 'add_hours', revision: initial.revision, locationId, weekday, startTime: '09:00', endTime: '17:00' }, staff)).status).toBe(200);
+    const added = await read(); expect(added.hours).toHaveLength(2); expect(added.revision).toBeGreaterThan(initial.revision);
+    const id = added.hours.find((item: { weekday: number }) => item.weekday === weekday).id;
+    expect((await request(path, { action: 'remove_hours', revision: added.revision, id }, staff)).status).toBe(200);
+    expect((await request(path, { action: 'add_time_off', revision: (await read()).revision, locationId, date, startTime: '18:00', endTime: '19:00' }, staff)).status).toBe(200);
+    const off = await read(); expect(off.timeOff).toHaveLength(1);
+    expect((await request(path, { action: 'remove_time_off', revision: off.revision, id: off.timeOff[0].id }, staff)).status).toBe(200);
+    expect((await read()).timeOff).toHaveLength(0);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE entity_type='staff_schedule'").get()!.n).toBe(4);
+  });
+  it('protects existing requests, cleanup time, and weekly hours used by appointments', async () => {
+    const { staff, locationId, date } = await staffFixture();
+    const page = await (await request(path, undefined, staff)).json();
+    const off = { action: 'add_time_off', revision: page.revision, locationId, date, startTime: '09:00', endTime: '10:00' };
+    expect((await request(path, off, staff)).status).toBe(409);
+    expect((await request(path, { ...off, startTime: '09:45', endTime: '09:55' }, staff)).status).toBe(409);
+    expect((await request(path, { action: 'remove_hours', revision: page.revision, id: 'book-hours' }, staff)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('requested');
+    expect(db.sqlite.prepare("SELECT active FROM weekly_availability WHERE id='book-hours'").get()!.active).toBe(1);
+  });
+  it('rejects stale writes, overlapping hours, unauthorized locations and foreign IDs', async () => {
+    const { staff, locationId, date, alice } = await staffFixture();
+    const page = await (await request(path, undefined, staff)).json();
+    const body = { action: 'add_hours', revision: page.revision, locationId, weekday: new Date(`${date}T00:00:00Z`).getUTCDay(), startTime: '10:00', endTime: '11:00' };
+    expect((await request(path, body, staff)).status).toBe(409);
+    expect((await request(path, { ...body, locationId: 'foreign' }, staff)).status).toBe(400);
+    expect((await request(path, { ...body, revision: page.revision - 1 }, staff)).status).toBe(409);
+    expect((await request(path, { action: 'remove_hours', revision: page.revision, id: 'foreign' }, staff)).status).toBe(404);
+    expect((await request(path, undefined, alice)).status).toBe(403);
+    expect((await request(path, { ...body, staffId: 'other' }, staff)).status).toBe(400);
+    const fresh = await createSession(env, 'professional'); expect((await request(path, undefined, fresh)).status).toBe(403);
+    expect(JSON.stringify(page)).not.toMatch(/customerName|customerId|customerNote|password|alice@example/);
+    const span = wallWindow(date, '18:00', '19:00', 'America/New_York')!; const now = new Date().toISOString();
+    db.sqlite.prepare("INSERT INTO schedule_exceptions(id,staff_id,starts_at,ends_at,exception_type,created_by_user_id,created_at,updated_at) VALUES ('shop-time-off','book-staff',?,?,'time_off','alice',?,?)")
+      .run(new Date(span.start).toISOString(), new Date(span.end).toISOString(), now, now);
+    const updated = await (await request(path, undefined, staff)).json(); expect(updated.timeOff[0].canRemove).toBe(false);
+    expect((await request(path, { action: 'remove_time_off', revision: updated.revision, id: 'shop-time-off' }, staff)).status).toBe(404);
+  });
+  it('fails closed for malformed appointment reservations and clock-change dates', async () => {
+    const { staff, locationId, date } = await staffFixture();
+    db.sqlite.exec("UPDATE appointments SET reserved_until='invalid'");
+    const page = await (await request(path, undefined, staff)).json();
+    const body = { action: 'add_time_off', revision: page.revision, locationId, date, startTime: '18:00', endTime: '19:00' };
+    expect((await request(path, body, staff)).status).toBe(409);
+    let year = new Date().getUTCFullYear();
+    const fallDate = (value: number) => new Date(Date.UTC(value, 10, 1 + (7 - new Date(Date.UTC(value, 10, 1)).getUTCDay()) % 7)).toISOString().slice(0, 10);
+    if (Date.parse(fallDate(year)) < Date.now()) year++;
+    expect((await request(path, { ...body, date: fallDate(year), startTime: '01:00', endTime: '02:00' }, staff)).status).toBe(400);
+  });
+  it('rechecks revision and MFA inside the schedule transaction', async () => {
+    const { staff, locationId, date } = await staffFixture();
+    const page = await (await request(path, undefined, staff)).json();
+    const original = db.batch.bind(db); let calls = 0;
+    const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      calls++; if (calls === 2) db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='professional'");
+      return original<T>(statements);
+    });
+    expect((await request(path, { action: 'add_time_off', revision: page.revision, locationId, date, startTime: '18:00', endTime: '19:00' }, staff)).status).toBe(409);
+    spy.mockRestore(); expect(db.sqlite.prepare('SELECT count(*) AS n FROM schedule_exceptions').get()!.n).toBe(0);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE entity_type='staff_schedule'").get()!.n).toBe(0);
+  });
+  it('protects proposed appointment times and active holds', async () => {
+    const { staff, locationId, date } = await staffFixture();
+    const range = wallWindow(date, '18:00', '19:00', 'America/New_York')!;
+    db.sqlite.prepare('UPDATE appointments SET proposed_starts_at=?,proposed_ends_at=?').run(new Date(range.start).toISOString(), new Date(range.end).toISOString());
+    const read = async () => (await (await request(path, undefined, staff)).json()).revision;
+    const body = { action: 'add_time_off', locationId, date, startTime: '18:00', endTime: '19:00' };
+    expect((await request(path, { ...body, revision: await read() }, staff)).status).toBe(409);
+    db.sqlite.exec('UPDATE appointments SET proposed_starts_at=NULL,proposed_ends_at=NULL');
+    const now = new Date().toISOString();
+    db.sqlite.prepare("INSERT INTO appointment_holds(id,staff_id,service_id,location_id,starts_at,ends_at,expires_at,created_at) VALUES ('schedule-hold','book-staff','book-service',?,?,?,?,?)")
+      .run(locationId, new Date(range.start).toISOString(), new Date(range.end).toISOString(), new Date(Date.now() + 60000).toISOString(), now);
+    expect((await request(path, { ...body, revision: await read() }, staff)).status).toBe(409);
+  });
+  it('rolls back the audit receipt when a schedule mutation fails', async () => {
+    const { staff, locationId, date } = await staffFixture();
+    const page = await (await request(path, undefined, staff)).json();
+    db.sqlite.exec("CREATE TRIGGER reject_time_off BEFORE INSERT ON schedule_exceptions BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request(path, { action: 'add_time_off', revision: page.revision, locationId, date, startTime: '18:00', endTime: '19:00' }, staff)).status).toBe(500);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE entity_type='staff_schedule'").get()!.n).toBe(0);
+  });
+  it('does not return a former profile’s schedule if profile ownership changes during the read', async () => {
+    const { staff } = await staffFixture(); await seed('replacement-user', 'staff');
+    const original = db.batch.bind(db);
+    const spy = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      const result = await original<T>(statements); const now = new Date().toISOString();
+      db.sqlite.exec("UPDATE staff_profiles SET user_id='replacement-user' WHERE id='book-staff'");
+      db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('replacement-profile','professional','Replacement','replacement','approved',?,?)").run(now, now);
+      return result;
+    });
+    const response = await request(path, undefined, staff); spy.mockRestore();
+    expect(response.status).toBe(403); expect(await response.text()).not.toContain('book-hours');
+  });
+});
 describe('professional appointment decisions', () => {
   it('distinguishes disabled access, setup and approval while preventing cross-role data access', async () => {
     const { alice, staff, path } = await staffFixture();
