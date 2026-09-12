@@ -1,0 +1,92 @@
+/* Shared visual contract. Keep new page-specific rules in their owning files.
+   IDs beat the accumulated legacy class selectors. The two size declarations
+   need !important until the earlier polish files' important sizes are retired. */
+:root {
+  --title-page: clamp(2rem, 1.4rem + 2.5vw, 3.5rem);
+  --title-section: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
+  --title-editorial: clamp(2rem, 1.3rem + 2vw, 3rem);
+}
+
+#main-content :is(h1, h2, h3):not(.sr-only):not(.hero-accessible-title) {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  letter-spacing: -.02em;
+}
+
+#main-content h1:not(.sr-only):not(.hero-accessible-title) {
+  font-size: var(--title-page) !important;
+  line-height: 1.12 !important;
+}
+
+#main-content h2 {
+  font-size: var(--title-section) !important;
+  line-height: 1.22 !important;
+}
+
+#main-content :is(.compact-services, .compact-proof, .compact-about, .location-conversion) h2 {
+  font-size: var(--title-editorial) !important;
+}
+
+#main-content :is(.storefront-v2-card, .customer-overview-panel) h2 {
+  font-size: clamp(1.3rem, 1.15rem + .6vw, 1.65rem) !important;
+}
+
+.customer-home-header, .customer-section-heading, .commerce-page-heading,
+.v5-section-heading, .commerce-receipt-header {
+  flex-wrap: wrap;
+}
+
+.customer-home-header > div, .commerce-page-heading > div,
+.commerce-product-detail-copy, .booking-v2-panel-heading > div {
+  min-width: 0;
+}
+
+/* Keep real shop, staff and gallery photographs. Remove decorative wallpaper
+   behind forms, price tables and marketing copy, where it adds visual noise. */
+#main-content .ornament-section::before,
+#main-content .platform-pattern::before,
+#main-content [class*="route-pattern-"]::before {
+  content: none;
+  background-image: none;
+}
+
+#main-content .route-page-intro::before {
+  content: none;
+}
+
+.service-symbol { display: block; flex: 0 0 auto; }
+.service-icon-link .service-symbol { width: 2.75rem; height: 2.75rem; }
+.booking-gateway-v3-icon .service-symbol { width: 2rem; height: 2rem; }
+
+/* Trust statements don't need tiny, ambiguous equipment illustrations. */
+.trust-shortlist li { padding-left: 1.4rem; }
+.trust-shortlist li::before {
+  width: .35rem;
+  height: .35rem;
+  top: 1.15rem;
+  left: .2rem;
+  border-radius: 50%;
+  background: currentColor;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* The current page is indicated by a line, not a cramped scissors drawing. */
+.nav-list-branded a[aria-current='page']::before {
+  top: auto;
+  bottom: .3rem;
+  width: 1.25rem;
+  height: 2px;
+  background: currentColor;
+}
+
+.home-booking-rail-copy > span { white-space: normal; }
+
+@media (max-width: 600px) {
+  .customer-home-header { align-items: flex-start; }
+  .customer-home-header > div { flex-basis: 100%; }
+}

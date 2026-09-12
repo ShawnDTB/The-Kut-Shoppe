@@ -13,6 +13,7 @@ import {
 } from '../data/visuals';
 import { Arrow } from './Layout';
 import { LocationMap } from './LocationMap';
+import { ServiceIcon } from './ServiceIcon';
 
 function HeroBackdrop() {
   return <div className="hero-static-media hero-shop-floor" aria-hidden="true"><img src={originalAssets.hero[0]} alt="" width="1600" height="900" loading="eager" fetchPriority="high" decoding="async" /></div>;
@@ -59,7 +60,7 @@ function ServicesOverview() {
         </div>
         <figure className="services-chair-photo"><img src={originalAssets.introPhoto} alt="A barber at The Kut Shoppe actively cutting a client’s hair" width="1000" height="760" loading="lazy" decoding="async" /><figcaption>A cut in progress at The Kut Shoppe</figcaption></figure>
       </div>
-      <div className="container service-icon-strip">{serviceHighlights.map((service) => <a className="service-icon-link" href={service.route} key={service.title}><img src={service.icon} alt="" width="88" height="88" loading="lazy" decoding="async" /><span>{service.title}</span></a>)}</div>
+      <div className="container service-icon-strip">{serviceHighlights.map((service) => <a className="service-icon-link" href={service.route} key={service.title}><ServiceIcon name={service.icon} /><span>{service.title}</span></a>)}</div>
       <div className="container services-booking-rail-wrap">
         <BookingRail
           compact
@@ -126,7 +127,7 @@ export function HomePage() {
             <div className="hero-hours-panel hero-hours-daily" aria-label="Shop hours"><div className="hero-hours-heading"><span>Shop hours</span><small>Walk-in reference</small></div><dl>{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl><p>{shopHoursNote}</p></div>
             <BookingRail
               compact
-              context="Barber appointments · same-day waitlist · Loctician direction"
+              context="Haircuts and grooming · Locs and styling"
               title="Choose Barber or Loctician."
             />
           </div>
@@ -146,7 +147,7 @@ export function HomePage() {
           <div className="conversion-copy location-conversion-copy">
             <p className="eyebrow">Ready for the next one?</p>
             <h2>Your chair is ready.</h2>
-            <p>Choose a Barber or Loctician. When today’s barber schedule is full, the waitlist appears automatically.</p>
+            <p>Choose a Barber or Loctician to see appointment options. For same-day walk-ins, call the shop to check availability.</p>
             <div className="location-booking-actions"><a className="button" href="/book">Book now <Arrow /></a><a className="text-link" href={business.phoneHref}>Call {business.phone}</a></div>
           </div>
           <LocationMap />

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;600;700&family=Judson:wght@400;700&family=Maven+Pro:wght@400;500;600&family=Mulish:wght@400;500;600&family=Rosarivo:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Judson:wght@400;700&family=Mulish:wght@400;500;600;700&display=swap');
 
 :root {
   --ink: #0d0d0d;
@@ -14,10 +14,11 @@
   --line: rgba(244, 244, 244, 0.18);
   --line-strong: rgba(244, 244, 244, 0.34);
   --display: 'Judson', Georgia, serif;
-  --editorial: 'Rosarivo', Georgia, serif;
-  --heading-sans: 'Maven Pro', 'Segoe UI', sans-serif;
+  --heading-serif: var(--display);
+  --editorial: 'Judson', Georgia, serif;
+  --heading-sans: 'Mulish', 'Segoe UI', sans-serif;
   --body: 'Mulish', 'Segoe UI', sans-serif;
-  --accent: 'Alegreya Sans SC', 'Arial Narrow', sans-serif;
+  --accent: 'Mulish', 'Segoe UI', sans-serif;
   --container: 74rem;
   --narrow: 62rem;
   --ornament-2: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-2.png');
@@ -128,13 +129,13 @@ h2 {
 }
 
 h1 {
-  max-width: 13ch;
+  max-width: 100%;
   margin-bottom: 1.6rem;
   font-size: clamp(3.6rem, 8vw, 7.8rem);
 }
 
 h2 {
-  max-width: 14ch;
+  max-width: 100%;
   margin-bottom: 1.5rem;
   font-size: clamp(2.7rem, 5.4vw, 5.5rem);
 }

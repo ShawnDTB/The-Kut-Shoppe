@@ -38,37 +38,37 @@ export const serviceHighlights = [
   {
     title: 'Haircuts',
     route: '/services/haircuts',
-    icon: `${mediaRoot}/Service-1.png`,
+    icon: 'scissors',
     description: 'Scissor cuts, afros, flattops, mohawks, fades, tapers, Caesars, buzz cuts, shape-ups, and bald cuts.',
   },
   {
     title: 'Shaving',
     route: '/services/beards-shaves',
-    icon: `${mediaRoot}/Service-2.png`,
+    icon: 'razor',
     description: 'Straight-razor detailing and clean facial line-ups for a sharper finished look.',
   },
   {
     title: 'Beard trims',
     route: '/services/beards-shaves',
-    icon: `${mediaRoot}/Service-3.png`,
+    icon: 'beard',
     description: 'Facial-hair shape-ups and line-ups designed to complement a fresh cut or fade.',
   },
   {
     title: 'Hair coloring',
     route: '/services/color-scalp-care',
-    icon: `${mediaRoot}/Service-4.png`,
+    icon: 'color',
     description: 'One-step and two-step color services, with additional options discussed during booking or consultation.',
   },
   {
     title: 'Scalp treatments',
     route: '/services/color-scalp-care',
-    icon: `${mediaRoot}/Service-5.png`,
+    icon: 'scalp',
     description: 'Hair washing, scalp care, detangling, blow-drying, and related treatments beyond the cut itself.',
   },
   {
     title: 'Locs and styling',
     route: '/services/locs-braids',
-    icon: `${mediaRoot}/Service-6.png`,
+    icon: 'locs',
     description: 'Locs, retwists, cornrows, twists, braids, washing, detangling, trims, silk presses, and more.',
   },
 ] as const;
