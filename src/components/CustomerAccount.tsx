@@ -12,7 +12,7 @@ import { ProfessionalSetup } from './ProfessionalSetup';
 import { ProfessionalSchedule } from './ProfessionalSchedule';
 import { StaffVisits } from './StaffVisits';
 import { CustomerOverview } from './CustomerOverview';
-import { CustomerBooking } from './CustomerBooking';
+import { RestoredBooking as CustomerBooking } from './RestoredBooking';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
 type View = 'overview' | 'booking' | 'appointments' | 'orders' | 'profile' | 'security' | 'professional' | 'professional-visits' | 'professional-setup' | 'professional-schedule' | 'setup-reviews';

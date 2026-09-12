@@ -3,7 +3,7 @@ import { accountApi } from '../data/customer-api';
 import { business } from '../data/site';
 import type { CustomerAppointment, CustomerOrder, CustomerPage } from '../shared/customer';
 import { followAccountLink } from '../data/customer-navigation';
-import { CustomerBooking } from './CustomerBooking';
+import { RestoredBooking as CustomerBooking } from './RestoredBooking';
 
 type Item = CustomerAppointment | CustomerOrder;
 const statusLabel = (value: string) => value.replaceAll('_', ' ');

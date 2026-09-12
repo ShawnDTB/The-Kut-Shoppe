@@ -1,6 +1,6 @@
 # Working local review
 
-Latest: the [shop and booking recovery](restored-commerce-and-booking.md) restores catalog, product, cart, unpaid checkout requests and protected product/order management. `/book` lets visitors choose before signing in. `/account` opens the dashboard overview.
+Latest: the [original booking page](booking-page-restoration.md) restores the Barber/Loctician gateway, service rows, staged panels and weekly calendar on the current backend. Open `/book` with no query string. The [shop and booking recovery](restored-commerce-and-booking.md) also restores catalog, product, cart, unpaid checkout requests and protected product/order management. `/account` opens the dashboard overview.
 
 ```sh
 git switch dev-branch

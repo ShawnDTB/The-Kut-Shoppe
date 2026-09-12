@@ -21,7 +21,8 @@ for (const route of ['account', 'dashboard', 'staff', 'admin/products', 'admin/o
   assert.equal(sitemap.includes(`.com/${route}</loc>`), false, `${route} must not be in the sitemap`);
 }
 const booking = await readFile('dist/book/index.html', 'utf8');
-assert.match(booking, /href="https:\/\/booksy\.com\//);
+assert.match(booking, /Who do you need\?/);
+assert.match(booking, /href="\/book\?barber=any"/);
 assert.match(booking, /href="https:\/\/crownedbysteph\.glossgenius\.com/);
 const checkout = await readFile('dist/checkout/index.html', 'utf8');
 assert.match(await readFile('dist/_redirects','utf8'), /^\/shop\/\* \/shop 200$/m, 'Database product URLs need the shop application shell');

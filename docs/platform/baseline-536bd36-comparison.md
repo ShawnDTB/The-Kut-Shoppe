@@ -23,7 +23,9 @@ The central migration mistake was replacing reachable product flows before their
 
 ### Booking
 
-`Booking.tsx` implements a staged Service → Barber → Appointment → Details journey, followed by confirmation. It supports service selection, named or any-available professional, a week-based calendar, available time slots, notice/window rules, customer contact details and notes, and appointment requests. Query parameters include `type`, `barber`, and `appointment`; the last connects the customer change-appointment action back to scheduling. The flow checks ownership before loading an appointment for editing. Same-day availability and waitlist paths are represented. `/book/walk-in` has a separate entry point.
+`Booking.tsx` first shows **Who do you need?**, with Barber and Loctician cards. Barber links to `/book?barber=any`; Loctician links directly to Crowned by Steph. The Barber flow uses a row-based service/price/duration list, then Service → Barber → Appointment → Details panels and confirmation. It supports named or any-available professionals, a week-based calendar, time slots and a chair picker when multiple barbers match a time. Same-day availability and waitlist paths are represented; `/book/walk-in` has a separate entry point.
+
+Correction from tracing the exact exported entry point: although the internal flow contains appointment-edit code and ownership checks, `Booking()` at **536bd36 already blocks every `?appointment=` request** with “Online changes are paused.” The earlier version of this comparison overstated the reachability of that edit flow. Restoring the original new-booking page is distinct from implementing appointment changes.
 
 `platform.ts` implements eligible professionals, working windows, generated slots, conflict checks, any-available matching, request creation, confirmation/decline, alternative-time proposals, customer responses, and walk-in claiming. These were actual local operations. Requests are stored in browser localStorage and notifications are queued in a local outbox. The records and availability are not a shared authoritative schedule across different customers' devices.
 
@@ -55,7 +57,7 @@ The earlier UI included chair/shop navigation, a calendar, request handling, wai
 | Guest browsing before identity | Service/barber/date choices before details | Account sign-in precedes native selection | Lost interaction flow |
 | Any available / barber preselection | Implemented in original booking | Current new form requires explicit professional; old query behavior not fully carried over | Missing |
 | Calendar | Week-based presentation and navigation | Date shortcuts/input followed by times | Simplified replacement |
-| `/book?appointment=…` | Change an owned appointment | New native flow does not implement the edit journey | Missing; must not create an unintended duplicate request |
+| `/book?appointment=…` | Entry point already pauses online changes; internal edit code exists but is unreachable | New native flow does not implement the edit journey | Existing baseline limitation; must not create an unintended duplicate request |
 | `/book/walk-in` | Walk-in entry | Provider-booking screen | Disconnected |
 | `/shop` | Catalog/filter/cart drawer | Contact-only shop screen | Entire workflow disconnected |
 | `/shop/:slug` | Product/variant detail | Same contact-only shop screen | Disconnected |

@@ -1,5 +1,7 @@
 <div align="center">
 
+**Original booking page restored:** `/book` again starts with **Barber / Loctician**, followed by the original service-row and weekly-calendar layout. The restored Barber journey uses the current account and scheduling APIs. See [booking page restoration](docs/platform/booking-page-restoration.md) for the exact baseline comparison and review steps.
+
 **September 12 recovery:** [Restored shop and booking](docs/platform/restored-commerce-and-booking.md) reconnects the original catalog, product, cart and checkout screens to server-backed unpaid requests and inventory. Owner product/order management works with MFA. Visitors can choose booking details before signing in. Run `npm run review`; apply migrations through **0009**. [The full baseline comparison](docs/platform/baseline-536bd36-comparison.md) records the regression and remaining parity gaps.
 
 **Functionality restoration:** [Analysis and feature inventory](docs/platform/functionality-restoration.md) compares the earlier platform experience with the current backend. `/book` now opens native booking when enabled, with separate service/professional/date/time choices. Accounts open to an informative overview backed by real scoped dashboard data.
