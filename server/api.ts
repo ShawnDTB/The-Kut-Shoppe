@@ -14,6 +14,7 @@ import { reviewQueue, reviewSetup, saveSetup, setupPage } from './professional-s
 import { changeSchedule, schedulePage } from './professional-schedule';
 import { staffVisit, staffVisits } from './staff-visits';
 import { customerDashboard } from './customer-dashboard';
+import { catalog, createOrder, requireCommerceAdmin, saveProduct, adminOrders, processOrder } from './commerce';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -36,6 +37,7 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (path === '/api/v1/config' && request.method === 'GET') {
     return json({ enabled: configured(env), turnstileSiteKey: configured(env) ? env.TURNSTILE_SITE_KEY : '', bookingEnabled: configured(env) && env.CUSTOMER_BOOKING_ENABLED === 'true' });
   }
+  if (path === '/api/v1/catalog' && request.method === 'GET') { guardRequest(request, env); return json(await catalog(env)); }
   if (!configured(env)) throw new ApiError(503, 'Account access is temporarily unavailable. You can still book or call the shop.');
   guardRequest(request, env);
   const ip = request.headers.get('CF-Connecting-IP') ?? 'local';
@@ -119,9 +121,25 @@ async function route(request: Request, env: Env): Promise<Response> {
       .bind(new Date().toISOString(), secretHash(env, token)).run();
     return json({ message: 'Signed out.' }, 200, cookie('', true));
   }
+  if (action === 'GET /api/v1/booking/options') { requireBooking(env); return json(await bookingOptions(env, '')); }
+  if (action === 'GET /api/v1/booking/availability') {
+    requireBooking(env);
+    const selection = Object.fromEntries(new URL(request.url).searchParams);
+    allowFields(selection, ['staffId','serviceId','locationId','date']);
+    return json(await bookingAvailability(env, '', bookingSelection(selection)));
+  }
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (action === 'POST /api/v1/me/orders/request') { await rateLimit(env, `order-request:${account.id}`, 12); return json(await createOrder(env, account.id, sessionHash, body)); }
+  if (path === '/api/v1/me/commerce/products') {
+    await requireCommerceAdmin(env, account.id, sessionHash);
+    if (request.method === 'GET') return json(await catalog(env, true));
+    if (request.method === 'POST') return json(await saveProduct(env, account.id, sessionHash, body));
+  }
+  if (action === 'GET /api/v1/me/commerce/orders') return json(await adminOrders(env, account.id, sessionHash));
+  const commerceOrder = path.match(/^\/api\/v1\/me\/commerce\/orders\/([A-Za-z0-9_-]{1,100})$/);
+  if (commerceOrder && request.method === 'POST') return json(await processOrder(env, account.id, sessionHash, commerceOrder[1]!, body));
   if (path === '/api/v1/me/dashboard' && request.method === 'GET') {
     if (new URL(request.url).searchParams.size) throw new ApiError(400, 'This dashboard request is not supported.');
     return json(await customerDashboard(env, account.id));

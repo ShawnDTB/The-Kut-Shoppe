@@ -9,3 +9,4 @@
 /cart/ /cart 301
 /checkout/ /checkout 301
 /my-account/ /account 302
+/shop/* /shop 200

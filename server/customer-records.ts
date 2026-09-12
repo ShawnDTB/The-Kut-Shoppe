@@ -70,7 +70,7 @@ export async function withdrawAppointment(env: Env, userId: string, sessionHash:
   return { appointment, message: 'Your unconfirmed request has been withdrawn. No confirmed appointment was cancelled.' };
 }
 
-function shippingAddress(raw: string | null): CustomerProfile['address'] | null {
+export function shippingAddress(raw: string | null): CustomerProfile['address'] | null {
   if (!raw || raw.length > 8192) return null;
   try {
     const value: unknown = JSON.parse(raw);

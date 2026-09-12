@@ -11,6 +11,7 @@ import {
 import { readCart, subscribeToStorefrontChanges } from '../data/storefront';
 import { localPlatformPreview } from '../data/runtime';
 import { getCustomerSession, loadCustomerSession, subscribeToCustomerSession } from '../data/customer-api';
+import { readCart as readLiveCart, subscribeToStorefrontChanges as subscribeLiveCart } from '../data/live-storefront';
 
 type HeaderAccount = Pick<PlatformAccount, 'name' | 'role'>;
 
@@ -55,7 +56,7 @@ function CustomerActions({
   const accountHref = account && account.role !== 'customer' ? '/dashboard' : '/account';
   return (
     <div className={mobile ? 'customer-header-actions customer-header-actions-mobile' : 'customer-header-actions'}>
-      {localPlatformPreview ? <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a> : null}
+      <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a>
       <a className="customer-action customer-action-account" href={accountHref} onClick={onNavigate}>{accountLabel(account)}</a>
       <a className="customer-action customer-action-book" href="/book" onClick={onNavigate}>Book now</a>
     </div>
@@ -189,8 +190,11 @@ function Header({ currentPath }: { currentPath: string }) {
     }
     const refresh = () => { const current = getCustomerSession(); setAccount(current ? { name: current.profile.name, role: current.role } : null); };
     const unsubscribe = subscribeToCustomerSession(refresh);
+    const refreshCart = () => setCartCount(readLiveCart().reduce((sum, item) => sum + item.quantity, 0));
+    refreshCart();
+    const unsubscribeCart = subscribeLiveCart(refreshCart);
     void loadCustomerSession().catch(() => undefined);
-    return unsubscribe;
+    return () => { unsubscribe(); unsubscribeCart(); };
   }, []);
 
   return (

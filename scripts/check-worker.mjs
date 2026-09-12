@@ -18,7 +18,7 @@ const workerFile = (await readdir('.wrangler/customer-worker')).find((name) => n
 assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
+  d1Databases: ['DB'], bindings: { COMMERCE_ENABLED: 'true', APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
     AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', MFA_ENCRYPTION_KEY: '12'.repeat(32), TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
@@ -247,5 +247,13 @@ try {
   assert.equal(visitDetails.status, 200); assert.equal((await visitDetails.json()).visit.status, 'confirmed');
   assert.equal((await call(`/me/professional/visits/${visitId}`, undefined, applicantCookie)).status, 404);
   assert.equal((await call('/me/professional/visits', undefined, detailCookie)).status, 403);
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, assigned visit isolation, and transactional notifications.');
+  await db.batch([
+    db.prepare("INSERT INTO products(id,name,slug,category,description,base_sku,status,pickup_enabled,shipping_enabled,created_at,updated_at) VALUES ('race-product','Race product','race-product','Grooming','Test','RACE','published',1,1,?,?)").bind(now,now),
+    db.prepare("INSERT INTO product_variants(id,product_id,name,sku,price_cents,stock_on_hand,active,created_at,updated_at) VALUES ('race-variant','race-product','Single','RACE-1',100,1,1,?,?)").bind(now,now),
+  ]);
+  const purchase={requestKey:randomUUID(),items:[{variantId:'race-variant',quantity:1,unitPriceCents:100}],fulfillment:'pickup',customer:{name:'Runtime customer',phone:'5551234567'},shippingAddress:null};
+  const purchases=await Promise.all([call('/me/orders/request',purchase,detailCookie),call('/me/orders/request',{...purchase,requestKey:randomUUID()},secondCookie)]);
+  assert.deepEqual(purchases.map(r=>r.status).sort(),[200,409],'Two customers reserved the last inventory item');
+  assert.equal((await db.prepare("SELECT stock_reserved FROM product_variants WHERE id='race-variant'").first()).stock_reserved,1);
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, assigned visit isolation, inventory competition, and transactional notifications.');
 } finally { await worker.dispose(); }

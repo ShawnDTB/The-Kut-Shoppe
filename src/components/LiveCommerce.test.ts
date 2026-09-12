@@ -1,0 +1,41 @@
+import { act, createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { accountApi, AccountApiError, setCustomerSession } from '../data/customer-api';
+import { addToCart, loadCatalog, readCart } from '../data/live-storefront';
+import { StorefrontV5 } from './LiveStorefrontV5';
+import { ProductDetailPageV5, CheckoutPageV5 } from './LiveCommerceCustomerV5';
+import { CartPageV4 } from './LiveCartPageV4';
+
+vi.mock('../data/customer-api', async original=>({...await original<typeof import('../data/customer-api')>(),accountApi:vi.fn()}));
+const api=vi.mocked(accountApi);
+const product={id:'pomade',name:'Shop pomade',slug:'shop-pomade',category:'Grooming',description:'Matte finish',status:'published',pickupEnabled:true,shippingEnabled:true,amazonUrl:'',images:[],variants:[{id:'matte',name:'Matte',sku:'POM-M',priceCents:1500,stockOnHand:2,active:true}]};
+let element:HTMLDivElement;let root:Root;
+beforeEach(async()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);window.localStorage.clear();api.mockReset();setCustomerSession({id:'alice',email:'alice@example.test',role:'customer',emailVerified:true,profile:{name:'Alice Customer',phone:'5551234567',address:{line1:'',line2:'',city:'',state:'',postalCode:''}}});api.mockResolvedValueOnce({products:[product]});await loadCatalog();element=document.createElement('div');document.body.append(element);root=createRoot(element);});
+afterEach(async()=>{await act(async()=>root.unmount());element.remove();vi.unstubAllGlobals();});
+const button=async(text:string)=>{const node=[...document.querySelectorAll('button')].find(node=>node.textContent===text);expect(node).toBeDefined();await act(async()=>node!.click());};
+it('restores catalog, product, cart and checkout controls using the server catalog',async()=>{
+  await act(async()=>root.render(createElement(StorefrontV5)));
+  expect(element.querySelector('a[href="/shop/shop-pomade"]')).not.toBeNull();
+  await button('Add to cart');expect(readCart()).toEqual([{productId:'pomade',variantId:'matte',quantity:1}]);
+  expect(document.querySelector('a[href="/checkout"]')).not.toBeNull();
+  await act(async()=>root.render(createElement(ProductDetailPageV5,{slug:'shop-pomade'})));
+  expect(element.textContent).toContain('Matte finish');
+  await button('Add to cart');expect(readCart()[0]?.quantity).toBe(2);
+  await act(async()=>root.render(createElement(CartPageV4)));
+  expect(element.textContent).toContain('$30.00');
+  await act(async()=>element.querySelector<HTMLButtonElement>('[aria-label="Decrease Shop pomade quantity"]')!.click());
+  expect(readCart()[0]?.quantity).toBe(1);
+});
+it('submits an unpaid request, preserves its key on uncertain retry, and opens the saved order',async()=>{
+  addToCart('pomade','matte');const onSubmitted=vi.fn();
+  await act(async()=>root.render(createElement(CheckoutPageV5,{onSubmitted})));
+  expect(element.textContent).toContain('unpaid order request');
+  api.mockRejectedValueOnce(new AccountApiError(0,'Connection lost'));
+  await button('Submit pickup request');const first=api.mock.calls.at(-1)!;
+  expect(first[0]).toBe('/me/orders/request');expect(first[1]).toMatchObject({fulfillment:'pickup',items:[{variantId:'matte',quantity:1,unitPriceCents:1500}],customer:{name:'Alice Customer',phone:'5551234567'}});
+  expect(readCart()).toHaveLength(1);
+  api.mockResolvedValueOnce({orderId:'saved-order'});await button('Submit pickup request');
+  expect(api.mock.calls.at(-1)![1]).toEqual(first[1]);expect(onSubmitted).toHaveBeenCalledWith('saved-order');expect(readCart()).toEqual([]);
+  expect(window.localStorage.getItem('kut-shoppe.live-cart.v1')).not.toContain('Alice');
+});

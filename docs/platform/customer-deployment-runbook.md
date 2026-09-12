@@ -1,5 +1,7 @@
 # Customer deployment runbook
 
+Current recovery: apply migrations through **0009** and read [shop and booking recovery](restored-commerce-and-booking.md). Commerce request APIs use the independent `COMMERCE_ENABLED` setting, enabled automatically for local review and false in committed hosted defaults. Historical test counts and migration notes below describe earlier milestones; `npm run check` is the current verification gate.
+
 For immediate end-to-end local review, use [working local review](local-review.md): `npm run review` enables the implemented account/booking/staff features against isolated persistent local D1, with generated local sign-ins and an account-email inbox. Hosted service provisioning remains separate.
 
 Latest follow-up: [Assigned professional visits](staff-visits.md) adds protected upcoming/active lists and visit details using the existing staff-operations/MFA gates. No migration after 0008 is needed. Current coverage is 147 tests plus real local Workers/D1 checks; hosted browser acceptance and deployment remain outstanding.

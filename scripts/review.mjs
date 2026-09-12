@@ -27,7 +27,7 @@ await build({ configFile: false, logLevel: 'warn', build: { ssr: `${root}/entry.
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false, host: '127.0.0.1', port: 0,
   modules: true, scriptPath: `${root}/worker/worker.js`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
   d1Databases: ['DB'], resourcePersistencePath: `${root}/database`,
-  bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
+  bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true', COMMERCE_ENABLED: 'true',
     AUTH_SECRET: secrets.auth, MFA_ENCRYPTION_KEY: secrets.mfa, TURNSTILE_SITE_KEY: '1x00000000000000000000AA', TURNSTILE_SECRET_KEY: 'local-review', RESEND_API_KEY: 'local-inbox', MAIL_FROM: 'review@example.test' },
   outboundService: async (request) => {
     if (request.url === 'https://challenges.cloudflare.com/turnstile/v0/siteverify') return globalThis.Response.json({ success: true, hostname: 'localhost', action: 'account' });
@@ -80,6 +80,13 @@ try {
       ...Array.from({ length: 7 }, (_, day) => db.prepare("INSERT INTO weekly_availability(id,staff_id,location_id,weekday,start_time,end_time,created_at,updated_at) VALUES (?,'local-review-staff',?,?,'09:00','17:00',?,?)").bind(`local-review-hours-${day}`, location.id, day, now, now)),
     ]);
   }
+  if (!(await db.prepare("SELECT id FROM products WHERE id='local-review-pomade'").first())) {
+    const now = new Date().toISOString();
+    await db.batch([
+      db.prepare("INSERT INTO products(id,name,slug,category,description,base_sku,status,pickup_enabled,shipping_enabled,created_at,updated_at) VALUES ('local-review-pomade','Review pomade','review-pomade','Grooming','Sample product for local review only.','REVIEW-POM','published',1,1,?,?)").bind(now,now),
+      ...['Matte','Shine'].map((name,index)=>db.prepare("INSERT INTO product_variants(id,product_id,name,sku,price_cents,stock_on_hand,active,created_at,updated_at) VALUES (?,'local-review-pomade',?,?,1500,10,1,?,?)").bind(`local-review-pomade-${index}`,name,`REVIEW-POM-${index}`,now,now)),
+    ]);
+  }
   deliveries.length = 0;
   const dist = await realpath('dist');
   const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.json': 'application/json', '.woff2': 'font/woff2', '.txt': 'text/plain' };
@@ -110,7 +117,9 @@ try {
       }
       if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
       const path = decodeURIComponent(url.pathname);
-      let file = resolve(dist, `.${path}`, extname(path) ? '' : 'index.html');
+      // Product slugs are database records, so they cannot all be prerendered.
+      // Match the hosted shop rewrite while preserving the requested browser URL.
+      let file = /^\/shop\/[A-Za-z0-9_-]+\/?$/.test(path) ? resolve(dist,'shop/index.html') : resolve(dist, `.${path}`, extname(path) ? '' : 'index.html');
       try { file = await realpath(file); } catch { res.writeHead(404); res.end('Page not found'); return; }
       if (!file.startsWith(`${dist}${sep}`)) { res.writeHead(404); res.end(); return; }
       res.setHeader('Content-Type', mime[extname(file)] || 'application/octet-stream');
@@ -119,7 +128,7 @@ try {
     } catch { res.writeHead(500); res.end('Local review request failed.'); }
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(8788, '127.0.0.1', resolve); });
-  console.log(`\nLocal review: ${origin}/account\nEmail inbox: ${origin}/__review/inbox?token=${inboxToken}\nSign-in credentials: ${root}/accounts.json\n\nPersistent local data; use test information only. Customer, staff, and owner sign-ins are available. Staff MFA enrollment is required. External email and anti-bot verification are simulated only in this local runner. Payments and appointment changes are not implemented.\n`);
+  console.log(`\nLocal review: ${origin}/account\nEmail inbox: ${origin}/__review/inbox?token=${inboxToken}\nSign-in credentials: ${root}/accounts.json\n\nPersistent local data; use test information only. Customer, staff, and owner sign-ins are available. Staff MFA enrollment is required. External email and anti-bot verification are simulated only in this local runner. Shop requests: /shop. Owner products/orders: /admin/products and /admin/orders. A sample pomade is available for local review. Requests are unpaid; online payment and confirmed appointment changes are not implemented.\n`);
   const stop = async () => { server.close(); await worker.dispose(); process.exit(0); };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
 } catch (error) {

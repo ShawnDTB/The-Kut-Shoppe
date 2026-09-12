@@ -38,7 +38,8 @@ import './customer-account.css';
 import { findRoute } from './data/site';
 import { localPlatformPreview } from './data/runtime';
 import { CustomerAccount } from './components/CustomerAccount';
-import { ProductionBooking, ProductionShop } from './components/ProductionAccess';
+import { ProductionBooking } from './components/ProductionAccess';
+import { LiveCommerce } from './components/LiveCommerce';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
@@ -112,9 +113,10 @@ export function App({ url }: AppProps) {
   return <SiteLayout currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
     : normalizedUrl === '/' ? <HomePage />
     : import.meta.env.DEV && localPlatformPreview && LocalPlatformPreview && operational ? <ClientPlatform><Suspense fallback={<p role="status">Opening local preview…</p>}><LocalPlatformPreview path={normalizedUrl} /></Suspense></ClientPlatform>
+    : normalizedUrl === '/admin/products' || normalizedUrl === '/admin/orders' ? <ClientPlatform><LiveCommerce path={normalizedUrl} /></ClientPlatform>
     : normalizedUrl === '/account' || normalizedUrl === '/dashboard' || isStaffRoute || isAdminRoute ? <ClientPlatform><CustomerAccount /></ClientPlatform>
     : normalizedUrl === '/book' || normalizedUrl.startsWith('/book/') ? <ProductionBooking />
-    : normalizedUrl === '/shop' || productMatch || normalizedUrl === '/cart' || normalizedUrl === '/checkout' ? <ProductionShop />
+    : normalizedUrl === '/shop' || productMatch || normalizedUrl === '/cart' || normalizedUrl === '/checkout' ? <ClientPlatform><LiveCommerce path={normalizedUrl} /></ClientPlatform>
     : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
     : <RoutePage url={url} />}</SiteLayout>;
 }

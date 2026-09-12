@@ -1036,6 +1036,67 @@ async function register(email = 'new@example.test') {
   return await response.json() as { challengeId: string };
 }
 
+describe('server commerce requests', () => {
+  const product = { id:'pomade',name:'Matte pomade',slug:'matte-pomade',category:'Grooming',description:'Matte finish',baseSku:'POM',status:'published',pickupEnabled:true,shippingEnabled:true,imageUrl:'',imageAlt:'',variants:[{id:'matte',name:'Matte',sku:'POM-M',priceCents:1500,stockOnHand:2,active:true}] };
+  const order = () => ({requestKey:randomUUID(),items:[{variantId:'matte',quantity:1,unitPriceCents:1500}],fulfillment:'pickup',customer:{name:'Test customer',phone:'5551234567'},shippingAddress:null});
+  async function fixture() {
+    env.COMMERCE_ENABLED='true';
+    const owner=await seed('shop-owner','owner');await enrollMfa(owner);
+    const alice=await seed('shop-alice');const bob=await seed('shop-bob');
+    const revision=(await (await request('/me/commerce/products',undefined,owner)).json()).revision;
+    const saved=await request('/me/commerce/products',{product,revision},owner);
+    expect(saved.status).toBe(200);
+    return {owner,alice,bob};
+  }
+  it('publishes a catalog without requiring customer login, and protects management by role and MFA',async()=>{
+    const {alice,owner}=await fixture();
+    expect((await request('/me/commerce/products',undefined,alice)).status).toBe(403);
+    const unverifiedSession=await createSession(env,'shop-owner');
+    expect((await request('/me/commerce/products',undefined,unverifiedSession)).status).toBe(403);
+    const data=await (await request('/me/commerce/products',undefined,owner)).json();
+    expect((await request('/me/commerce/products',{product:{...product,id:'hidden',slug:'hidden',baseSku:'H',status:'draft',variants:[{...product.variants[0],id:'hidden-v',sku:'H-V'}]},revision:data.revision},owner)).status).toBe(200);
+    env.ACCOUNTS_ENABLED='false';
+    const catalog=await (await request('/catalog')).json();
+    expect(catalog.products.map((p:{id:string})=>p.id)).toEqual(['pomade']);
+    expect(catalog.products[0].variants[0].stockOnHand).toBe(2);
+    expect(JSON.stringify(catalog)).not.toContain('shop-alice');
+  });
+  it('reserves stock once across retries and enforces ownership, price and quantity',async()=>{
+    const {alice,bob}=await fixture();const input=order();
+    expect((await request('/me/orders/request',{...input,items:[null]},alice)).status).toBe(400);
+    expect((await request('/me/orders/request',{...input,customer:{...input.customer,phone:'not-a-phone'}},alice)).status).toBe(400);
+    expect((await request('/me/orders/request',{...input,items:[{...input.items[0],unitPriceCents:1}]},alice)).status).toBe(409);
+    expect((await request('/me/orders/request',input)).status).toBe(401);
+    const first=await request('/me/orders/request',input,alice);expect(first.status).toBe(200);const result=await first.json();
+    expect(await (await request('/me/orders/request',input,alice)).json()).toEqual(result);
+    expect((await request('/me/orders/request',{...input,customer:{...input.customer,name:'Different'}},alice)).status).toBe(409);
+    expect((await request(`/me/orders/${result.orderId}`,undefined,bob)).status).toBe(404);
+    expect((await request(`/me/orders/${result.orderId}`,undefined,alice)).status).toBe(200);
+    expect((await request('/me/orders/request',{...order(),items:[{...input.items[0],quantity:2}]},bob)).status).toBe(409);
+    expect(db.sqlite.prepare("SELECT stock_reserved FROM product_variants WHERE id='matte'").get()!.stock_reserved).toBe(1);
+    expect((await (await request('/catalog')).json()).products[0].variants[0].stockOnHand).toBe(1);
+  });
+  it('processes pickup requests with revision checks and consumes inventory exactly once',async()=>{
+    const {alice,owner}=await fixture();const {orderId}=await (await request('/me/orders/request',order(),alice)).json();
+    let stale=0;
+    for(const status of ['accepted','preparing','ready-for-pickup','completed']) {
+      const data=await (await request('/me/commerce/orders',undefined,owner)).json();stale=data.revision;
+      expect(data.orders[0].customer.email).toBe('shop-alice@example.test');
+      expect((await request(`/me/commerce/orders/${orderId}`,{status,revision:data.revision,trackingNumber:''},owner)).status).toBe(200);
+    }
+    expect((await request(`/me/commerce/orders/${orderId}`,{status:'completed',revision:stale,trackingNumber:''},owner)).status).toBe(400);
+    expect(db.sqlite.prepare("SELECT stock_on_hand,stock_reserved FROM product_variants WHERE id='matte'").get()).toMatchObject({stock_on_hand:1,stock_reserved:0});
+  });
+  it('releases cancelled requests and rejects stale inventory edits',async()=>{
+    const {alice,owner}=await fixture();const before=await (await request('/me/commerce/products',undefined,owner)).json();
+    const {orderId}=await (await request('/me/orders/request',order(),alice)).json();
+    expect((await request('/me/commerce/products',{product,revision:before.revision},owner)).status).toBe(409);
+    const data=await (await request('/me/commerce/orders',undefined,owner)).json();
+    expect((await request(`/me/commerce/orders/${orderId}`,{status:'cancelled',revision:data.revision,trackingNumber:''},owner)).status).toBe(200);
+    expect(db.sqlite.prepare("SELECT stock_on_hand,stock_reserved FROM product_variants WHERE id='matte'").get()).toMatchObject({stock_on_hand:2,stock_reserved:0});
+  });
+});
+
 describe('customer account security boundary', () => {
   it('fails closed when disabled or missing a secret, with no prototype fallback', async () => {
     env.ACCOUNTS_ENABLED = 'false';

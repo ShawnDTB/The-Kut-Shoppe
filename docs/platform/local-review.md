@@ -1,6 +1,6 @@
 # Working local review
 
-Latest: `/book` opens the native booking journey in this environment; after sign-in, select the service, professional, location, date and time. `/account` now opens the dashboard overview. See [functionality restoration](functionality-restoration.md) for the comparison with the earlier UI and the remaining features.
+Latest: the [shop and booking recovery](restored-commerce-and-booking.md) restores catalog, product, cart, unpaid checkout requests and protected product/order management. `/book` lets visitors choose before signing in. `/account` opens the dashboard overview.
 
 ```sh
 git switch dev-branch
@@ -23,13 +23,13 @@ The terminal prints the local inbox URL and the generated credentials file: `.wr
 | Staff decisions and visits | Sign in as staff in another browser profile. Enroll an authenticator under account security, confirm the customer's request, and open Your visits. |
 | Availability | Edit staff weekly hours and time off. Appointment conflict checks remain enforced. |
 | Professional setup | The owner can submit a professional profile and review eligible submissions after MFA. The seeded staff account is already approved so booking can be tested immediately. |
-| History | Requests and confirmed visits appear in the customer's history. New order history is empty because checkout is not implemented. |
+| Shop and history | Choose a sample pomade variant, submit a pickup/shipping request, then inspect account order details. The owner processes it through `/admin/orders` after MFA. |
 
 Use separate browser profiles for simultaneous customer/staff sessions. Staff MFA is not bypassed; save the local recovery codes when enrolling. The review haircut and daily 09:00–17:00 hours are test fixtures, not published shop prices or working hours. Changes are retained across restarts.
 
 ## Local services and persistence
 
-The runner enables accounts, native booking requests, staff setup, and staff operations. It applies migrations 0001–0008 to a dedicated persistent local D1 database and generates separate authentication and MFA encryption keys. Application ownership checks, password hashing, secure cookies, MFA, and transaction safeguards are unchanged.
+The runner enables accounts, commerce requests, native booking requests, staff setup, and staff operations. It applies migrations 0001–0009 to a dedicated persistent local D1 database and generates separate authentication and MFA encryption keys. Application ownership checks, password hashing, secure cookies, MFA, and transaction safeguards are unchanged.
 
 Account emails go to an in-memory inbox; no messages leave the computer. The inbox keeps at most 100 messages, clears on restart, and uses a fresh random access URL each run. Content is escaped instead of rendering provider HTML. Host/Origin checks and a loopback listener restrict access. Do not expose this runner through a tunnel or use real customer information.
 
@@ -43,7 +43,7 @@ The already ignored `.wrangler/review/` folder holds the database, keys, and gen
 - Verified owner/staff provisioning in that environment. The local bootstrap is never a production role-grant mechanism.
 - Appointment email Worker deployment/scheduling and provider testing. This review inbox captures account mail only.
 - Customer cancellation/rescheduling requests with staff review and agreed notice/fee rules.
-- Payments, inventory/order creation, refunds, and commerce operations. Checkout remains closed.
+- Online payments, automated order email, tax/shipping quotes and refunds. Unpaid order requests and inventory reservations are implemented; these do not prove payment.
 - Browser/mobile acceptance and the deployment runbook's release checks. Local API checks do not establish production readiness.
 
 `main` and the live WordPress site remain unchanged. This is a working local environment for implemented features, not a claim that every planned feature is finished.
