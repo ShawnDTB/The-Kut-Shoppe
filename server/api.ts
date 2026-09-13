@@ -5,7 +5,7 @@ import { allowFields, configured, cookie, emailField, guardRequest, hashPassword
 import { audit, authenticate, consumeChallenge, createSession, getAccount, overview, parseProfile, sendChallenge } from './accounts';
 import { finishEmailChange, startEmailChange } from './email-change';
 import { historyPage } from './history';
-import { appointmentDetail, orderDetail, withdrawAppointment } from './customer-records';
+import { appointmentDetail, orderDetail, withdrawAppointment, requestCancellation } from './customer-records';
 import { appointmentCalendar } from './calendar';
 import { bookingAvailability, bookingOptions, bookingSelection, requestAppointment, requireBooking } from './booking';
 import { decideRequest, professionalAccess, staffQueue, staffRequest } from './staff-requests';
@@ -223,7 +223,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     }
     throw new ApiError(404, 'This action is not available.');
   }
-  const record = path.match(/^\/api\/v1\/me\/(appointments|orders)\/([A-Za-z0-9_-]{1,128})(?:\/(calendar|withdraw))?$/);
+  const record = path.match(/^\/api\/v1\/me\/(appointments|orders)\/([A-Za-z0-9_-]{1,128})(?:\/(calendar|withdraw|cancellation))?$/);
   if (record) {
     const [, kind, id, operation] = record as [string, 'appointments' | 'orders', string, string | undefined];
     if (new URL(request.url).search) throw new ApiError(400, 'This record request is not supported.');
@@ -234,10 +234,10 @@ async function route(request: Request, env: Env): Promise<Response> {
       headers.set('Content-Disposition', 'attachment; filename="kut-shoppe-appointment.ics"');
       return new Response(appointmentCalendar(await appointmentDetail(env, account.id, id)), { headers });
     }
-    if (request.method === 'POST' && kind === 'appointments' && operation === 'withdraw') {
+    if (request.method === 'POST' && kind === 'appointments' && (operation === 'withdraw' || operation === 'cancellation')) {
       allowFields(body, ['updatedAt']);
       await rateLimit(env, `withdraw-request:${account.id}`, 20);
-      return json(await withdrawAppointment(env, account.id, secretHash(env, sessionToken(request)!), id, stringField(body, 'updatedAt', 40, 1)));
+      return json(await (operation === 'withdraw' ? withdrawAppointment : requestCancellation)(env, account.id, secretHash(env, sessionToken(request)!), id, stringField(body, 'updatedAt', 40, 1)));
     }
     throw new ApiError(404, 'This action is not available.');
   }

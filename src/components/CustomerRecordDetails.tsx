@@ -40,11 +40,11 @@ export function CustomerAppointmentDetails({ id, onBack }: { id: string; onBack:
     return () => { active = false; };
   }, [id, attempt]);
   const refresh = () => { setLoading(true); setConfirming(false); setError(''); setAttempt((value) => value + 1); };
-  const withdraw = async () => {
+  const withdraw = async (operation: 'withdraw' | 'cancellation' = 'withdraw') => {
     if (working || !appointment) return;
     setWorking(true); setError(''); setNotice('');
     try {
-      const result = await accountApi<{ appointment: CustomerAppointmentDetail; message: string }>(`/me/appointments/${encodeURIComponent(id)}/withdraw`, { updatedAt: appointment.updatedAt });
+      const result = await accountApi<{ appointment: CustomerAppointmentDetail; message: string }>(`/me/appointments/${encodeURIComponent(id)}/${operation}`, { updatedAt: appointment.updatedAt });
       setAppointment(result.appointment); setNotice(result.message); setConfirming(false);
     } catch (failure) { setError(messageOf(failure)); }
     finally { setWorking(false); }
@@ -63,6 +63,7 @@ export function CustomerAppointmentDetails({ id, onBack }: { id: string; onBack:
       <p className="customer-status">{appointment.withdrawnByCustomer ? 'Request withdrawn' : label(appointment.status)}</p>
       <h3>{appointment.serviceName}</h3>
       {appointment.status === 'requested' ? <p className="customer-notice">Your request is awaiting shop approval. This visit is not confirmed yet.</p> : null}
+      {appointment.cancellationState ? <p className="customer-notice">{appointment.cancellationState === 'pending' ? 'Cancellation requested. Your appointment remains confirmed until your barber approves. Call the shop if your visit is approaching.' : appointment.cancellationState === 'approved' ? 'Your barber approved the cancellation. This appointment is cancelled. Update any calendar copy you downloaded.' : 'Your barber declined the cancellation request. Your appointment remains confirmed. Contact the shop to discuss your options.'}</p> : null}
       <dl className="customer-detail-facts">
         <div><dt>Professional</dt><dd>{appointment.barberName ?? 'To be assigned'}</dd></div>
         <div><dt>{appointment.status === 'requested' ? 'Requested time' : 'Start'}</dt><dd>{time(appointment.startsAt, appointment.location.timeZone)}</dd></div>
@@ -74,6 +75,9 @@ export function CustomerAppointmentDetails({ id, onBack }: { id: string; onBack:
       {appointment.status === 'reschedule_proposed' && appointment.proposedStartsAt ? <section className="customer-notice"><h3>The shop proposed another time</h3><p>{time(appointment.proposedStartsAt, appointment.location.timeZone)}{appointment.proposedEndsAt ? ` to ${time(appointment.proposedEndsAt, appointment.location.timeZone)}` : ''}</p><p>This proposed time is not confirmed. Contact the shop to respond.</p></section> : null}
       {appointment.customerNote ? <section><h3>Your appointment note</h3><p className="customer-record-note">{appointment.customerNote}</p></section> : null}
       {appointment.canDownloadCalendar ? <div className="customer-detail-action"><button className="button button-secondary" type="button" disabled={working || loading} onClick={() => void calendar()}>Download calendar event</button><p className="customer-fine-print">Adds a copy of this confirmed visit. It is not a live calendar subscription. Your calendar provider may store the event details.</p></div> : null}
+      {appointment.canRequestCancellation ? <section className="customer-security-section"><h3>Need to cancel?</h3><p>Ask your barber to cancel this confirmed appointment. The time stays reserved until they approve. This request does not charge a fee or process a refund.</p>
+        {confirming ? <div className="customer-withdraw-confirm"><p id="cancellation-description">Send a cancellation request for this visit?</p><div className="customer-form-actions"><button className="button button-secondary" disabled={working || loading} onClick={() => setConfirming(false)}>Go back</button><button className="button" aria-describedby="cancellation-description" disabled={working || loading} onClick={() => void withdraw('cancellation')}>{working ? 'Sending…' : 'Send cancellation request'}</button></div></div> : <button className="button button-secondary" disabled={working || loading} onClick={() => setConfirming(true)}>Request cancellation</button>}
+      </section> : null}
       {appointment.canWithdraw ? <section className="customer-security-section"><h3>Don’t need this request?</h3><p>You can withdraw this unconfirmed website request or waitlist entry. This does not cancel a confirmed visit or a booking made with another provider.</p>
         {confirming ? <div className="customer-withdraw-confirm"><p id="withdraw-description">Withdraw this request? You’ll need to make a new request if you change your mind.</p><div className="customer-form-actions"><button className="button button-secondary" type="button" disabled={working || loading} onClick={() => { setConfirming(false); window.requestAnimationFrame(() => actionButton.current?.focus()); }}>Keep request</button><button className="button" type="button" aria-describedby="withdraw-description" disabled={working || loading} onClick={() => void withdraw()}>{working ? 'Withdrawing…' : 'Withdraw request'}</button></div></div>
           : <button ref={actionButton} className="button button-secondary" type="button" disabled={working || loading} onClick={() => setConfirming(true)}>Withdraw unconfirmed request</button>}

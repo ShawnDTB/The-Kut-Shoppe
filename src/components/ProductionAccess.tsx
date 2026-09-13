@@ -16,7 +16,7 @@ export function ProductionBooking() {
     return()=>{active=false;};
   },[]);
   if(entry==='gateway')return <BookingGateway/>;
-  if(editing)return <section className="section customer-account"><div className="container"><h1>Change your appointment</h1><p>Your existing appointment has not changed. Online changes remain unavailable.</p><a className="button" href={`/account?view=appointments&record=${encodeURIComponent(editing)}`}>Open existing appointment</a><p><a href={business.phoneHref}>Call {business.phone}</a> to arrange a change.</p></div></section>;
+  if(editing)return <section className="section customer-account"><div className="container"><h1>Change your appointment</h1><p>Your existing appointment has not changed. Open its details to see available cancellation options.</p><a className="button" href={`/account?view=appointments&record=${encodeURIComponent(editing)}`}>Open existing appointment</a><p><a href={business.phoneHref}>Call {business.phone}</a> to arrange a different appointment time.</p></div></section>;
   if(entry==='barber'&&native===null)return <section className="section"><div className="container"><p role="status">Opening Barber booking…</p></div></section>;
   if(entry==='barber'&&native)return <RestoredBooking onBack={()=>window.location.assign('/book')} onOpen={id=>window.location.assign(`/account?view=appointments&record=${encodeURIComponent(id)}`)}/>;
   const providers=bookingPaths.filter(path=>entry==='loctician'?path.id==='styling':entry==='barber'?path.id==='barber':true);

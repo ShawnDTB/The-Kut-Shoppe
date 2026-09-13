@@ -8,6 +8,7 @@ interface AppointmentRow {
   startsAt: string | null; endsAt: string | null; proposedStartsAt: string | null; proposedEndsAt: string | null;
   priceCents: number; customerNote: string | null; createdAt: string; updatedAt: string; withdrawalId: string | null;
   locationName: string; line1: string; line2: string | null; city: string; state: string; postalCode: string; timeZone: string;
+  cancellationState: CustomerAppointmentDetail['cancellationState'];
 }
 
 export async function appointmentDetail(env: Env, userId: string, id: string): Promise<CustomerAppointmentDetail> {
@@ -15,7 +16,7 @@ export async function appointmentDetail(env: Env, userId: string, id: string): P
     a.status, a.source, a.starts_at AS startsAt, a.ends_at AS endsAt,
     a.proposed_starts_at AS proposedStartsAt, a.proposed_ends_at AS proposedEndsAt, a.price_cents AS priceCents,
     a.customer_note AS customerNote, a.created_at AS createdAt, a.updated_at AS updatedAt,
-    a.customer_withdrawal_id AS withdrawalId, l.name AS locationName,
+    a.customer_withdrawal_id AS withdrawalId, a.cancellation_state AS cancellationState, l.name AS locationName,
     l.address_line_1 AS line1, l.address_line_2 AS line2, l.city, l.state, l.postal_code AS postalCode, l.timezone AS timeZone
     FROM appointments a JOIN services s ON s.id = a.service_id JOIN locations l ON l.id = a.location_id
     LEFT JOIN staff_profiles sp ON sp.id = COALESCE(a.assigned_staff_id, a.requested_staff_id)
@@ -35,7 +36,41 @@ export async function appointmentDetail(env: Env, userId: string, id: string): P
       && (row.startsAt === null || starts > Date.now()),
     withdrawnByCustomer: row.status === 'cancelled' && Boolean(row.withdrawalId),
     canDownloadCalendar: row.status === 'confirmed' && Number.isFinite(starts) && Number.isFinite(ends) && ends > starts,
+    canRequestCancellation: env.STAFF_OPERATIONS_ENABLED === 'true' && row.source === 'website'
+      && row.status === 'confirmed' && !row.cancellationState && starts > Date.now(),
+    cancellationState: row.cancellationState,
   };
+}
+
+export async function requestCancellation(env: Env, userId: string, sessionHash: string, id: string, updatedAt: string) {
+  const current = await appointmentDetail(env, userId, id);
+  if (current.cancellationState === 'pending' || current.cancellationState === 'approved') {
+    return { appointment: current, message: 'Your cancellation request is already saved. Check its current status below.' };
+  }
+  if (!current.canRequestCancellation) throw new ApiError(409, 'This appointment cannot accept a cancellation request online. Contact the shop.');
+  const receipt = randomUUID(); const now = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE appointments SET customer_cancellation_id=?,cancellation_requested_at=?,cancellation_state='pending',updated_at=?
+      WHERE id=? AND customer_user_id=? AND source='website' AND status='confirmed' AND cancellation_state IS NULL
+        AND updated_at=? AND julianday(starts_at)>julianday(?)
+        AND EXISTS (SELECT 1 FROM users u JOIN sessions se ON se.user_id=u.id WHERE u.id=? AND u.status='active'
+          AND u.email_verified_at IS NOT NULL AND se.token_hash=? AND se.revoked_at IS NULL AND se.expires_at>?)
+        AND EXISTS (SELECT 1 FROM staff_profiles sp JOIN users u ON u.id=sp.user_id
+          WHERE sp.id=COALESCE(appointments.assigned_staff_id,appointments.requested_staff_id)
+            AND sp.setup_status='approved' AND u.status='active' AND u.email_verified_at IS NOT NULL
+            AND u.role IN ('staff','manager','owner','admin'))`)
+      .bind(receipt, now, now, id, userId, updatedAt, now, userId, sessionHash, now),
+    env.DB.prepare(`INSERT INTO appointment_events(id,appointment_id,actor_user_id,event_type,created_at)
+      SELECT ?,id,?,'customer_requested_cancellation',? FROM appointments WHERE id=? AND customer_cancellation_id=?`)
+      .bind(receipt, userId, now, id, receipt),
+    env.DB.prepare(`INSERT INTO audit_events(id,actor_user_id,action,entity_type,entity_id,created_at)
+      SELECT ?,?,'customer_requested_cancellation','appointment',id,? FROM appointments WHERE id=? AND customer_cancellation_id=?`)
+      .bind(randomUUID(), userId, now, id, receipt),
+    ...queueAppointmentNotifications(env, receipt),
+  ]);
+  const appointment = await appointmentDetail(env, userId, id);
+  if (!appointment.cancellationState) throw new ApiError(409, 'The appointment or account changed. Refresh the details before trying again.');
+  return { appointment, message: 'Cancellation requested. Your appointment remains confirmed until your barber approves the cancellation.' };
 }
 
 export async function withdrawAppointment(env: Env, userId: string, sessionHash: string, id: string, updatedAt: string) {

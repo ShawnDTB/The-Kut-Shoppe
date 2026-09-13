@@ -1,5 +1,7 @@
 # Customer deployment runbook
 
+Latest milestone: apply migrations through **0010** and read [appointment cancellation requests](appointment-cancellation.md). Existing confirmed website visits can now accept customer cancellation requests for assigned-professional review. Local review applies the migration automatically; no hosted resources have been changed.
+
 Current recovery: apply migrations through **0009** and read [shop and booking recovery](restored-commerce-and-booking.md). Commerce request APIs use the independent `COMMERCE_ENABLED` setting, enabled automatically for local review and false in committed hosted defaults. Historical test counts and migration notes below describe earlier milestones; `npm run check` is the current verification gate.
 
 For immediate end-to-end local review, use [working local review](local-review.md): `npm run review` enables the implemented account/booking/staff features against isolated persistent local D1, with generated local sign-ins and an account-email inbox. Hosted service provisioning remains separate.

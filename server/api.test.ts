@@ -478,6 +478,95 @@ async function staffFixture() {
   const decision = { action: 'confirm', updatedAt: detail.request.updatedAt, decisionKey: randomUUID(), currentPassword: password };
   return { ...fixture, staff, id: saved.appointmentId as string, detail: detail.request, path, decision };
 }
+describe('confirmed appointment cancellation', () => {
+  async function fixture() {
+    const f = await staffFixture();
+    expect((await request(f.path, f.decision, f.staff)).status).toBe(200);
+    const customerPath = `/me/appointments/${f.id}`;
+    const current = await (await request(customerPath, undefined, f.alice)).json();
+    return { ...f, customerPath, cancellationPath: `${customerPath}/cancellation`, updatedAt: current.appointment.updatedAt };
+  }
+  it('keeps a requested cancellation reserved, approves once, releases the slot and queues private notices', async () => {
+    const f = await fixture();
+    const body = { updatedAt: f.updatedAt };
+    expect((await request(f.cancellationPath, body, f.alice)).status).toBe(200);
+    expect((await request(f.cancellationPath, body, f.alice)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT status,cancellation_state FROM appointments').get()).toEqual({ status: 'confirmed', cancellation_state: 'pending' });
+    expect((await f.available()).slots.some((s: { startsAt: string }) => s.startsAt === f.payload.startsAt)).toBe(false);
+    const queue = await (await request('/me/professional/requests', undefined, f.staff)).json();
+    expect(queue.items[0]).toMatchObject({ id: f.id, cancellationState: 'pending' });
+    const decision = { ...f.decision, action: 'cancel', updatedAt: queue.items[0].updatedAt, decisionKey: randomUUID() };
+    expect((await request(f.path, decision, f.staff)).status).toBe(200);
+    expect((await request(f.path, decision, f.staff)).status).toBe(200);
+    const detail = await (await request(f.customerPath, undefined, f.alice)).json();
+    expect(detail.appointment).toMatchObject({ status: 'cancelled', cancellationState: 'approved', canDownloadCalendar: false, withdrawnByCustomer: false });
+    expect((await f.available()).slots.some((s: { startsAt: string }) => s.startsAt === f.payload.startsAt)).toBe(true);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type IN ('customer_requested_cancellation','professional_cancellation_approved')").get()!.n).toBe(2);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.event_type IN ('customer_requested_cancellation','professional_cancellation_approved')").get()!.n).toBe(4);
+  });
+  it('declines a cancellation without losing the confirmed time and prevents stale or opposite decisions', async () => {
+    const f = await fixture();
+    expect((await request(f.path, { ...f.decision, action: 'cancel', decisionKey: randomUUID() }, f.staff)).status).toBe(409);
+    expect((await request(f.cancellationPath, { updatedAt: 'stale' }, f.alice)).status).toBe(409);
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(200);
+    const current = await (await request(f.path, undefined, f.staff)).json();
+    const decision = { ...f.decision, action: 'keep', updatedAt: current.request.updatedAt, decisionKey: randomUUID() };
+    expect((await request(f.path, { ...decision, updatedAt: 'stale' }, f.staff)).status).toBe(409);
+    expect((await request(f.path, decision, f.staff)).status).toBe(200);
+    expect((await request(f.path, { ...decision, action: 'cancel' }, f.staff)).status).toBe(409);
+    expect((await request(f.cancellationPath, { updatedAt: current.request.updatedAt }, f.alice)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT status,cancellation_state FROM appointments').get()).toEqual({ status: 'confirmed', cancellation_state: 'declined' });
+    expect((await f.available()).slots.some((s: { startsAt: string }) => s.startsAt === f.payload.startsAt)).toBe(false);
+  });
+  it('enforces ownership, current MFA, operations availability and future website appointments', async () => {
+    const f = await fixture(); const other = await seed('other');
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, other)).status).toBe(404);
+    env.STAFF_OPERATIONS_ENABLED = 'false';
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(409);
+    env.STAFF_OPERATIONS_ENABLED = 'true';
+    db.sqlite.exec("UPDATE appointments SET source='migration'");
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET source='website'");
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(200);
+    const current = await (await request(f.path, undefined, f.staff)).json();
+    const decision = { ...f.decision, action: 'cancel', updatedAt: current.request.updatedAt, decisionKey: randomUUID() };
+    expect((await request(f.path, decision, await createSession(env, 'professional'))).status).toBe(403);
+    expect((await request(f.path, { ...decision, currentPassword: 'wrong' }, f.staff)).status).toBe(400);
+    db.sqlite.exec("UPDATE appointments SET starts_at='2000-01-01T12:00:00.000Z'");
+    expect((await request(f.path, decision, f.staff)).status).toBe(409);
+  });
+  it('rechecks customer sessions and staff MFA at the final cancellation write', async () => {
+    const f = await fixture(); const original = db.batch.bind(db);
+    const revokeCustomer = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      db.sqlite.exec("UPDATE sessions SET revoked_at='2000-01-01' WHERE user_id='alice'");
+      return original<T>(statements);
+    });
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(409);
+    revokeCustomer.mockRestore();
+    const fresh = await createSession(env, 'alice');
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, fresh)).status).toBe(200);
+    const current = await (await request(f.path, undefined, f.staff)).json();
+    const revokeStaff = vi.spyOn(db, 'batch').mockImplementation(async <T>(statements: Statement[]) => {
+      db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='professional'");
+      return original<T>(statements);
+    });
+    expect((await request(f.path, { ...f.decision, action: 'cancel', updatedAt: current.request.updatedAt, decisionKey: randomUUID() }, f.staff)).status).toBe(409);
+    revokeStaff.mockRestore();
+    expect(db.sqlite.prepare('SELECT status,cancellation_state FROM appointments').get()).toEqual({ status: 'confirmed', cancellation_state: 'pending' });
+  });
+  it('rolls back both customer request and staff cancellation when audit insertion fails', async () => {
+    const f = await fixture();
+    db.sqlite.exec("CREATE TRIGGER fail_cancel BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT cancellation_state FROM appointments').get()!.cancellation_state).toBeNull();
+    db.sqlite.exec('DROP TRIGGER fail_cancel');
+    expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, f.alice)).status).toBe(200);
+    const current = await (await request(f.path, undefined, f.staff)).json();
+    db.sqlite.exec("CREATE TRIGGER fail_cancel BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request(f.path, { ...f.decision, action: 'cancel', updatedAt: current.request.updatedAt, decisionKey: randomUUID() }, f.staff)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT status,cancellation_state FROM appointments').get()).toEqual({ status: 'confirmed', cancellation_state: 'pending' });
+  });
+});
 describe('staff multi-factor verification', () => {
   it('blocks customers, fails closed without the encryption key, and reveals no secrets in status', async () => {
     const customer = await seed('alice');

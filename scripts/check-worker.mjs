@@ -247,6 +247,23 @@ try {
   assert.equal(visitDetails.status, 200); assert.equal((await visitDetails.json()).visit.status, 'confirmed');
   assert.equal((await call(`/me/professional/visits/${visitId}`, undefined, applicantCookie)).status, 404);
   assert.equal((await call('/me/professional/visits', undefined, detailCookie)).status, 403);
+  const cancellationPath = `/me/appointments/${visitId}/cancellation`;
+  const cancelBefore = await (await call(`/me/appointments/${visitId}`, undefined, detailCookie)).json();
+  const duplicateCancellations = await Promise.all([
+    call(cancellationPath, { updatedAt: cancelBefore.appointment.updatedAt }, detailCookie),
+    call(cancellationPath, { updatedAt: cancelBefore.appointment.updatedAt }, detailCookie),
+  ]);
+  assert.deepEqual(duplicateCancellations.map(r => r.status), [200, 200]);
+  assert.equal((await db.prepare('SELECT status FROM appointments WHERE id=?').bind(visitId).first()).status, 'confirmed');
+  const cancelCurrent = await (await call(`/me/professional/requests/${visitId}`, undefined, staffCookie)).json();
+  const cancellationDecision = { updatedAt: cancelCurrent.request.updatedAt, currentPassword: 'A runtime test passphrase 2026' };
+  const opposingCancellations = await Promise.all([
+    call(`/me/professional/requests/${visitId}`, { ...cancellationDecision, action: 'cancel', decisionKey: randomUUID() }, staffCookie),
+    call(`/me/professional/requests/${visitId}`, { ...cancellationDecision, action: 'keep', decisionKey: randomUUID() }, staffCookie),
+  ]);
+  assert.deepEqual(opposingCancellations.map(r => r.status).sort(), [200, 409]);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type IN ('professional_cancellation_approved','professional_cancellation_declined')").bind(visitId).first()).n, 1);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type='customer_requested_cancellation'").bind(visitId).first()).n, 1);
   await db.batch([
     db.prepare("INSERT INTO products(id,name,slug,category,description,base_sku,status,pickup_enabled,shipping_enabled,created_at,updated_at) VALUES ('race-product','Race product','race-product','Grooming','Test','RACE','published',1,1,?,?)").bind(now,now),
     db.prepare("INSERT INTO product_variants(id,product_id,name,sku,price_cents,stock_on_hand,active,created_at,updated_at) VALUES ('race-variant','race-product','Single','RACE-1',100,1,1,?,?)").bind(now,now),

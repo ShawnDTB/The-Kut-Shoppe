@@ -38,6 +38,8 @@ export interface CustomerAppointmentDetail extends CustomerAppointment {
   canWithdraw: boolean;
   withdrawnByCustomer: boolean;
   canDownloadCalendar: boolean;
+  canRequestCancellation?: boolean;
+  cancellationState?: 'pending' | 'approved' | 'declined' | null;
 }
 export interface CustomerOrderItem {
   id: string;

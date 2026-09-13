@@ -1,5 +1,7 @@
 # Current state and visual consistency — September 12, 2026
 
+Follow-up: [confirmed appointment cancellation requests](appointment-cancellation.md) now implements customer submission and assigned-professional approval/decline with migration 0010. The assessment below describes the preceding baseline; rescheduling/proposals, calendar/waitlist and deployment work remain outstanding.
+
 Source baseline: `dev-branch` at `c8baaa72244f05d7f66ddebac076d3b3877986b7`, following the booking and commerce recovery. This is an assessment of the repository and local review implementation, not a claim that these features are deployed on the public domain.
 
 ## Assessment
