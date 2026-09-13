@@ -176,6 +176,26 @@ describe('private paginated history', () => {
     expect((await (await request('/me/dashboard', undefined, bob)).json()).nextVisit.id).toBe('foreign');
     db.sqlite.prepare("UPDATE users SET role='owner' WHERE id='alice'").run();
     expect((await (await request('/me/dashboard', undefined, alice)).json()).counts.pending).toBe(105);
+    // Older records updated today must surface, including cancellation and
+    // proposed-time decisions; one appointment is counted only once.
+    const updated = new Date(Date.now() + 1000).toISOString();
+    db.sqlite.prepare("UPDATE appointments SET created_at='2020-01-01T00:00:00Z',updated_at=?,cancellation_state='pending' WHERE id='nearest'").run(updated);
+    db.sqlite.prepare("UPDATE appointments SET status='reschedule_proposed',cancellation_state='pending' WHERE id='pending-0'").run();
+    db.sqlite.prepare("UPDATE appointments SET cancellation_state='pending' WHERE id='foreign'").run();
+    const insertOrder = db.sqlite.prepare("INSERT INTO orders(id,customer_user_id,status,fulfillment_type,subtotal_cents,total_cents,internal_note,created_at,updated_at) VALUES (?,?,'ready_for_pickup','pickup',1500,1500,'PRIVATE',?,?)");
+    for (let index = 0; index < 5; index++) insertOrder.run(`pickup-${index}`, 'alice', now, now);
+    insertOrder.run('foreign-order', 'bob', now, updated); insertOrder.run('guest-order', null, now, updated);
+    db.sqlite.prepare("UPDATE orders SET created_at='2020-01-01T00:00:00Z',updated_at=? WHERE id='pickup-0'").run(updated);
+    const attention = await (await request('/me/dashboard', undefined, alice)).json();
+    expect(attention.counts.pending).toBe(106); expect(attention.counts.orders).toBe(5);
+    expect(attention.pendingAppointments).toHaveLength(4);
+    expect(attention.pendingAppointments[0]).toMatchObject({ id: 'nearest', cancellationState: 'pending', status: 'confirmed' });
+    expect(attention.recentAppointments[0]).toMatchObject({ id: 'nearest', timeZone: 'America/New_York' });
+    expect(attention.recentOrders[0].id).toBe('pickup-0');
+    expect(attention.readyOrderCount).toBe(5); expect(attention.readyOrders).toHaveLength(3);
+    expect(JSON.stringify(attention)).not.toMatch(/PRIVATE|foreign|guest-order|password|email/);
+    db.sqlite.prepare("UPDATE appointments SET cancellation_state='declined' WHERE id='nearest'").run();
+    expect((await (await request('/me/dashboard', undefined, alice)).json()).counts.pending).toBe(105);
     expect((await request('/me/dashboard?user=bob', undefined, alice)).status).toBe(400);
     expect((await request('/me/dashboard')).status).toBe(401);
   });

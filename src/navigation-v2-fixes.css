@@ -21,20 +21,9 @@
   -webkit-text-fill-color: var(--paper);
 }
 
-.mobile-nav-drawer {
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-}
-
 .mobile-primary-links a,
 .mobile-secondary-links a,
 .mobile-call-link,
 .customer-header-actions-mobile a {
   min-height: 3.25rem;
-}
-
-@media (max-width: 1040px) {
-  .mobile-nav-drawer {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
 }

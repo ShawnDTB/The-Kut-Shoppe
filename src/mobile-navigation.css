@@ -1,0 +1,61 @@
+/* Single layout owner for the native navigation dialog. Legacy drawer/overlay
+   selectors intentionally do not apply to this component. */
+.site-menu-dialog {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f6f3eb;
+  overflow: hidden;
+}
+.site-menu-dialog[open] { display: flex; justify-content: flex-end; }
+.site-menu-dialog::backdrop { background: rgb(0 0 0 / 65%); }
+.site-menu-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 30rem);
+  min-width: 0;
+  height: 100%;
+  background: #191919;
+  border-left: 1px solid #514e47;
+}
+.site-menu-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: max(.75rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) .75rem max(1rem, env(safe-area-inset-left));
+  border-bottom: 1px solid #514e47;
+}
+.site-menu-header .mobile-drawer-brand { min-width: 0; }
+.site-menu-header .mobile-drawer-brand span { min-width: 0; }
+.site-menu-header .mobile-drawer-brand strong { white-space: normal; overflow-wrap: anywhere; }
+.site-menu-header .mobile-drawer-brand img { flex: 0 0 auto; width: 44px; height: 44px; }
+.site-menu-header .mobile-nav-close { flex: 0 0 44px; width: 44px; height: 44px; }
+.site-menu-content {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+.site-menu-content > * { flex-shrink: 0; }
+.site-menu-content .mobile-primary-links a { min-height: 48px; }
+.site-menu-actions .customer-header-actions-mobile { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.site-menu-actions .customer-action-book { grid-column: 1 / -1; grid-row: 1; }
+.site-menu-dialog :focus-visible { outline: 3px solid #edcb84; outline-offset: 3px; }
+@media (max-width: 480px) {
+  .site-menu-panel { width: 100%; border-left: 0; }
+}

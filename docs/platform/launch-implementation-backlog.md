@@ -1,10 +1,22 @@
 # Launch implementation backlog
 
-Baseline: `3071cc8`, September 13, 2026. All tasks below are planned, not completed. See [audit and competitor findings](launch-readiness-audit.md). Prior completed cancellation work is documented separately in [appointment cancellation](appointment-cancellation.md).
+Baseline: `3071cc8`, September 13, 2026. See [audit and competitor findings](launch-readiness-audit.md). Prior completed cancellation work is documented separately in [appointment cancellation](appointment-cancellation.md).
+
+Implementation progress after audit commit `90e7cad`: [mobile navigation and dashboard milestone](mobile-dashboard-milestone.md). Tasks not listed below remain planned.
+
+| Task | Current status | Remaining acceptance |
+| --- | --- | --- |
+| A1 | Preview attempt blocked by browser environment (`ERR_BLOCKED_BY_CLIENT`) | Reproduce original clipping with viewport/scroll evidence; do not claim visual acceptance. |
+| A2 | Implemented: one modal layout, one scroll region, obsolete drawer CSS retired, desktop transition at 1041px | Real-device short viewport, zoom and 981–1040px layout checks. |
+| A3 | Implemented: native modal, initial/return focus, cancellation, outside close and scroll restoration; lifecycle regression tests pass | Real-browser Tab/Shift+Tab, screen reader and background inertness checks. jsdom cannot prove native focus behavior. |
+| B1 | Implemented: prominent next visit, requests/pickups, updated records, secondary totals/profile, refresh recovery | Visual mobile/desktop acceptance and long-content review. |
+| B2 | Verified in SQLite API tests: customer-owned cancellation/proposal attention, uncapped counts, pickup-ready orders and update-time ordering | Full customer workflow acceptance remains B3. Rescheduling actions remain milestone C. |
+
+Next: finish A1/A3 visual acceptance and A4/B3 customer journey checks, then implement C1–C5 rescheduling. Payment/receipt and front-desk milestones D–F remain required before a complete operational launch.
 
 Priority means implementation order and launch impact, not an estimated delivery date. Size is omitted until the payment/hardware and business decisions are resolved. Implement each milestone as a coherent working journey with source, migration, tests and a review guide on `dev-branch`.
 
-## A — Navigation and accessibility: next task
+## A — Navigation and accessibility
 
 | ID | Work | Dependency | Completion evidence |
 | --- | --- | --- | --- |

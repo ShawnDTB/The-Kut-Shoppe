@@ -98,12 +98,31 @@
 @media (prefers-reduced-motion: reduce) {
   .customer-account *, .customer-account *::before, .customer-account *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
-.customer-overview-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; }
-.customer-overview-stats > div, .customer-overview-panel { border: 1px solid #555; padding: 1.25rem; border-radius: .35rem; min-width: 0; }
-.customer-overview-stats dt { font-size: .9rem; }
-.customer-overview-stats dd { margin: .4rem 0 0; font-size: 2rem; font-weight: 700; }
+.customer-overview-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; padding-block: 1.25rem; border-block: 1px solid var(--account-line); }
+.customer-overview-stats > div { min-width: 0; padding-inline: .5rem; }
+.customer-overview-panel { border: 1px solid var(--account-line); padding: clamp(1rem, 2.5vw, 1.75rem); border-radius: .35rem; min-width: 0; background: #1b1b1b; }
+.customer-overview-stats dt { font-size: .9rem; color: var(--account-muted); }
+.customer-overview-stats dd { margin: .4rem 0 0; font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .customer-overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
 .customer-overview-panel p { overflow-wrap: anywhere; }
+.customer-dashboard-priority { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.customer-next-visit { background: #24231f; padding: clamp(1.25rem, 3vw, 2.25rem); }
+.customer-next-visit h4 { font-family: var(--display, Georgia, serif); font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1.2; margin-block: 1rem; overflow-wrap: anywhere; }
+.customer-next-visit .customer-visit-date { color: var(--account-ink); font-size: 1.1rem; }
+.customer-overview .customer-section-heading { flex-wrap: wrap; align-items: flex-start; }
+.customer-overview .customer-section-heading h2, .customer-overview .customer-section-heading h3 { margin: 0; }
+.customer-overview .customer-section-heading > * { min-width: 0; }
+.customer-overview .customer-section-heading > a { flex-shrink: 0; }
+.customer-overview .customer-section-heading > div { flex: 1 1 16rem; }
+.customer-overview .customer-records { margin-bottom: 0; }
+.customer-overview .customer-records li { align-items: flex-start; gap: 1rem; padding-block: 1rem; flex-wrap: wrap; }
+.customer-overview .customer-records li > div { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
+.customer-overview .customer-records li:last-child { border-bottom: 0; }
+.customer-overview a:not(.button), .customer-overview .text-button { display: inline-flex; align-items: center; min-height: 44px; }
+.customer-dashboard-profile { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem 2rem; margin-bottom: 1rem; }
+.customer-dashboard-profile > div { min-width: 0; flex: 1 1 16rem; }
+.customer-dashboard-profile h3 { margin-top: 0; }
+.customer-dashboard-refresh-status:empty { margin: 0; }
 .customer-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .customer-form .customer-choice { display: flex; align-items: center; gap: .8rem; border: 1px solid #777; border-radius: .35rem; padding: 1rem; cursor: pointer; }
 .customer-choice:has(input:checked) { border-color: #d6bc76; background: #39352b; }
@@ -115,5 +134,7 @@
 .customer-booking button:focus-visible, .customer-choice:has(input:focus-visible) { outline: 2px solid #d6bc76; outline-offset: 3px; }
 @media (max-width: 680px) {
   .customer-overview-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .customer-overview-grid, .customer-choice-grid { grid-template-columns: 1fr; }
+  .customer-overview-grid, .customer-dashboard-priority, .customer-choice-grid { grid-template-columns: 1fr; }
+  .customer-overview .customer-section-heading > div { flex-basis: auto; }
+  .customer-overview .customer-records li > div { flex-basis: auto; }
 }

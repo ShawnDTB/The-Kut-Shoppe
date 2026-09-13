@@ -63,7 +63,7 @@ function CustomerActions({
   );
 }
 
-function MobileNavigation({
+export function MobileNavigation({
   currentPath,
   account,
   cartCount,
@@ -74,11 +74,12 @@ function MobileNavigation({
 }) {
   const [open, setOpen] = useState(false);
   const drawerId = useId();
-  const drawerRef = useRef<HTMLElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const media = window.matchMedia('(min-width: 981px)');
+    const media = window.matchMedia('(min-width: 1041px)');
     const closeAtDesktop = () => {
       if (media.matches) setOpen(false);
     };
@@ -95,37 +96,36 @@ function MobileNavigation({
     const previousBodyOverflow = document.body.style.overflow;
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousBodyPosition = document.body.style.position;
+    const previousBodyInset = document.body.style.inset;
     const scrollY = window.scrollY;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
+    const dialog = dialogRef.current;
+    const trigger = triggerRef.current;
 
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.inset = `-${scrollY}px 0 0`;
-    window.requestAnimationFrame(() => {
-      drawerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-      closeButtonRef.current?.focus();
-    });
-    window.addEventListener('keydown', closeOnEscape);
+    // The native modal keeps keyboard focus inside and makes the rest of the
+    // document inert. The top layer also escapes transformed page ancestors.
+    dialog?.showModal();
+    closeButtonRef.current?.focus({ preventScroll: true });
 
     return () => {
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
       document.body.style.position = previousBodyPosition;
-      document.body.style.inset = '';
+      document.body.style.inset = previousBodyInset;
+      dialog?.close();
       window.scrollTo({ top: scrollY, behavior: 'instant' });
-      window.removeEventListener('keydown', closeOnEscape);
+      trigger?.focus({ preventScroll: true });
     };
   }, [open]);
 
   const close = () => setOpen(false);
   const overlay = open && typeof document !== 'undefined' ? createPortal(
-    <div className="mobile-nav-overlay mobile-nav-overlay-v5">
-      <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" onClick={close} />
-      <aside ref={drawerRef} className="mobile-nav-drawer mobile-nav-drawer-v5" id={drawerId} role="dialog" aria-modal="true" aria-label="Site navigation">
-        <div className="mobile-drawer-header">
+    <dialog ref={dialogRef} className="site-menu-dialog" id={drawerId} aria-label="Site navigation" onCancel={(event) => { event.preventDefault(); close(); }} onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
+      <div className="site-menu-panel">
+        <div className="site-menu-header">
           <a className="mobile-drawer-brand" href="/" onClick={close}>
             <img src={originalAssets.logo} alt="" width="58" height="58" />
             <span><strong>The Kut Shoppe</strong><small>Downtown Stroudsburg</small></span>
@@ -133,14 +133,14 @@ function MobileNavigation({
           <button ref={closeButtonRef} className="mobile-nav-close" type="button" aria-label="Close navigation" onClick={close}><span aria-hidden="true" /></button>
         </div>
 
-        <nav className="mobile-drawer-content mobile-drawer-content-v5" aria-label="Mobile navigation">
-          <div className="mobile-primary-links mobile-primary-links-v5">
+        <nav className="site-menu-content" aria-label="Mobile navigation">
+          <div className="mobile-primary-links">
             {primaryNavigation.map(([label, href]) => {
               const current = isCurrentRoute(currentPath, href);
               return <a key={href} href={href} aria-current={current ? 'page' : undefined} onClick={close}>{label}<Arrow /></a>;
             })}
           </div>
-          <div className="mobile-booking-group mobile-booking-group-v5"><CustomerActions account={account} cartCount={cartCount} mobile onNavigate={close} /></div>
+          <div className="site-menu-actions"><CustomerActions account={account} cartCount={cartCount} mobile onNavigate={close} /></div>
           <details className="mobile-visit-details">
             <summary>Hours and visit information <Arrow /></summary>
             <div className="mobile-hours-card mobile-hours-card-detailed">
@@ -152,14 +152,14 @@ function MobileNavigation({
           </details>
           <a className="mobile-call-link" href={business.phoneHref} onClick={close}>Call {business.phone}</a>
         </nav>
-      </aside>
-    </div>,
+      </div>
+    </dialog>,
     document.body,
   ) : null;
 
   return (
     <div className={`mobile-navigation${open ? ' is-open' : ''}`}>
-      <button className="mobile-nav-trigger" type="button" aria-expanded={open} aria-controls={drawerId} onClick={() => setOpen(true)}>
+      <button ref={triggerRef} className="mobile-nav-trigger" type="button" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? drawerId : undefined} onClick={() => setOpen(true)}>
         <span className="mobile-menu-icon" aria-hidden="true"><i /><i /></span><span>Menu</span>
       </button>
       {overlay}

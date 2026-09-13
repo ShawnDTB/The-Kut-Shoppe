@@ -241,14 +241,6 @@ button {
   font-size: max(1rem, 16px);
 }
 
-.mobile-nav-drawer {
-  max-width: min(27rem, 94vw);
-}
-
-.mobile-drawer-content {
-  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
-}
-
 .mobile-booking-group .customer-action {
   min-height: 3.5rem;
   font-weight: 700;

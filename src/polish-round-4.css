@@ -543,42 +543,7 @@
   max-width: none;
   margin-bottom: 0.35rem;
 }
-
 /* Mobile drawer: fixed to the viewport, reduced first-glance information. */
-.mobile-nav-overlay {
-  position: fixed;
-  z-index: 3200;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-.mobile-nav-drawer-v4 {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(34rem, 100vw);
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.mobile-nav-drawer-v4 .mobile-drawer-header {
-  position: sticky;
-  z-index: 2;
-  top: 0;
-  background: #171717;
-}
-
-.mobile-drawer-content-v4 {
-  gap: 1rem;
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-}
 
 .mobile-primary-links-v4 {
   display: grid;
@@ -769,7 +734,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-nav-drawer-v4,
+
   .cart-drawer-v3 > aside {
     scroll-behavior: auto;
   }
