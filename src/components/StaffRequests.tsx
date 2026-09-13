@@ -3,6 +3,7 @@ import { accountApi } from '../data/customer-api';
 import { business } from '../data/site';
 import type { ProfessionalAccess, StaffQueue, StaffRequest } from '../shared/staff';
 import { StaffAuthenticator } from './StaffAuthenticator';
+import { AppointmentRescheduling } from './AppointmentRescheduling';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
 const time = (value: string | null, zone: string) => {
@@ -46,6 +47,7 @@ function RequestDetail({ id, onBack }: { id: string; onBack: () => void }) {
     {request ? <><p className="customer-status">{request.status.replaceAll('_', ' ')}</p><h3>{request.customerName} · {request.serviceName}</h3>
       <dl className="customer-detail-facts"><div><dt>Requested visit</dt><dd>{time(request.startsAt, request.timeZone)} to {time(request.endsAt, request.timeZone)}</dd></div><div><dt>Location</dt><dd>{request.locationName} ({request.timeZone})</dd></div><div><dt>Recorded service price</dt><dd>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(request.priceCents / 100)}</dd></div></dl>
       {request.customerNote ? <section><h3>Customer’s note</h3><p className="customer-record-note">{request.customerNote}</p></section> : null}
+      {(request.status === 'confirmed' && request.cancellationState !== 'pending') || request.changePending ? <AppointmentRescheduling id={id} professional onSaved={refresh} /> : null}
       {request.cancellationState === 'pending' ? <p className="customer-notice">The customer requested cancellation. The appointment remains confirmed until you approve. Review before the scheduled start; contact the customer directly if the visit has already started.</p> : null}
       {request.status === 'requested' || (request.status === 'confirmed' && request.cancellationState === 'pending') ? action ? <form className="customer-form customer-security-section" onSubmit={(event) => void decide(event)}>
         <h3>{action === 'cancel' ? 'Approve this cancellation?' : action === 'keep' ? 'Decline cancellation and keep the visit?' : action === 'confirm' ? 'Confirm this appointment?' : 'Decline this request?'}</h3><p>{action === 'cancel' ? 'This cancels the visit and releases the reserved time. It does not process a payment, cancellation fee, or refund.' : action === 'keep' ? 'The appointment stays confirmed and its time remains reserved. Contact the customer to explain the next steps.' : action === 'confirm' ? 'This accepts the visit at the requested time and recorded price. Availability is checked again before saving.' : 'This declines the request and releases its opening. It does not process a payment or refund.'}</p>
@@ -74,9 +76,9 @@ function Queue() {
   }, [cursor, attempt]);
   const refresh = () => { setWorking(true); setCursor(null); setNext(null); setItems([]); setAttempt((value) => value + 1); };
   if (selected) return <RequestDetail key={selected} id={selected} onBack={() => { setSelected(null); refresh(); }} />;
-  return <section aria-busy={working}><h2>Your appointment requests</h2><p>Booking and cancellation requests assigned to your professional profile, ordered by appointment creation. Review the requested action before responding.</p>
+  return <section aria-busy={working}><h2>Your appointment requests</h2><p>Booking, rescheduling and cancellation requests assigned to your professional profile, ordered by appointment creation. Review the requested action before responding.</p>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
-    <ul className="customer-records">{items.map((item) => <li key={item.id}><div><h3>{item.customerName} · {item.serviceName}</h3><p>{time(item.startsAt, item.timeZone)} · {item.locationName}</p><p className="customer-status">{item.cancellationState === 'pending' ? 'Cancellation requested' : 'Booking requested'}</p></div><button className="button button-secondary" onClick={() => setSelected(item.id)}>Review request</button></li>)}</ul>
+    <ul className="customer-records">{items.map((item) => <li key={item.id}><div><h3>{item.customerName} · {item.serviceName}</h3><p>{time(item.startsAt, item.timeZone)} · {item.locationName}</p><p className="customer-status">{item.changePending ? 'Rescheduling requested' : item.cancellationState === 'pending' ? 'Cancellation requested' : 'Booking requested'}</p></div><button className="button button-secondary" onClick={() => setSelected(item.id)}>Review request</button></li>)}</ul>
     <p role="status">{working ? 'Loading requests…' : items.length ? `${items.length} requests shown.` : error ? '' : 'No requests are awaiting your response.'}</p>
     <div className="customer-form-actions">{next && !error ? <button className="button button-secondary" disabled={working} onClick={() => { setWorking(true); setCursor(next); }}>Load more requests</button> : null}<button className="text-button" disabled={working} onClick={refresh}>Refresh queue</button>{error && cursor ? <button className="text-button" disabled={working} onClick={() => { setWorking(true); setAttempt((value) => value + 1); }}>Retry loading more</button> : null}</div>
   </section>;

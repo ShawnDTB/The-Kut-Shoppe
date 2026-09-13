@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { accountApi, downloadAppointmentCalendar } from '../data/customer-api';
+import { accountApi, downloadAppointmentCalendar, downloadAccountDocument } from '../data/customer-api';
 import { followAccountLink } from '../data/customer-navigation';
+import { AppointmentRescheduling } from './AppointmentRescheduling';
 import { business } from '../data/site';
 import type { CustomerAppointmentDetail, CustomerOrderDetail, CustomerProfile } from '../shared/customer';
 
@@ -14,6 +15,17 @@ const time = (value: string | null, timeZone = 'America/New_York') => {
 };
 function Address({ value }: { value: CustomerProfile['address'] }) {
   return <address>{value.line1}<br />{value.line2 ? <>{value.line2}<br /></> : null}{value.city}, {value.state} {value.postalCode}</address>;
+}
+function DocumentDownload({ id, kind }: { id: string; kind: 'appointments' | 'orders' }) {
+  const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
+  const download = async () => {
+    if (busy) return; setBusy(true); setError(''); setNotice('');
+    try { await downloadAccountDocument(kind, id); setNotice('Download started. Open the document and use Print to print or save as PDF.'); }
+    catch (failure) { setError(messageOf(failure)); }
+    finally { setBusy(false); }
+  };
+  return <div className="customer-detail-action"><button className="button button-secondary" disabled={busy} onClick={() => void download()}>{busy ? 'Preparing document…' : kind === 'appointments' ? 'Download appointment document' : 'Download order acknowledgement'}</button>
+    <p className="customer-fine-print">A printable copy of your current record. This is not a payment receipt.</p>{error ? <p className="form-error" role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}</div>;
 }
 function DetailFrame({ kind, onBack, children }: { kind: 'appointments' | 'orders'; onBack: () => void; children: ReactNode }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -74,6 +86,8 @@ export function CustomerAppointmentDetails({ id, onBack }: { id: string; onBack:
       <p className="customer-fine-print">Times use the appointment location’s time zone: {appointment.location.timeZone}. The recorded price is not a payment receipt.</p>
       {appointment.status === 'reschedule_proposed' && appointment.proposedStartsAt ? <section className="customer-notice"><h3>The shop proposed another time</h3><p>{time(appointment.proposedStartsAt, appointment.location.timeZone)}{appointment.proposedEndsAt ? ` to ${time(appointment.proposedEndsAt, appointment.location.timeZone)}` : ''}</p><p>This proposed time is not confirmed. Contact the shop to respond.</p></section> : null}
       {appointment.customerNote ? <section><h3>Your appointment note</h3><p className="customer-record-note">{appointment.customerNote}</p></section> : null}
+      <DocumentDownload id={id} kind="appointments" />
+      {appointment.reschedulingEnabled ? <AppointmentRescheduling id={id} onSaved={refresh} /> : null}
       {appointment.canDownloadCalendar ? <div className="customer-detail-action"><button className="button button-secondary" type="button" disabled={working || loading} onClick={() => void calendar()}>Download calendar event</button><p className="customer-fine-print">Adds a copy of this confirmed visit. It is not a live calendar subscription. Your calendar provider may store the event details.</p></div> : null}
       {appointment.canRequestCancellation ? <section className="customer-security-section"><h3>Need to cancel?</h3><p>Ask your barber to cancel this confirmed appointment. The time stays reserved until they approve. This request does not charge a fee or process a refund.</p>
         {confirming ? <div className="customer-withdraw-confirm"><p id="cancellation-description">Send a cancellation request for this visit?</p><div className="customer-form-actions"><button className="button button-secondary" disabled={working || loading} onClick={() => setConfirming(false)}>Go back</button><button className="button" aria-describedby="cancellation-description" disabled={working || loading} onClick={() => void withdraw('cancellation')}>{working ? 'Sending…' : 'Send cancellation request'}</button></div></div> : <button className="button button-secondary" disabled={working || loading} onClick={() => setConfirming(true)}>Request cancellation</button>}
@@ -109,6 +123,7 @@ export function CustomerOrderDetails({ id, onBack }: { id: string; onBack: () =>
       {!order.itemsComplete ? <p className="customer-notice">Showing the first 100 line items. Contact the shop for the complete itemized record. Totals below cover the whole order.</p> : null}
       <dl className="customer-order-totals">{([['Subtotal', order.subtotalCents], ['Shipping', order.shippingCents], ['Tax', order.taxCents], ['Recorded total', order.totalCents]] as const).map(([name, amount]) => <div key={name}><dt>{name}</dt><dd>{money(amount)}</dd></div>)}</dl>
       <p className="customer-fine-print">These are the amounts saved with the order, not current product prices. This page does not process payments or refunds.</p>
+      {order.itemsComplete ? <DocumentDownload id={id} kind="orders" /> : null}
       {order.fulfillment === 'shipping' ? <section><h3>Ship-to address</h3>{order.shippingAddress ? <Address value={order.shippingAddress} /> : <p>The recorded shipping address is unavailable. Contact the shop to check it.</p>}{order.trackingNumber ? <p className="customer-record-note">Tracking number: {order.trackingNumber}</p> : null}</section> : <p>Check the order status or contact the shop before collecting your order.</p>}
       <p>For order changes, payment questions, or refund requests, <a href={business.phoneHref}>call {business.phone}</a>.</p>
     </div> : null}

@@ -4,9 +4,10 @@ import type { CustomerOrder } from '../src/shared/customer';
 
 export async function customerDashboard(env: Env, userId: string): Promise<CustomerDashboard> {
   const upcoming = "status IN ('confirmed','reschedule_proposed','checked_in','in_service') AND (julianday(ends_at)>julianday('now') OR status IN ('checked_in','in_service'))";
-  const pending = "(status IN ('requested','waitlisted','reschedule_proposed') OR (status='confirmed' AND cancellation_state='pending'))";
+  const pending = "(status IN ('requested','waitlisted','reschedule_proposed') OR (status='confirmed' AND (cancellation_state='pending' OR EXISTS (SELECT 1 FROM appointment_changes c WHERE c.appointment_id=appointments.id AND c.status='pending' AND julianday(c.expires_at)>julianday('now')))))";
   const appointment = `SELECT a.id,s.name AS serviceName,sp.professional_name AS barberName,a.starts_at AS startsAt,a.status,
-    a.cancellation_state AS cancellationState,l.timezone AS timeZone
+    a.cancellation_state AS cancellationState,l.timezone AS timeZone,
+    (SELECT c.kind FROM appointment_changes c WHERE c.appointment_id=a.id AND c.status='pending' AND julianday(c.expires_at)>julianday('now')) AS changeKind
     FROM appointments a JOIN services s ON s.id=a.service_id JOIN locations l ON l.id=a.location_id
     LEFT JOIN staff_profiles sp ON sp.id=COALESCE(a.assigned_staff_id,a.requested_staff_id)`;
   const order = 'SELECT id,status,fulfillment_type AS fulfillment,total_cents AS totalCents,created_at AS createdAt FROM orders';
@@ -21,7 +22,7 @@ export async function customerDashboard(env: Env, userId: string): Promise<Custo
       ORDER BY CASE WHEN status IN ('checked_in','in_service') THEN 0 ELSE 1 END,julianday(starts_at),a.id LIMIT 1`).bind(userId),
     env.DB.prepare(`${appointment} WHERE a.customer_user_id=? ORDER BY a.updated_at DESC,a.id DESC LIMIT 4`).bind(userId),
     env.DB.prepare(`${order} WHERE customer_user_id=? ORDER BY updated_at DESC,id DESC LIMIT 3`).bind(userId),
-    env.DB.prepare(`${appointment} WHERE a.customer_user_id=? AND ${pending} ORDER BY a.updated_at DESC,a.id DESC LIMIT 4`).bind(userId),
+    env.DB.prepare(`${appointment} WHERE a.customer_user_id=? AND ${pending.replaceAll('appointments.id', 'a.id')} ORDER BY a.updated_at DESC,a.id DESC LIMIT 4`).bind(userId),
     env.DB.prepare(`${order} WHERE customer_user_id=? AND status='ready_for_pickup' AND fulfillment_type='pickup' ORDER BY updated_at DESC,id DESC LIMIT 3`).bind(userId),
     env.DB.prepare("SELECT count(*) AS count FROM orders WHERE customer_user_id=? AND status='ready_for_pickup' AND fulfillment_type='pickup'").bind(userId),
   ]);

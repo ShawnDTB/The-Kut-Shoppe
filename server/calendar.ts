@@ -33,6 +33,7 @@ export function appointmentCalendar(appointment: CustomerAppointmentDetail) {
   return [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//The Kut Shoppe//Customer Appointments//EN', 'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT', `UID:${uid}@thekutshoppe.com`, `DTSTAMP:${dateValue(new Date().toISOString())}`,
+    `LAST-MODIFIED:${dateValue(appointment.updatedAt)}`, `SEQUENCE:${appointment.changeVersion ?? 0}`,
     `DTSTART:${dateValue(appointment.startsAt)}`, `DTEND:${dateValue(appointment.endsAt)}`,
     `SUMMARY:${textValue(`${appointment.serviceName} at ${appointment.location.name}`)}`,
     `LOCATION:${textValue([address.line1, address.line2, `${address.city}, ${address.state} ${address.postalCode}`].filter(Boolean).join(', '))}`,

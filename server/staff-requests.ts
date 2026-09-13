@@ -25,7 +25,8 @@ export async function requireProfessional(env: Env, userId: string, sessionHash:
   return row.id;
 }
 const requestSelect = `SELECT a.id,u.display_name AS customerName,s.name AS serviceName,l.name AS locationName,l.timezone AS timeZone,
-  a.starts_at AS startsAt,a.ends_at AS endsAt,a.created_at AS createdAt,a.updated_at AS updatedAt,a.status,a.price_cents AS priceCents,a.customer_note AS customerNote,a.cancellation_state AS cancellationState
+  a.starts_at AS startsAt,a.ends_at AS endsAt,a.created_at AS createdAt,a.updated_at AS updatedAt,a.status,a.price_cents AS priceCents,a.customer_note AS customerNote,a.cancellation_state AS cancellationState,
+  EXISTS (SELECT 1 FROM appointment_changes c WHERE c.appointment_id=a.id AND c.status='pending' AND c.kind='customer_request') AS changePending
   FROM appointments a JOIN users u ON u.id=a.customer_user_id JOIN services s ON s.id=a.service_id JOIN locations l ON l.id=a.location_id
   WHERE a.source='website' AND COALESCE(a.assigned_staff_id,a.requested_staff_id)=?
     AND EXISTS (SELECT 1 FROM staff_profiles gate JOIN users actor ON actor.id=gate.user_id JOIN sessions se ON se.user_id=actor.id
@@ -51,7 +52,7 @@ export async function staffQueue(env: Env, userId: string, sessionHash: string, 
       if (!cursor || typeof cursor.at !== 'string' || cursor.at.length > 64 || typeof cursor.id !== 'string' || !cursor.id || cursor.id.length > 128) throw new Error();
     } catch { throw new ApiError(400, 'Refresh the request queue and try again.'); }
   }
-  const { results } = await env.DB.prepare(`${requestSelect} AND (a.status='requested' OR (a.status='confirmed' AND a.cancellation_state='pending')) ${cursor ? 'AND (a.created_at,a.id)>(?,?)' : ''}
+  const { results } = await env.DB.prepare(`${requestSelect} AND (a.status='requested' OR (a.status='confirmed' AND a.cancellation_state='pending') OR EXISTS (SELECT 1 FROM appointment_changes c WHERE c.appointment_id=a.id AND c.status='pending' AND c.kind='customer_request')) ${cursor ? 'AND (a.created_at,a.id)>(?,?)' : ''}
     ORDER BY a.created_at,a.id LIMIT 26`).bind(staffId, sessionHash, ...(cursor ? [cursor.at, cursor.id] : [])).all<StaffRequest>();
   const items = results.slice(0, 25); const last = items.at(-1);
   const payload = last && results.length > 25 ? Buffer.from(JSON.stringify({ at: last.createdAt, id: last.id })).toString('base64url') : null;

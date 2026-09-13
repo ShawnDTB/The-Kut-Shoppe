@@ -5,12 +5,12 @@ import { staffMfaGate } from './staff-mfa';
 import { secretHash } from './security';
 import type { StaffVisit, StaffVisitSummary, StaffVisitsPage } from '../src/shared/staff-visits';
 
-const fields = `a.id,u.display_name AS customerName,s.name AS serviceName,l.name AS locationName,l.timezone AS timeZone,
+const fields = `a.id,COALESCE(u.display_name,a.guest_name,'Guest') AS customerName,a.source,s.name AS serviceName,l.name AS locationName,l.timezone AS timeZone,
   a.starts_at AS startsAt,a.ends_at AS endsAt,a.status`;
 // An accepted visit must be assigned to this professional. A requested-staff
 // preference does not confer access after assignment to someone else.
-const scope = `FROM appointments a JOIN users u ON u.id=a.customer_user_id JOIN services s ON s.id=a.service_id JOIN locations l ON l.id=a.location_id
-  WHERE a.source='website' AND a.assigned_staff_id=? AND a.status IN ('confirmed','reschedule_proposed','checked_in','in_service')
+const scope = `FROM appointments a LEFT JOIN users u ON u.id=a.customer_user_id JOIN services s ON s.id=a.service_id JOIN locations l ON l.id=a.location_id
+  WHERE a.source IN ('website','walk_in') AND a.assigned_staff_id=? AND a.status IN ('confirmed','reschedule_proposed','checked_in','in_service')
   AND EXISTS (SELECT 1 FROM staff_profiles sp JOIN users actor ON actor.id=sp.user_id JOIN sessions se ON se.user_id=actor.id
     WHERE sp.id=a.assigned_staff_id AND actor.id=? AND se.token_hash=? AND sp.setup_status='approved'
       AND actor.status='active' AND actor.email_verified_at IS NOT NULL AND actor.role IN ('staff','manager','owner','admin')
@@ -41,7 +41,7 @@ export async function staffVisits(env: Env, userId: string, session: string, val
   const selected = rows[0]!.results as (StaffVisitSummary & { sortAt: number })[];
   const last = selected[24]; const payload = selected.length > 25 && last ? Buffer.from(JSON.stringify({ at: last.sortAt, id: last.id })).toString('base64url') : null;
   return { items: selected.slice(0, 25).map((item) => ({ id: item.id, customerName: item.customerName, serviceName: item.serviceName,
-    locationName: item.locationName, timeZone: item.timeZone, startsAt: item.startsAt, endsAt: item.endsAt, status: item.status })), nextCursor: payload ? `${payload}.${sign(payload)}` : null,
+    source: item.source, locationName: item.locationName, timeZone: item.timeZone, startsAt: item.startsAt, endsAt: item.endsAt, status: item.status })), nextCursor: payload ? `${payload}.${sign(payload)}` : null,
     needsTimeReview: Number((rows[1]!.results[0] as { count: number }).count) };
 }
 export async function staffVisit(env: Env, userId: string, session: string, id: string): Promise<StaffVisit> {

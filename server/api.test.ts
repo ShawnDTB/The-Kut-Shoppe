@@ -8,7 +8,7 @@ import { createSession, sendChallenge } from './accounts';
 import { hashPassword, secretHash, verifyPassword } from './security';
 import { canChangeRole } from './permissions';
 import type { Database, Env, Statement } from './types';
-import { wallWindow } from './booking-time';
+import { wallWindow, localDate } from './booking-time';
 import { deliverAppointmentNotifications } from './appointment-notifications';
 import { totp } from './totp';
 
@@ -498,6 +498,193 @@ async function staffFixture() {
   const decision = { action: 'confirm', updatedAt: detail.request.updatedAt, decisionKey: randomUUID(), currentPassword: password };
   return { ...fixture, staff, id: saved.appointmentId as string, detail: detail.request, path, decision };
 }
+describe('appointment rescheduling', () => {
+  async function fixture() {
+    const f = await staffFixture();
+    expect((await request(f.path, f.decision, f.staff)).status).toBe(200);
+    const customerPath = `/me/appointments/${f.id}/reschedule`; const staffPath = `${f.path}/reschedule`;
+    const page = await (await request(customerPath, undefined, f.alice)).json();
+    const available = await (await request(`${customerPath}?date=${f.date}`, undefined, f.alice)).json();
+    const body = { action: 'request', updatedAt: page.updatedAt, version: page.version, requestKey: randomUUID(), date: f.date, startsAt: available.slots[0].startsAt, quote: available.quote };
+    const decide = (current: { updatedAt: string; version: number; change: { id: string } }, action = 'approve') => ({ action, updatedAt: current.updatedAt, version: current.version, changeId: current.change.id, requestKey: randomUUID(), currentPassword: password });
+    return { ...f, customerPath, staffPath, page, times: available, body, decide };
+  }
+  it('preserves the original reservation, accepts a self-overlapping replacement once, and updates calendar/dashboard/history', async () => {
+    const f = await fixture();
+    expect(Date.parse(f.body.startsAt) - Date.parse(f.payload.startsAt)).toBe(15 * 60000);
+    const sent = await request(f.customerPath, f.body, f.alice); expect(sent.status).toBe(200);
+    const current = await sent.json(); expect(current.change.status).toBe('pending'); expect(current.startsAt).toBe(f.payload.startsAt);
+    expect((await request(f.customerPath, f.body, f.alice)).status).toBe(200);
+    const dashboard = await (await request('/me/dashboard', undefined, f.alice)).json();
+    expect(dashboard.counts.pending).toBe(1); expect(dashboard.pendingAppointments[0].changeKind).toBe('customer_request');
+    const originalSlots = await f.available(); expect(originalSlots.slots.some((s: { startsAt: string }) => s.startsAt === f.payload.startsAt)).toBe(false);
+    expect((await request(`/me/appointments/${f.id}/cancellation`, { updatedAt: current.updatedAt }, f.alice)).status).toBe(409);
+    const decision = f.decide(current); const saved = await request(f.staffPath, decision, f.staff); expect(saved.status).toBe(200);
+    expect((await saved.json()).startsAt).toBe(f.body.startsAt);
+    expect((await request(f.staffPath, decision, f.staff)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT status,price_cents FROM appointments WHERE id=?').get(f.id)).toEqual({ status: 'confirmed', price_cents: 3200 });
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointment_change_operations').get()!.n).toBe(2);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.event_type LIKE 'appointment_change_%'").get()!.n).toBe(4);
+    const calendar = await request(`/me/appointments/${f.id}/calendar`, undefined, f.alice); expect(await calendar.text()).toContain('SEQUENCE:2');
+    expect((await (await request('/me/dashboard', undefined, f.alice)).json()).counts.pending).toBe(0);
+    expect((await request(f.staffPath, { ...decision, action: 'decline' }, f.staff)).status).toBe(409);
+  });
+  it('supports a professional alternative, customer acceptance, withdrawal, and repeated changes', async () => {
+    const f = await fixture();
+    const sent = await (await request(f.customerPath, f.body, f.alice)).json();
+    const proposed = await request(f.staffPath, { ...f.body, action: 'propose', requestKey: randomUUID(), updatedAt: sent.updatedAt, version: sent.version, changeId: sent.change.id, currentPassword: password }, f.staff);
+    expect(proposed.status).toBe(200); const proposal = await proposed.json(); expect(proposal.change.kind).toBe('professional_proposal');
+    expect((await request(f.staffPath, f.decide(proposal), f.staff)).status).toBe(403);
+    const { currentPassword: _password, ...accept } = f.decide(proposal, 'accept'); void _password;
+    expect((await request(f.customerPath, accept, f.alice)).status).toBe(200);
+    const page = await (await request(f.customerPath, undefined, f.alice)).json();
+    const slots = await (await request(`${f.customerPath}?date=${f.date}`, undefined, f.alice)).json();
+    const second = await request(f.customerPath, { ...f.body, updatedAt: page.updatedAt, version: page.version, requestKey: randomUUID(), startsAt: slots.slots.at(-1).startsAt, quote: slots.quote }, f.alice);
+    expect(second.status).toBe(200); const change = await second.json();
+    expect((await request(f.customerPath, { action: 'withdraw', updatedAt: change.updatedAt, version: change.version, changeId: change.change.id, requestKey: randomUUID() }, f.alice)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointment_changes').get()!.n).toBe(3);
+  });
+  it('rejects foreign resources, stale versions, forged quotes and expired proposals while allowing cleanup', async () => {
+    const f = await fixture(); const other = await seed('other');
+    expect((await request(f.customerPath, undefined, other)).status).toBe(404);
+    expect((await request(f.customerPath, f.body, other)).status).toBe(404);
+    expect((await request(f.staffPath, undefined, f.alice)).status).toBe(403);
+    expect((await request(f.customerPath, { ...f.body, version: 50 }, f.alice)).status).toBe(409);
+    expect((await request(f.customerPath, { ...f.body, quote: 'forged' }, f.alice)).status).toBe(409);
+    const current = await (await request(f.customerPath, f.body, f.alice)).json();
+    db.sqlite.prepare("UPDATE appointment_changes SET expires_at='2020-01-01T00:00:00Z'").run();
+    expect((await request(f.staffPath, f.decide(current), f.staff)).status).toBe(409);
+    expect((await (await request(f.customerPath, undefined, f.alice)).json()).change.status).toBe('expired');
+    expect((await request(f.staffPath, f.decide(current, 'decline'), f.staff)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT starts_at FROM appointments WHERE id=?').get(f.id)!.starts_at).toBe(f.payload.startsAt);
+  });
+  it('rechecks competing reservations and schedule policy before accepting', async () => {
+    const f = await fixture();
+    const sent = await (await request(f.customerPath, { ...f.body, startsAt: f.times.slots.at(-1).startsAt }, f.alice)).json();
+    const other = await seed('other');
+    const page = await f.available();
+    const competitor = { ...f.payload, startsAt: sent.change.startsAt, quote: page.quote, requestKey: randomUUID() };
+    expect((await request('/me/booking/requests', competitor, other)).status).toBe(200);
+    expect((await request(f.staffPath, f.decide(sent), f.staff)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT starts_at FROM appointments WHERE id=?').get(f.id)!.starts_at).toBe(f.payload.startsAt);
+    db.sqlite.prepare("UPDATE appointments SET status='cancelled' WHERE customer_user_id='other'").run();
+    db.sqlite.prepare('UPDATE weekly_availability SET active=0').run();
+    expect((await request(f.staffPath, f.decide(sent), f.staff)).status).toBe(409);
+  });
+  it('fails closed on final session/MFA revocation or audit rollback', async () => {
+    const f = await fixture();
+    const batch = env.DB.batch.bind(env.DB);
+    let interfere = true;
+    const spy = vi.spyOn(env.DB, 'batch').mockImplementation(async statements => {
+      // Availability uses six statements; mutations include an operation receipt.
+      if (interfere && statements.length > 6) { interfere = false; db.sqlite.prepare("UPDATE sessions SET revoked_at=? WHERE user_id='alice'").run(new Date().toISOString()); }
+      return batch(statements);
+    });
+    expect((await request(f.customerPath, f.body, f.alice)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM appointment_changes').get()!.n).toBe(0);
+    const fresh = await createSession(env, 'alice');
+    const current = await (await request(f.customerPath, f.body, fresh)).json();
+    db.sqlite.exec("CREATE TRIGGER fail_change_audit BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request(f.staffPath, f.decide(current), f.staff)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT status FROM appointment_changes').get()!.status).toBe('pending');
+    expect(db.sqlite.prepare('SELECT starts_at FROM appointments WHERE id=?').get(f.id)!.starts_at).toBe(f.payload.startsAt);
+    db.sqlite.exec('DROP TRIGGER fail_change_audit');
+    let revoke = true;
+    const second = vi.spyOn(env.DB, 'batch').mockImplementation(async statements => {
+      if (revoke && statements.length > 6) { revoke = false; db.sqlite.prepare("UPDATE sessions SET mfa_until=NULL WHERE user_id='professional'").run(); }
+      return batch(statements);
+    });
+    expect((await request(f.staffPath, f.decide(current), f.staff)).status).toBe(409); second.mockRestore();
+  });
+});
+describe('front desk walk-ins', () => {
+  beforeEach(() => {
+    // Keep same-day opening tests deterministic even when CI runs after hours.
+    // SQLite and application time use the same fixed instant in this suite.
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-20T14:00:01Z'));
+    const prepare = env.DB.prepare.bind(env.DB);
+    vi.spyOn(env.DB, 'prepare').mockImplementation(sql => prepare(sql.replaceAll("'now'", "'2026-10-20T14:00:01Z'")));
+  });
+  afterEach(() => { vi.useRealTimers(); });
+  async function fixture() {
+    const f = await seedBooking(); env.STAFF_OPERATIONS_ENABLED = 'true';
+    const owner = await seed('desk-owner', 'owner'); await enrollMfa(owner);
+    const date = localDate(Date.now(), 'America/New_York');
+    db.sqlite.prepare("UPDATE weekly_availability SET weekday=?,start_time='00:00',end_time='23:59'").run(new Date(`${date}T00:00:00Z`).getUTCDay());
+    const selection = { staffId: 'book-staff', serviceId: 'book-service', locationId: f.locationId, date };
+    const available = await (await request(`/me/front-desk/availability?${new URLSearchParams(selection)}`, undefined, owner)).json();
+    const payload = { ...selection, startsAt: available.slots[0].startsAt, quote: available.quote, name: 'Walk-in guest', phone: '', requestKey: randomUUID(), currentPassword: password };
+    const list = async () => (await request('/me/front-desk/visits', undefined, owner)).json();
+    return { ...f, owner, selection, available, payload, list };
+  }
+  it('creates a guest without an account, reserves inventory in the schedule, and supports check-in through completion', async () => {
+    const f = await fixture();
+    const response = await request('/me/front-desk/visits', f.payload, f.owner); expect(response.status).toBe(200);
+    const { appointmentId: id } = await response.json();
+    expect((await request('/me/front-desk/visits', f.payload, f.owner)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT customer_user_id,guest_email,guest_name FROM appointments WHERE id=?').get(id)).toEqual({ customer_user_id: null, guest_email: null, guest_name: 'Walk-in guest' });
+    const after = await (await request(`/me/front-desk/availability?${new URLSearchParams(f.selection)}`, undefined, f.owner)).json();
+    expect(after.slots.some((slot: { startsAt: string }) => slot.startsAt === f.payload.startsAt)).toBe(false);
+    expect((await request(`/me/appointments/${id}`, undefined, f.alice)).status).toBe(404);
+    const staff = await createSession(env, 'professional'); await enrollMfa(staff);
+    expect((await (await request('/me/professional/visits', undefined, staff)).json()).items[0]).toMatchObject({ id, customerName: 'Walk-in guest', source: 'walk_in' });
+    for (const action of ['checked_in','in_service','completed']) {
+      if (action === 'in_service') db.sqlite.prepare('UPDATE appointments SET starts_at=?,ends_at=? WHERE id=?').run(new Date(Date.now() - 60000).toISOString(), new Date(Date.now() + 3600000).toISOString(), id);
+      const visit = (await f.list()).items[0];
+      const body = { action, updatedAt: visit.updatedAt, requestKey: randomUUID(), currentPassword: password };
+      expect((await request(`/me/front-desk/visits/${id}`, body, f.owner)).status).toBe(200);
+      expect((await request(`/me/front-desk/visits/${id}`, body, f.owner)).status).toBe(200);
+    }
+    expect((await f.list()).items[0].status).toBe('completed');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM walk_in_operations').get()!.n).toBe(4);
+  });
+  it('rejects customer access, same-slot competition, stale actions, and starting before the scheduled time', async () => {
+    const f = await fixture();
+    expect((await request('/me/front-desk/visits', f.payload, f.alice)).status).toBe(403);
+    const saved = await (await request('/me/front-desk/visits', f.payload, f.owner)).json();
+    expect((await request('/me/front-desk/visits', { ...f.payload, requestKey: randomUUID() }, f.owner)).status).toBe(409);
+    const visit = (await f.list()).items[0]; const path = `/me/front-desk/visits/${saved.appointmentId}`;
+    expect((await request(path, { action: 'completed', updatedAt: visit.updatedAt, requestKey: randomUUID(), currentPassword: password }, f.owner)).status).toBe(409);
+    expect((await request(path, { action: 'checked_in', updatedAt: 'stale', requestKey: randomUUID(), currentPassword: password }, f.owner)).status).toBe(409);
+    expect((await request(path, { action: 'checked_in', updatedAt: visit.updatedAt, requestKey: randomUUID(), currentPassword: password }, f.owner)).status).toBe(200);
+    expect((await request(path, { action: 'in_service', updatedAt: (await f.list()).items[0].updatedAt, requestKey: randomUUID(), currentPassword: password }, f.owner)).status).toBe(409);
+  });
+  it('rolls back guest creation on audit failure and rechecks staff access inside the commit', async () => {
+    const f = await fixture();
+    db.sqlite.exec("CREATE TRIGGER fail_walk_in BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request('/me/front-desk/visits', f.payload, f.owner)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM walk_in_operations').get()!.n).toBe(0);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointments WHERE source='walk_in'").get()!.n).toBe(0);
+    db.sqlite.exec('DROP TRIGGER fail_walk_in');
+    const batch = env.DB.batch.bind(env.DB); let once = true;
+    const spy = vi.spyOn(env.DB, 'batch').mockImplementation(async statements => {
+      if (once && statements.length === 4) { once = false; db.sqlite.prepare("UPDATE sessions SET mfa_until=NULL WHERE user_id='desk-owner'").run(); }
+      return batch(statements);
+    });
+    expect((await request('/me/front-desk/visits', f.payload, f.owner)).status).toBe(409); spy.mockRestore();
+  });
+});
+describe('private printable customer documents', () => {
+  it('distinguishes pending booking acknowledgements, confirmations and orders without leaking notes or another account', async () => {
+    const alice = await seed('alice'); const bob = await seed('bob'); seedRecords();
+    db.sqlite.prepare("UPDATE services SET name='<script>alert(1)</script>' WHERE id='detail-service'").run();
+    const url = '/me/appointments/detail-appointment/document';
+    expect((await request(url, undefined, bob)).status).toBe(404);
+    expect((await request(url)).status).toBe(401);
+    const response = await request(url, undefined, alice); expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toContain('no-store');
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'none'");
+    expect(response.headers.get('Content-Disposition')).toContain('attachment');
+    const html = await response.text();
+    expect(html).toContain('Appointment request acknowledgement'); expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toMatch(/<script>|SECRET|My private note|password|alice@example/);
+    db.sqlite.prepare("UPDATE appointments SET status='confirmed' WHERE id='detail-appointment'").run();
+    expect(await (await request(url, undefined, alice)).text()).toContain('Appointment confirmation');
+    const order = await request('/me/orders/detail-order/document', undefined, alice); expect(order.status).toBe(200);
+    const orderHtml = await order.text(); expect(orderHtml).toContain('Order acknowledgement'); expect(orderHtml).toContain('not proof of payment');
+    expect((await request('/me/orders/detail-order/document', undefined, bob)).status).toBe(404);
+  });
+});
 describe('confirmed appointment cancellation', () => {
   async function fixture() {
     const f = await staffFixture();

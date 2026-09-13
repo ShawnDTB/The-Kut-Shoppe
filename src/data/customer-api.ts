@@ -42,6 +42,15 @@ export async function downloadAppointmentCalendar(id: string) {
   document.body.append(link); link.click(); link.remove();
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
+export async function downloadAccountDocument(kind: 'appointments' | 'orders', id: string) {
+  const response = await accountResponse(`/me/${kind}/${encodeURIComponent(id)}/document`);
+  if (!response.headers.get('Content-Type')?.startsWith('text/html')) throw new AccountApiError(0, 'The document could not be downloaded. Please try again.');
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a'); link.href = objectUrl;
+  link.download = `kut-shoppe-${kind === 'appointments' ? 'appointment' : 'order'}.html`;
+  document.body.append(link); link.click(); link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
 export async function loadCustomerSession() {
   try {
     const result = await accountApi<{ account: CustomerAccount }>('/me');

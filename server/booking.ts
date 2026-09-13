@@ -49,7 +49,7 @@ export function bookingSelection(input: Record<string, unknown>): Selection {
   if (!validDate(date)) throw new ApiError(400, 'Choose a valid appointment date.');
   return { staffId: id('staffId'), serviceId: id('serviceId'), locationId: id('locationId'), date };
 }
-type Busy = { startsAt: string | null; endsAt: string | null; proposedStartsAt: string | null; proposedEndsAt: string | null; reservedUntil: string | null };
+type Busy = { startsAt: string | null; endsAt: string | null; proposedStartsAt: string | null; proposedEndsAt: string | null; reservedUntil: string | null; status: string };
 type Exception = { startsAt: string; endsAt: string; kind: string; locationId: string | null };
 const parseInstant = (value: string | null) => value && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? Date.parse(value) : NaN;
 function interval(start: string | null, end: string | null): Interval {
@@ -57,7 +57,7 @@ function interval(start: string | null, end: string | null): Interval {
   if (!Number.isFinite(first) || !Number.isFinite(last) || last <= first) throw new ApiError(409, 'The shop needs to review this schedule before it can accept requests.');
   return { start: first, end: last };
 }
-async function schedule(env: Env, userId: string, selection: Selection, now: number, confirmingId: string | null = null) {
+async function schedule(env: Env, userId: string, selection: Selection, now: number, confirmingId: string | null = null, honorNotice = false, bypassNotice = false) {
   const { staffId, serviceId, locationId, date } = selection;
   const day = Date.parse(`${date}T00:00:00Z`);
   if (day < now - 2 * DAY || day > now + 92 * DAY) throw new ApiError(400, 'Choose a date within the next 90 days.');
@@ -70,10 +70,10 @@ async function schedule(env: Env, userId: string, selection: Selection, now: num
     env.DB.prepare(`SELECT starts_at AS startsAt, ends_at AS endsAt, exception_type AS kind, location_id AS locationId
       FROM schedule_exceptions WHERE staff_id=? AND (julianday(ends_at)>=julianday(?) OR julianday(ends_at) IS NULL) LIMIT 1001`).bind(staffId, new Date(day - DAY).toISOString()),
     env.DB.prepare(`SELECT starts_at AS startsAt, ends_at AS endsAt, proposed_starts_at AS proposedStartsAt,
-      proposed_ends_at AS proposedEndsAt, reserved_until AS reservedUntil FROM appointments
+      proposed_ends_at AS proposedEndsAt, reserved_until AS reservedUntil,status FROM appointments
       WHERE (assigned_staff_id=? OR (assigned_staff_id IS NULL AND requested_staff_id=?)) AND (? IS NULL OR id!=?)
         AND status IN ('requested','confirmed','reschedule_proposed','checked_in','in_service')
-        AND (ends_at IS NULL OR julianday(ends_at) IS NULL OR julianday(ends_at)>=julianday(?)
+        AND (status='in_service' OR ends_at IS NULL OR julianday(ends_at) IS NULL OR julianday(ends_at)>=julianday(?)
           OR julianday(proposed_ends_at)>=julianday(?)
           OR (proposed_starts_at IS NOT NULL AND (proposed_ends_at IS NULL OR julianday(proposed_ends_at) IS NULL))) LIMIT 1001`).bind(staffId, staffId, confirmingId, confirmingId, new Date(day - DAY).toISOString(), new Date(day - DAY).toISOString()),
     env.DB.prepare('SELECT starts_at AS startsAt, ends_at AS endsAt FROM appointment_holds WHERE staff_id=? AND (julianday(expires_at)>julianday(?) OR julianday(expires_at) IS NULL) LIMIT 1001').bind(staffId, new Date(now).toISOString()),
@@ -96,6 +96,7 @@ async function schedule(env: Env, userId: string, selection: Selection, now: num
     } else blocked.push(span); // Time off/breaks block the person across locations.
   }
   for (const row of result[4]!.results as Busy[]) {
+    if (row.status === 'in_service' && (!row.endsAt || Date.parse(row.endsAt) <= now)) throw new ApiError(409, 'The professional has an overdue active visit. The shop needs to update it before offering another opening.');
     if (row.startsAt !== null) {
       const span = interval(row.startsAt, row.endsAt);
       span.end = Math.max(span.end + policy.bufferMinutes * MINUTE, row.reservedUntil ? interval(row.startsAt, row.reservedUntil).end : 0);
@@ -112,7 +113,7 @@ async function schedule(env: Env, userId: string, selection: Selection, now: num
   const duration = policy.durationMinutes * MINUTE;
   const buffer = policy.bufferMinutes * MINUTE;
   for (const window of mergeWindows(windows)) {
-    const lower = Math.max(window.start, day - DAY, now + (confirmingId ? 0 : policy.noticeHours) * 3_600_000);
+    const lower = Math.max(window.start, day - DAY, now + (bypassNotice || (confirmingId && !honorNotice) ? 0 : policy.noticeHours) * 3_600_000);
     // Fifteen-minute UTC grid remains unambiguous through DST's repeated hour.
     for (let start = Math.ceil(lower / (15 * MINUTE)) * 15 * MINUTE; start + duration + buffer <= Math.min(window.end, day + 2 * DAY); start += 15 * MINUTE) {
       if (localDate(start, policy.timeZone) !== date || blocked.some((span) => overlaps({ start, end: start + duration + buffer }, span))) continue;
@@ -129,6 +130,20 @@ export async function confirmationSchedule(env: Env, userId: string, selection: 
   const snapshot = await schedule(env, userId, selection, Date.now(), id);
   if (!snapshot.slots.some((slot) => slot.startsAt === startsAt && slot.endsAt === endsAt)) throw new ApiError(409, 'The requested time no longer fits the schedule. Refresh this request before responding.');
   return { revision: snapshot.revision, reservedUntil: new Date(Date.parse(endsAt) + snapshot.policy.bufferMinutes * MINUTE).toISOString() };
+}
+export async function rescheduleAvailability(env: Env, userId: string, selection: Selection, id: string) {
+  const snapshot = await schedule(env, userId, selection, Date.now(), id, true);
+  return { option: publicOption(snapshot.policy), date: selection.date, slots: snapshot.slots,
+    quote: secretHash(env, JSON.stringify({ policy: snapshot.policy, appointment: id })),
+    revision: snapshot.revision, bufferMinutes: snapshot.policy.bufferMinutes };
+}
+export async function walkInAvailability(env: Env, selection: Selection) {
+  // Only the protected front-desk API uses this notice waiver. Existing visits,
+  // buffers, holds, time off and location/service eligibility still apply.
+  const snapshot = await schedule(env, '', selection, Date.now(), null, false, true);
+  if (selection.date !== localDate(Date.now(), snapshot.policy.timeZone)) throw new ApiError(400, 'Walk-ins must be scheduled for today at the shop.');
+  return { option: publicOption(snapshot.policy), date: selection.date, slots: snapshot.slots,
+    quote: secretHash(env, JSON.stringify({ walkIn: snapshot.policy })), revision: snapshot.revision, bufferMinutes: snapshot.policy.bufferMinutes };
 }
 export async function requestAppointment(env: Env, userId: string, sessionHash: string, body: Record<string, unknown>) {
   allowFields(body, ['staffId', 'serviceId', 'locationId', 'date', 'startsAt', 'note', 'requestKey', 'quote']);

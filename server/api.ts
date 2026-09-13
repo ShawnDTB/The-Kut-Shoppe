@@ -7,6 +7,10 @@ import { finishEmailChange, startEmailChange } from './email-change';
 import { historyPage } from './history';
 import { appointmentDetail, orderDetail, withdrawAppointment, requestCancellation } from './customer-records';
 import { appointmentCalendar } from './calendar';
+import { appointmentDocument, orderDocument, documentPolicy } from './customer-documents';
+import { changeAppointment, changeAvailability, reschedulePage } from './rescheduling';
+import { requireFrontDesk, walkIns, createWalkIn, progressWalkIn } from './front-desk';
+import { walkInAvailability } from './booking';
 import { bookingAvailability, bookingOptions, bookingSelection, requestAppointment, requireBooking } from './booking';
 import { decideRequest, professionalAccess, staffQueue, staffRequest } from './staff-requests';
 import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } from './staff-mfa';
@@ -131,6 +135,24 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (path.startsWith('/api/v1/me/front-desk')) {
+    await requireFrontDesk(env, account.id, sessionHash);
+    const params = new URL(request.url).searchParams;
+    if (action === 'GET /api/v1/me/front-desk/options' && !params.size) return json(await bookingOptions(env, ''));
+    if (action === 'GET /api/v1/me/front-desk/availability') {
+      if ([...params.keys()].some(key => !['staffId','serviceId','locationId','date'].includes(key) || params.getAll(key).length !== 1)) throw new ApiError(400, 'This availability request is not supported.');
+      await rateLimit(env, `availability:${account.id}`, 60);
+      const { option, date, slots, quote } = await walkInAvailability(env, bookingSelection(Object.fromEntries(params)));
+      return json({ option, date, slots, quote });
+    }
+    if (path === '/api/v1/me/front-desk/visits' && !params.size) {
+      if (request.method === 'GET') return json(await walkIns(env, account.id, sessionHash));
+      if (request.method === 'POST') { await rateLimit(env, `front-desk:${account.id}`, 20); return json(await createWalkIn(env, account.id, sessionHash, body)); }
+    }
+    const visit = path.match(/^\/api\/v1\/me\/front-desk\/visits\/([A-Za-z0-9_-]{1,128})$/);
+    if (visit && request.method === 'POST' && !params.size) { await rateLimit(env, `front-desk:${account.id}`, 20); return json(await progressWalkIn(env, account.id, sessionHash, visit[1]!, body)); }
+    throw new ApiError(404, 'This front desk action is not available.');
+  }
   if (action === 'POST /api/v1/me/orders/request') { await rateLimit(env, `order-request:${account.id}`, 12); return json(await createOrder(env, account.id, sessionHash, body)); }
   if (path === '/api/v1/me/commerce/products') {
     await requireCommerceAdmin(env, account.id, sessionHash);
@@ -198,6 +220,19 @@ async function route(request: Request, env: Env): Promise<Response> {
       if ([...params.keys()].some((key) => key !== 'cursor') || params.getAll('cursor').length > 1) throw new ApiError(400, 'This request queue is not supported.');
       return json(await staffQueue(env, account.id, sessionHash, params.get('cursor')));
     }
+    const change = path.match(/^\/api\/v1\/me\/professional\/requests\/([A-Za-z0-9_-]{1,128})\/reschedule$/);
+    if (change) {
+      if (request.method === 'GET' && params.size === 0) return json(await reschedulePage(env, account.id, sessionHash, change[1]!, true));
+      if (request.method === 'GET' && params.size === 1 && params.getAll('date').length === 1) {
+        await rateLimit(env, `availability:${account.id}`, 60);
+        return json(await changeAvailability(env, account.id, sessionHash, change[1]!, true, params.get('date')!));
+      }
+      if (request.method === 'POST' && params.size === 0) {
+        await rateLimit(env, `professional-password:${account.id}`, 10);
+        return json(await changeAppointment(env, account.id, sessionHash, change[1]!, true, body));
+      }
+      throw new ApiError(400, 'This appointment change request is not supported.');
+    }
     const match = path.match(/^\/api\/v1\/me\/professional\/requests\/([A-Za-z0-9_-]{1,128})$/);
     if (match && params.size === 0) {
       if (request.method === 'GET') return json({ request: await staffRequest(env, account.id, sessionHash, match[1]!) });
@@ -223,12 +258,33 @@ async function route(request: Request, env: Env): Promise<Response> {
     }
     throw new ApiError(404, 'This action is not available.');
   }
-  const record = path.match(/^\/api\/v1\/me\/(appointments|orders)\/([A-Za-z0-9_-]{1,128})(?:\/(calendar|withdraw|cancellation))?$/);
+  const change = path.match(/^\/api\/v1\/me\/appointments\/([A-Za-z0-9_-]{1,128})\/reschedule$/);
+  if (change) {
+    const params = new URL(request.url).searchParams; const session = secretHash(env, sessionToken(request)!);
+    if (request.method === 'GET' && params.size === 0) return json(await reschedulePage(env, account.id, session, change[1]!, false));
+    if (request.method === 'GET' && params.size === 1 && params.getAll('date').length === 1) {
+      await rateLimit(env, `availability:${account.id}`, 60);
+      return json(await changeAvailability(env, account.id, session, change[1]!, false, params.get('date')!));
+    }
+    if (request.method === 'POST' && params.size === 0) {
+      await rateLimit(env, `appointment-change:${account.id}`, 20);
+      return json(await changeAppointment(env, account.id, session, change[1]!, false, body));
+    }
+    throw new ApiError(400, 'This appointment change request is not supported.');
+  }
+  const record = path.match(/^\/api\/v1\/me\/(appointments|orders)\/([A-Za-z0-9_-]{1,128})(?:\/(calendar|withdraw|cancellation|document))?$/);
   if (record) {
     const [, kind, id, operation] = record as [string, 'appointments' | 'orders', string, string | undefined];
     if (new URL(request.url).search) throw new ApiError(400, 'This record request is not supported.');
     if (request.method === 'GET' && !operation) return json(kind === 'appointments'
       ? { appointment: await appointmentDetail(env, account.id, id) } : { order: await orderDetail(env, account.id, id) });
+    if (request.method === 'GET' && operation === 'document') {
+      const content = kind === 'appointments' ? appointmentDocument(account, await appointmentDetail(env, account.id, id)) : orderDocument(account, await orderDetail(env, account.id, id));
+      const headers = privateHeaders('text/html; charset=utf-8');
+      headers.set('Content-Security-Policy', documentPolicy);
+      headers.set('Content-Disposition', `attachment; filename="kut-shoppe-${kind === 'appointments' ? 'appointment' : 'order'}.html"`);
+      return new Response(content, { headers });
+    }
     if (request.method === 'GET' && kind === 'appointments' && operation === 'calendar') {
       const headers = privateHeaders('text/calendar; charset=utf-8');
       headers.set('Content-Disposition', 'attachment; filename="kut-shoppe-appointment.ics"');

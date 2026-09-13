@@ -4,6 +4,7 @@ import { business } from '../data/site';
 import type { ProfessionalAccess } from '../shared/staff';
 import type { StaffVisit, StaffVisitsPage, StaffVisitSummary } from '../shared/staff-visits';
 import { StaffAuthenticator } from './StaffAuthenticator';
+import { AppointmentRescheduling } from './AppointmentRescheduling';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
 const status = (value: string) => ({ confirmed: 'Confirmed', reschedule_proposed: 'Change proposed', checked_in: 'Checked in', in_service: 'In service' })[value] ?? value.replaceAll('_', ' ');
@@ -27,6 +28,7 @@ function VisitDetail({ id, onBack }: { id: string; onBack: () => void }) {
     {visit ? <><p className="customer-status">{status(visit.status)}</p><h3>{visit.customerName} · {visit.serviceName}</h3>
       <dl className="customer-detail-facts"><div><dt>Scheduled visit</dt><dd>{time(visit.startsAt, visit.timeZone)} to {time(visit.endsAt, visit.timeZone)}</dd></div><div><dt>Location</dt><dd>{visit.locationName} ({visit.timeZone})</dd></div><div><dt>Recorded service price</dt><dd>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(visit.priceCents / 100)}</dd></div></dl>
       {visit.customerNote ? <section><h3>Customer’s note</h3><p className="customer-record-note">{visit.customerNote}</p></section> : null}
+      {visit.status === 'confirmed' && visit.source === 'website' ? <AppointmentRescheduling id={id} professional onSaved={() => setAttempt(value => value + 1)} /> : null}
       {visit.proposedStartsAt || visit.proposedEndsAt ? <section className="customer-notice"><h3>Proposed time awaiting agreement</h3><p>{time(visit.proposedStartsAt, visit.timeZone)} to {time(visit.proposedEndsAt, visit.timeZone)}</p><p>Confirm arrangements with the shop before treating a proposed time as the scheduled visit.</p></section> : null}
       <p>For a cancellation or schedule change, <a href={business.phoneHref}>contact the shop</a>.</p>
     </> : !error ? <p role="status">Loading appointment…</p> : null}
@@ -48,7 +50,7 @@ function VisitList() {
   }, [cursor, attempt]);
   const refresh = () => { setSelected(null); setCursor(null); setNext(null); setItems([]); setWorking(true); setAttempt((value) => value + 1); };
   if (selected) return <VisitDetail key={selected} id={selected} onBack={refresh} />;
-  return <section aria-busy={working}><h2>Your upcoming and active visits</h2><p>Assigned visits booked through this website, ordered by scheduled start. Continue checking your existing booking provider for external appointments.</p>
+  return <section aria-busy={working}><h2>Your upcoming and active visits</h2><p>Your assigned website bookings and walk-ins, ordered by scheduled start. Continue checking your existing booking provider for external appointments.</p>
     {error ? <p role="alert" className="form-error">{error}</p> : null}
     {needsReview ? <p className="customer-notice">{needsReview} assigned {needsReview === 1 ? 'visit needs' : 'visits need'} a time review. <a href={business.phoneHref}>Contact the shop</a> to resolve the schedule.</p> : null}
     <ul className="customer-records">{items.map((item) => <li key={item.id}><div><p className="customer-status">{status(item.status)}</p><h3>{item.customerName} · {item.serviceName}</h3><p>{time(item.startsAt, item.timeZone)} · {item.locationName} ({item.timeZone})</p></div><button className="button button-secondary" onClick={() => setSelected(item.id)}>View visit</button></li>)}</ul>

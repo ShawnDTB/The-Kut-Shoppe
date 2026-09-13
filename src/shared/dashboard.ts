@@ -3,6 +3,7 @@ import type { CustomerAppointment, CustomerOrder } from './customer';
 export interface DashboardAppointment extends CustomerAppointment {
   cancellationState: 'pending' | 'approved' | 'declined' | null;
   timeZone: string;
+  changeKind?: 'customer_request' | 'professional_proposal' | null;
 }
 
 export interface CustomerDashboard {

@@ -1,6 +1,7 @@
 export interface StaffVisitSummary {
   id: string; customerName: string; serviceName: string; locationName: string; timeZone: string;
   startsAt: string | null; endsAt: string | null; status: string;
+  source?: string;
 }
 export interface StaffVisit extends StaffVisitSummary {
   priceCents: number; customerNote: string | null; proposedStartsAt: string | null; proposedEndsAt: string | null;

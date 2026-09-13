@@ -1,0 +1,31 @@
+import { createHash } from 'node:crypto';
+import type { CustomerAccount, CustomerAppointmentDetail, CustomerOrderDetail } from '../src/shared/customer';
+import { ApiError } from './types';
+
+const escape = (value: string | number) => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
+const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value / 100);
+const time = (value: string | null, timeZone = 'America/New_York') => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' }).format(new Date(value)) : 'Time not set';
+const styles = 'body{font:16px/1.6 Arial,sans-serif;color:#161616;background:white;max-width:760px;margin:40px auto;padding:24px}h1{font:32px/1.2 Georgia,serif}h2{font-size:20px}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;padding:12px 8px;border-bottom:1px solid #aaa;overflow-wrap:anywhere}p{overflow-wrap:anywhere}.notice{padding:16px;border:1px solid #666}small{font-size:13px}@media print{body{margin:0;padding:0}tr{break-inside:avoid}h1,h2{break-after:avoid}}';
+export const documentPolicy = `default-src 'none'; style-src 'sha256-${createHash('sha256').update(styles).digest('base64')}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox`;
+function document(title: string, account: CustomerAccount, content: string) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta http-equiv="Content-Security-Policy" content="${escape(documentPolicy)}"><title>${escape(title)} | The Kut Shoppe</title><style>${styles}</style></head><body><header><p>The Kut Shoppe · 518 Main Street, Stroudsburg, PA 18360</p><h1>${escape(title)}</h1><p>Prepared for ${escape(account.profile.name)}</p></header>${content}<footer><p><small>Generated ${escape(time(new Date().toISOString()))} (America/New_York). This downloaded copy does not update automatically. Check your account for the latest status. Use your browser’s Print command to print or save as PDF.</small></p></footer></body></html>`;
+}
+export function appointmentDocument(account: CustomerAccount, appointment: CustomerAppointmentDetail) {
+  const confirmed = appointment.status === 'confirmed';
+  const title = confirmed ? 'Appointment confirmation' : appointment.status === 'requested' || appointment.status === 'waitlisted' ? 'Appointment request acknowledgement' : 'Appointment record';
+  const address = appointment.location.address;
+  return document(title, account, `<p>Reference: ${escape(appointment.id)}</p><p><strong>Status: ${escape(appointment.status.replaceAll('_', ' '))}</strong></p>
+    <p class="notice">${confirmed ? 'Your appointment is confirmed at the time shown below.' : 'This document does not confirm an upcoming visit. Refer to the status above.'} This is not a payment receipt.</p>
+    ${appointment.cancellationState === 'pending' ? '<p class="notice">Cancellation is awaiting approval. The appointment remains confirmed.</p>' : ''}
+    <table><caption>Current appointment details</caption><tbody>${[['Service', appointment.serviceName], ['Professional', appointment.barberName ?? 'To be assigned'], ['Start', time(appointment.startsAt, appointment.location.timeZone)], ['End', time(appointment.endsAt, appointment.location.timeZone)], ['Time zone', appointment.location.timeZone], ['Location', appointment.location.name], ['Address', [address.line1, address.line2, address.city, address.state, address.postalCode].filter(Boolean).join(', ')], ['Recorded service price', money(appointment.priceCents)], ['Last updated', time(appointment.updatedAt, appointment.location.timeZone)]].map(([label, value]) => `<tr><th scope="row">${escape(label!)}</th><td>${escape(value!)}</td></tr>`).join('')}</tbody></table>
+    <p>Any pending replacement time remains a proposal until accepted. This document shows the current appointment time, not a proposed replacement.</p>`);
+}
+export function orderDocument(account: CustomerAccount, order: CustomerOrderDetail) {
+  if (!order.itemsComplete) throw new ApiError(409, 'Contact the shop for a complete document for this order. A partial item list cannot be issued.');
+  return document('Order acknowledgement', account, `<p>Reference: ${escape(order.id)}</p><p><strong>Status: ${escape(order.status.replaceAll('_', ' '))}</strong></p>
+    <p class="notice">This acknowledges your order and recorded amounts. It is not proof of payment or a tax invoice. Check with the shop before collecting an order or making payment.</p>
+    <p>Fulfillment: ${escape(order.fulfillment)} · Placed: ${escape(time(order.createdAt))}</p>
+    <table><caption>Recorded order items</caption><thead><tr><th scope="col">Item</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Total</th></tr></thead><tbody>${order.items.map(item => `<tr><td>${escape(item.productName)}<br>${escape(item.variantName)}</td><td>${escape(item.quantity)}</td><td>${escape(money(item.unitPriceCents))}</td><td>${escape(money(item.quantity * item.unitPriceCents))}</td></tr>`).join('')}</tbody></table>
+    <table><caption>Recorded amounts</caption><tbody>${[['Subtotal', order.subtotalCents], ['Shipping', order.shippingCents], ['Tax', order.taxCents], ['Total', order.totalCents]].map(([label, amount]) => `<tr><th scope="row">${escape(label!)}</th><td>${escape(money(Number(amount)))}</td></tr>`).join('')}</tbody></table>
+    ${order.fulfillment === 'shipping' ? '<p>Shipping charges and any outstanding payment arrangements must be confirmed with the shop.</p>' : ''}`);
+}

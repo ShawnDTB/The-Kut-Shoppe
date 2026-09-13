@@ -248,6 +248,25 @@ try {
   assert.equal((await call(`/me/professional/visits/${visitId}`, undefined, applicantCookie)).status, 404);
   assert.equal((await call('/me/professional/visits', undefined, detailCookie)).status, 403);
   const cancellationPath = `/me/appointments/${visitId}/cancellation`;
+  const reschedulePath = `/me/appointments/${visitId}/reschedule`;
+  const changePage = await (await call(reschedulePath, undefined, detailCookie)).json();
+  const replacementResponse = await call(`${reschedulePath}?date=${bookingDate}`, undefined, detailCookie);
+  assert.equal(replacementResponse.status, 200, await replacementResponse.clone().text());
+  const replacement = await replacementResponse.json(); assert.ok(replacement.slots.length);
+  const move = { action: 'request', updatedAt: changePage.updatedAt, version: changePage.version, requestKey: randomUUID(),
+    date: bookingDate, startsAt: replacement.slots.at(-1).startsAt, quote: replacement.quote };
+  const duplicateMoves = await Promise.all([call(reschedulePath, move, detailCookie), call(reschedulePath, move, detailCookie)]);
+  for (const response of duplicateMoves) assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM appointment_changes WHERE appointment_id=?').bind(visitId).first()).n, 1);
+  const pendingMove = await (await call(reschedulePath, undefined, detailCookie)).json();
+  assert.equal(pendingMove.startsAt, changePage.startsAt, 'A pending change moved the original reservation');
+  const responseBody = { updatedAt: pendingMove.updatedAt, version: pendingMove.version, changeId: pendingMove.change.id, currentPassword: 'A runtime test passphrase 2026' };
+  const opposingMoves = await Promise.all([
+    call(`/me/professional/requests/${visitId}/reschedule`, { ...responseBody, action: 'approve', requestKey: randomUUID() }, staffCookie),
+    call(`/me/professional/requests/${visitId}/reschedule`, { ...responseBody, action: 'decline', requestKey: randomUUID() }, staffCookie),
+  ]);
+  assert.deepEqual(opposingMoves.map(r => r.status).sort(), [200,409]);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_change_operations WHERE appointment_id=? AND action IN ('approve','decline')").bind(visitId).first()).n, 1);
   const cancelBefore = await (await call(`/me/appointments/${visitId}`, undefined, detailCookie)).json();
   const duplicateCancellations = await Promise.all([
     call(cancellationPath, { updatedAt: cancelBefore.appointment.updatedAt }, detailCookie),
@@ -272,5 +291,5 @@ try {
   const purchases=await Promise.all([call('/me/orders/request',purchase,detailCookie),call('/me/orders/request',{...purchase,requestKey:randomUUID()},secondCookie)]);
   assert.deepEqual(purchases.map(r=>r.status).sort(),[200,409],'Two customers reserved the last inventory item');
   assert.equal((await db.prepare("SELECT stock_reserved FROM product_variants WHERE id='race-variant'").first()).stock_reserved,1);
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, assigned visit isolation, inventory competition, and transactional notifications.');
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, duplicate rescheduling and opposing decisions, assigned visit isolation, inventory competition, and transactional notifications.');
 } finally { await worker.dispose(); }

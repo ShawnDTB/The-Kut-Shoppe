@@ -9,14 +9,17 @@ interface AppointmentRow {
   priceCents: number; customerNote: string | null; createdAt: string; updatedAt: string; withdrawalId: string | null;
   locationName: string; line1: string; line2: string | null; city: string; state: string; postalCode: string; timeZone: string;
   cancellationState: CustomerAppointmentDetail['cancellationState'];
+  changePending: number;
+  changeVersion: number;
 }
 
 export async function appointmentDetail(env: Env, userId: string, id: string): Promise<CustomerAppointmentDetail> {
   const row = await env.DB.prepare(`SELECT a.id, s.name AS serviceName, sp.professional_name AS barberName,
-    a.status, a.source, a.starts_at AS startsAt, a.ends_at AS endsAt,
+    a.status, a.source, a.starts_at AS startsAt, a.ends_at AS endsAt, a.change_version AS changeVersion,
     a.proposed_starts_at AS proposedStartsAt, a.proposed_ends_at AS proposedEndsAt, a.price_cents AS priceCents,
     a.customer_note AS customerNote, a.created_at AS createdAt, a.updated_at AS updatedAt,
     a.customer_withdrawal_id AS withdrawalId, a.cancellation_state AS cancellationState, l.name AS locationName,
+    EXISTS (SELECT 1 FROM appointment_changes c WHERE c.appointment_id=a.id AND c.status='pending' AND julianday(c.expires_at)>julianday('now')) AS changePending,
     l.address_line_1 AS line1, l.address_line_2 AS line2, l.city, l.state, l.postal_code AS postalCode, l.timezone AS timeZone
     FROM appointments a JOIN services s ON s.id = a.service_id JOIN locations l ON l.id = a.location_id
     LEFT JOIN staff_profiles sp ON sp.id = COALESCE(a.assigned_staff_id, a.requested_staff_id)
@@ -37,7 +40,9 @@ export async function appointmentDetail(env: Env, userId: string, id: string): P
     withdrawnByCustomer: row.status === 'cancelled' && Boolean(row.withdrawalId),
     canDownloadCalendar: row.status === 'confirmed' && Number.isFinite(starts) && Number.isFinite(ends) && ends > starts,
     canRequestCancellation: env.STAFF_OPERATIONS_ENABLED === 'true' && row.source === 'website'
-      && row.status === 'confirmed' && !row.cancellationState && starts > Date.now(),
+      && row.status === 'confirmed' && !row.cancellationState && !row.changePending && starts > Date.now(),
+    reschedulingEnabled: env.STAFF_OPERATIONS_ENABLED === 'true' && row.source === 'website',
+    changeVersion: row.changeVersion,
     cancellationState: row.cancellationState,
   };
 }
@@ -53,6 +58,7 @@ export async function requestCancellation(env: Env, userId: string, sessionHash:
     env.DB.prepare(`UPDATE appointments SET customer_cancellation_id=?,cancellation_requested_at=?,cancellation_state='pending',updated_at=?
       WHERE id=? AND customer_user_id=? AND source='website' AND status='confirmed' AND cancellation_state IS NULL
         AND updated_at=? AND julianday(starts_at)>julianday(?)
+        AND NOT EXISTS (SELECT 1 FROM appointment_changes c WHERE c.appointment_id=appointments.id AND c.status='pending' AND julianday(c.expires_at)>julianday('now'))
         AND EXISTS (SELECT 1 FROM users u JOIN sessions se ON se.user_id=u.id WHERE u.id=? AND u.status='active'
           AND u.email_verified_at IS NOT NULL AND se.token_hash=? AND se.revoked_at IS NULL AND se.expires_at>?)
         AND EXISTS (SELECT 1 FROM staff_profiles sp JOIN users u ON u.id=sp.user_id

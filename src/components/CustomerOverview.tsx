@@ -12,6 +12,8 @@ function when(visit: DashboardAppointment) {
   return new Intl.DateTimeFormat('en-US', { timeZone: visit.timeZone, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(visit.startsAt));
 }
 function pendingLabel(visit: DashboardAppointment) {
+  if (visit.changeKind === 'professional_proposal') return 'Your professional proposed a new time. Open your appointment to accept or decline.';
+  if (visit.changeKind === 'customer_request') return 'Rescheduling requested. Your original visit stays confirmed until approved.';
   if (visit.status === 'confirmed' && visit.cancellationState === 'pending') return 'Cancellation requested. Your visit remains confirmed until approved.';
   if (visit.status === 'reschedule_proposed') return 'A different time has been proposed. Open your appointment for details.';
   if (visit.status === 'waitlisted') return 'On the waitlist. A visit has not been confirmed.';

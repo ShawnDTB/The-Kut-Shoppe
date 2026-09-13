@@ -12,7 +12,17 @@ Implementation progress after audit commit `90e7cad`: [mobile navigation and das
 | B1 | Implemented: prominent next visit, requests/pickups, updated records, secondary totals/profile, refresh recovery | Visual mobile/desktop acceptance and long-content review. |
 | B2 | Verified in SQLite API tests: customer-owned cancellation/proposal attention, uncapped counts, pickup-ready orders and update-time ordering | Full customer workflow acceptance remains B3. Rescheduling actions remain milestone C. |
 
-Next: finish A1/A3 visual acceptance and A4/B3 customer journey checks, then implement C1–C5 rescheduling. Payment/receipt and front-desk milestones D–F remain required before a complete operational launch.
+Follow-up implementation: [rescheduling, guest walk-ins and printable documents](rescheduling-walk-ins-and-documents.md).
+
+| Task | Follow-up status | Remaining scope |
+| --- | --- | --- |
+| C1–C3 | Implemented: separate change history, customer requests/withdrawal, professional approval/alternatives, customer acceptance/decline | Real-browser journey acceptance. |
+| C4–C5 | Implemented: atomic schedule move, cancellation interlock, calendar versioning, private notices, expiry/cleanup/repeated requests; concurrent D1 duplicate/opposing-decision checks pass | Future payment/deposit integration and broader device/customer acceptance. |
+| D3 | Printable current booking/request documents and order acknowledgements implemented | Detailed confirmation emails and immutable issued financial documents remain. |
+| E1–E3 | Owner/manager guest walk-in scheduling and lifecycle implemented; professionals see assigned guest visits | Dedicated front-desk permissions, unscheduled queue, account linking, full day/week calendar and pagination. |
+| D1/D2/D4, E4/E5, F1–F5 | Financial integration awaits seller/processor decision | Cash/card collection, paid receipts, refunds, terminal and register reconciliation are not implemented. |
+
+Next: establish whether the shop or individual professionals receive customer payments and identify any existing processor/terminal. Implement cash/card sales and financial receipts against that ownership model. Continue A/B visual and complete customer journey acceptance before launch.
 
 Priority means implementation order and launch impact, not an estimated delivery date. Size is omitted until the payment/hardware and business decisions are resolved. Implement each milestone as a coherent working journey with source, migration, tests and a review guide on `dev-branch`.
 
