@@ -20,9 +20,11 @@ Follow-up implementation: [rescheduling, guest walk-ins and printable documents]
 | C4–C5 | Implemented: atomic schedule move, cancellation interlock, calendar versioning, private notices, expiry/cleanup/repeated requests; concurrent D1 duplicate/opposing-decision checks pass | Future payment/deposit integration and broader device/customer acceptance. |
 | D3 | Printable current booking/request documents and order acknowledgements implemented | Detailed confirmation emails and immutable issued financial documents remain. |
 | E1–E3 | Owner/manager guest walk-in scheduling and lifecycle implemented; professionals see assigned guest visits | Dedicated front-desk permissions, unscheduled queue, account linking, full day/week calendar and pagination. |
-| D1/D2/D4, E4/E5, F1–F5 | Financial integration awaits seller/processor decision | Cash/card collection, paid receipts, refunds, terminal and register reconciliation are not implemented. |
+| D1 | Shop-owned collection proposed from owner-direction discussion; Square/Stripe comparison and onboarding plan documented | Kash must confirm seller, compensation/payroll, tax/shipping and processor/device choices before activation. |
+| D2/D4, E4/E5, F1–F5 | Financial integration planned against the proposed shop seller model | Cash/card collection, paid receipts, refunds, terminal and register reconciliation are not implemented. |
+| H1–H5 | Service earnings, retail attribution, tip accounting and pay-run requirements documented | No live commission rate, ledger writer, staff statement or disbursement workflow is implemented. |
 
-Next: establish whether the shop or individual professionals receive customer payments and identify any existing processor/terminal. Implement cash/card sales and financial receipts against that ownership model. Continue A/B visual and complete customer journey acceptance before launch.
+Next: implement the shared sale and receipt foundation using the proposed shop-owned collection model, then cash/register operations and processor sandbox checkout. The user reports Booksy is currently used and believes Kash wants centralized business-bank collection plus service earnings and retail commissions for barbers. Treat those policies as provisional, with Square recommended for evaluation. See [shop payments, barber earnings and Booksy transition](shop-payments-and-barber-earnings.md) for P1–P7 implementation order, processor research, onboarding requirements and acceptance criteria. Continue A/B visual and complete customer journey acceptance before launch.
 
 Priority means implementation order and launch impact, not an estimated delivery date. Size is omitted until the payment/hardware and business decisions are resolved. Implement each milestone as a coherent working journey with source, migration, tests and a review guide on `dev-branch`.
 
@@ -111,6 +113,20 @@ Acceptance journey: online product checkout paid electronically → stock reserv
 | G5 | Backup, restore, migration and rollback rehearsal | G4 | Restore into fresh database; ownership/inventory/payment references reconcile; pending workflows survive rollback strategy. |
 | G6 | Device, accessibility, performance and full-day acceptance | A–F | Mobile/desktop/keyboard/screen-reader journeys and actual reader/printing pass; alerts and outage procedures exercised. |
 | G7 | Release review for main/production | G1–G6 | Explicit recorded acceptance of defined launch scope; no hidden placeholders or fake successful actions. |
+
+## H — Barber earnings, retail commissions and pay runs
+
+P1–P7 in the [payment decision proposal](shop-payments-and-barber-earnings.md) define the dependency order across D/E/F/H. These are planned tasks; baseline earnings/payout tables alone do not implement them.
+
+| ID | Work | Dependency | Completion evidence |
+| --- | --- | --- | --- |
+| H1 | Effective service/retail compensation policies and per-line professional attribution | D1, D2 | Owner-approved rates, recognition rules and exclusions; immutable policy snapshots; prospective changes and audited corrections; unset rates are explicit. |
+| H2 | Append-only earnings events and separate tip liabilities | H1, E4/F2 | Paid/delivered source references and approved recognition rules; exact discount/rounding calculations; refund review never silently deducts wages/tips; direct cash tips cannot be paid twice. |
+| H3 | Barber statements and owner liability/reconciliation view | H2 | Own-account isolation, source traceability, pagination, pending/approved/paid distinction; daily visibility separate from weekly pay schedule. |
+| H4 | Pay-run approval and payroll/contractor export | H3, confirmed worker/payroll arrangements | Pay periods and totals reconcile; duplicate allocation/export protection; failed/cancelled run recovery; required compensation is not delayed by discretionary approval. |
+| H5 | Supported disbursement integration and confirmation | H4, provider onboarding | Separate processor settlements and staff payouts; idempotent attempts, unknown/failed outcomes, completion evidence and audit; no unbacked withdraw button. |
+
+Acceptance journey: a guest receives a haircut and buys a barber-referred product, pays the shop, receives a receipt, and generates the correct service/retail/tip statement entries. A reviewed weekly pay run records the actual staff payment once. A subsequent partial merchandise refund retains the original attribution/rate and routes any compensation adjustment through the approved policy.
 
 ## Working rules for future changes
 

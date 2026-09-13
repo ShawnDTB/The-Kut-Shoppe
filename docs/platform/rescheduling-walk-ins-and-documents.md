@@ -48,6 +48,8 @@ Remaining operational limits: no cash/card collection, financial receipt/refund 
 
 ## Cash and electronic payment implementation decision
 
+Follow-up direction is recorded in [shop payments and barber earnings](shop-payments-and-barber-earnings.md): the user reports Booksy use and proposes shop-owned collections, barber earnings and retail commissions. Square is recommended for evaluation; compensation terms and merchant onboarding remain unconfirmed. The proposal extends the implementation sequence below without activating financial features.
+
 Before implementing the financial records and processor calls, establish who sells each service/product and receives the funds. A shop-owned sale model differs from independent barber sellers. This determines merchant identifiers on sales/receipts, which account creates each charge, who handles refunds/disputes, and whether combined service/merchandise checkout is one sale or multiple sales. Stripe explicitly makes merchant-of-record identity depend on charge configuration. [Stripe merchant-of-record documentation](https://docs.stripe.com/connect/merchant-of-record).
 
 If an existing Square merchant account and Square Terminal are used, Square can connect the custom front desk to a paired terminal; completion must come from verified provider state/webhooks. Cash is recorded through its Payments API rather than Terminal checkout. [Square Terminal overview](https://developer.squareup.com/docs/terminal-api/overview), [cash payments](https://developer.squareup.com/docs/payments-api/take-payments/cash-payments).
