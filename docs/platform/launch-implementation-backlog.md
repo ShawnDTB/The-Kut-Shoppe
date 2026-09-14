@@ -123,10 +123,18 @@ P1–P7 in the [payment decision proposal](shop-payments-and-barber-earnings.md)
 | H1 | Effective service/retail compensation policies and per-line professional attribution | D1, D2 | Owner-approved rates, recognition rules and exclusions; immutable policy snapshots; prospective changes and audited corrections; unset rates are explicit. |
 | H2 | Append-only earnings events and separate tip liabilities | H1, E4/F2 | Paid/delivered source references and approved recognition rules; exact discount/rounding calculations; refund review never silently deducts wages/tips; direct cash tips cannot be paid twice. |
 | H3 | Barber statements and owner liability/reconciliation view | H2 | Own-account isolation, source traceability, pagination, pending/approved/paid distinction; daily visibility separate from weekly pay schedule. |
-| H4 | Pay-run approval and payroll/contractor export | H3, confirmed worker/payroll arrangements | Pay periods and totals reconcile; duplicate allocation/export protection; failed/cancelled run recovery; required compensation is not delayed by discretionary approval. |
-| H5 | Supported disbursement integration and confirmation | H4, provider onboarding | Separate processor settlements and staff payouts; idempotent attempts, unknown/failed outcomes, completion evidence and audit; no unbacked withdraw button. |
+| H4 | Pay-run review and employee payroll export | H3, confirmed payroll provider/pay codes | User confirmed employee status. Pay periods, applicable base/timekeeping/overtime, commissions and tips reconcile; duplicate allocation/export protection; required compensation is not delayed by discretionary approval. |
+| H5 | Payroll result integration and confirmation | H4, provider onboarding | Separate processor settlements, gross compensation, withholding and employee net pay; idempotent attempts, unknown/failed outcomes, completion evidence and audit; no unbacked withdraw button. |
 
 Acceptance journey: a guest receives a haircut and buys a barber-referred product, pays the shop, receives a receipt, and generates the correct service/retail/tip statement entries. A reviewed weekly pay run records the actual staff payment once. A subsequent partial merchandise refund retains the original attribution/rate and routes any compensation adjustment through the approved policy.
+
+## September 14 implementation checkpoint
+
+The user confirmed that barbers are employees. Employee payroll is the compensation path; contractor withdrawals are outside the current plan. Rates, pay schedule, payroll provider and tax/shipping settings remain to be supplied.
+
+[Sale preparation and immutable estimates](sales-estimates-milestone.md) implements the first P1/D2 document-and-amount increment: protected owner/manager preparation from existing native visits/orders, server prices, exact discount allocation, explicit unresolved charges, signed review, immutable issued copies, private customer history and printable estimates. Front desk and order management link into it. All 207 tests and the full project check pass, including concurrent D1 saves. Browser layout/printing acceptance remains blocked by the preview environment.
+
+This does not complete P1/D2: live merchant configuration, versioned commission policies, finalized sales, tenders, payments/refunds and financial receipts remain. Next implement confirmed business settings and the finalized sale/payment ledger, followed by P2 cash/register and P3 processor sandbox checkout. Preserve the current booking and shop flows. Estimates do not reserve inventory, record payment, create wages or send email.
 
 ## Working rules for future changes
 

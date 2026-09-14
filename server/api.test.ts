@@ -11,6 +11,7 @@ import type { Database, Env, Statement } from './types';
 import { wallWindow, localDate } from './booking-time';
 import { deliverAppointmentNotifications } from './appointment-notifications';
 import { totp } from './totp';
+import type { EstimateInput } from '../src/shared/sales';
 
 // Actual SQLite executes the repository migrations and every API query. Only
 // network delivery/bot services are replaced; authorization is never mocked.
@@ -1331,6 +1332,140 @@ async function register(email = 'new@example.test') {
   expect(response.status).toBe(202);
   return await response.json() as { challengeId: string };
 }
+
+describe('shared sale estimates', () => {
+  async function fixture() {
+    env.STAFF_OPERATIONS_ENABLED = 'true'; env.COMMERCE_ENABLED = 'true';
+    const owner = await seed('sale-owner', 'owner'); await enrollMfa(owner);
+    const alice = await seed('alice'); const bob = await seed('bob');
+    const now = seedRecords();
+    db.sqlite.exec("UPDATE appointments SET status='confirmed';");
+    db.sqlite.prepare("INSERT INTO products(id,name,slug,category,description,base_sku,created_at,updated_at) VALUES ('sale-product','Test product','sale-product','test','Test description','SALE',?,?)").run(now, now);
+    db.sqlite.prepare("INSERT INTO product_variants(id,product_id,name,sku,price_cents,stock_on_hand,created_at,updated_at) VALUES ('sale-variant','sale-product','Standard','SALE-1',9999,10,?,?)").run(now, now);
+    db.sqlite.prepare("INSERT INTO order_items(id,order_id,variant_id,product_name,variant_name,sku,quantity,unit_price_cents,created_at) VALUES ('sale-item','detail-order','sale-variant','Original product','Standard','SALE-1',1,2500,?)").run(now);
+    const input: EstimateInput = { appointmentId: 'detail-appointment', orderId: 'detail-order', discountCents: 501, discountReason: 'Customer discount', taxCents: null, shippingCents: null, chargeNote: '' };
+    const preview = async (body = input) => { const response = await request('/me/sales/preview', body, owner); expect(response.status).toBe(200); return response.json(); };
+    const save = (token: string, body = input, key = randomUUID()) => ({ ...body, token, requestKey: key, currentPassword: password });
+    return { owner, alice, bob, input, preview, save };
+  }
+  it('prepares recorded service and order prices, preserves unknown charges and saves exactly once without payment side effects', async () => {
+    const f = await fixture(); const page = await f.preview();
+    expect(page.estimate).toMatchObject({ subtotalCents: 5000, discountCents: 501, netCents: 4499, totalCents: null, taxCents: null, shippingCents: null });
+    expect(page.estimate.lines.map((line: { unitPriceCents: number }) => line.unitPriceCents)).toEqual([2500, 2500]);
+    const body = f.save(page.token); const response = await request('/me/sales', body, f.owner); expect(response.status).toBe(200);
+    const saved = await response.json();
+    expect(await (await request('/me/sales', body, f.owner)).json()).toEqual(saved);
+    expect(await (await request('/me/sales', { ...body, requestKey: randomUUID() }, f.owner)).json()).toEqual(saved);
+    expect((await request('/me/sales', { ...body, discountCents: 100 }, f.owner)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM sale_estimates').get()!.n).toBe(1);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='sale_estimate_issued'").get()!.n).toBe(1);
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('confirmed');
+    expect(db.sqlite.prepare('SELECT status FROM orders').get()!.status).toBe('submitted');
+    expect(db.sqlite.prepare('SELECT stock_on_hand,stock_reserved FROM product_variants').get()).toEqual({ stock_on_hand: 10, stock_reserved: 0 });
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM earning_entries').get()!.n).toBe(0);
+    const copy = await request(`/me/estimates/${saved.estimateId}/document`, undefined, f.alice); expect(copy.status).toBe(200);
+    expect(await copy.text()).toContain('not an invoice or payment receipt');
+  });
+  it('enforces customer ownership, staff roles, MFA and safe immutable document snapshots', async () => {
+    const f = await fixture();
+    const staff = await seed('sale-staff', 'staff'); await enrollMfa(staff);
+    for (const session of [f.alice, staff]) expect((await request('/me/sales/preview', f.input, session)).status).toBe(403);
+    db.sqlite.exec("UPDATE services SET name='<script>bad()</script>'; UPDATE users SET display_name='<img src=x onerror=bad()>' WHERE id='alice';");
+    const page = await f.preview(); const response = await request('/me/sales', f.save(page.token), f.owner); expect(response.status).toBe(200);
+    const { estimateId } = await response.json();
+    const path = `/me/estimates/${estimateId}/document`;
+    expect((await request(path, undefined, f.bob)).status).toBe(404);
+    expect((await request(path, undefined, f.owner)).status).toBe(404);
+    expect((await request(path)).status).toBe(401);
+    const before = await request(path, undefined, f.alice); const html = await before.text();
+    expect(html).toContain('&lt;script&gt;'); expect(html).not.toMatch(/<script>|<img |SECRET|password|sale-owner|request_fingerprint/);
+    expect(before.headers.get('Cache-Control')).toContain('no-store'); expect(before.headers.get('Content-Security-Policy')).toContain("default-src 'none'");
+    db.sqlite.exec("UPDATE services SET name='New name'; UPDATE users SET display_name='Changed name' WHERE id='alice'; UPDATE order_items SET unit_price_cents=9000;");
+    expect(await (await request(path, undefined, f.alice)).text()).toBe(html);
+    expect(() => db.sqlite.exec("UPDATE sale_estimates SET snapshot_json='{}'")).toThrow(/cannot be changed/);
+    expect(() => db.sqlite.exec('DELETE FROM sale_estimates')).toThrow(/retention/);
+    expect((await (await request('/me/estimates', undefined, f.bob)).json()).items).toEqual([]);
+    db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='sale-owner'");
+    expect((await request(`/me/sales/${estimateId}/document`, undefined, f.owner)).status).toBe(403);
+  });
+  it('rejects changed input, source changes, mismatched customers, unsupported records and incomplete amounts', async () => {
+    const f = await fixture(); const page = await f.preview();
+    expect((await request('/me/sales', f.save(page.token, { ...f.input, discountCents: 1 }), f.owner)).status).toBe(409);
+    expect((await request('/me/sales/preview', { ...f.input, taxCents: 0 }, f.owner)).status).toBe(400);
+    expect((await request('/me/sales/preview', { ...f.input, paid: true }, f.owner)).status).toBe(400);
+    db.sqlite.exec("UPDATE appointments SET customer_user_id='bob'");
+    expect((await request('/me/sales/preview', f.input, f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET customer_user_id='alice',status='cancelled'");
+    expect((await request('/me/sales', f.save(page.token), f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET status='confirmed'; UPDATE order_items SET quantity=2;");
+    expect((await request('/me/sales/preview', f.input, f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE order_items SET quantity=1; UPDATE appointments SET price_cents=3000;");
+    expect((await request('/me/sales', f.save(page.token), f.owner)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM sale_estimates').get()!.n).toBe(0);
+    const determined = { ...f.input, taxCents: 300, shippingCents: 500, chargeNote: 'Confirmed charge estimate' };
+    expect((await f.preview(determined)).estimate.totalCents).toBe(5799);
+  });
+  it('supports account-free guest estimates without allowing guest records to be attached to another customer', async () => {
+    const f = await fixture(); db.sqlite.exec("UPDATE appointments SET customer_user_id=NULL,guest_name='Walk-in customer',source='walk_in'");
+    expect((await request('/me/sales/preview', f.input, f.owner)).status).toBe(409);
+    const input = { ...f.input, orderId: null };
+    const preview = await request('/me/sales/preview', input, f.owner); expect(preview.status).toBe(200); const page = await preview.json();
+    expect(page.estimate).toMatchObject({ customerName: 'Walk-in customer', shippingCents: 0, totalCents: null });
+    const result = await request('/me/sales', { ...input, token: page.token, requestKey: randomUUID(), currentPassword: password }, f.owner); expect(result.status).toBe(200);
+    const saved = await result.json();
+    expect(db.sqlite.prepare('SELECT customer_user_id FROM sale_estimates').get()!.customer_user_id).toBeNull();
+    expect((await request(`/me/estimates/${saved.estimateId}`, undefined, f.alice)).status).toBe(404);
+    expect((await request(`/me/sales/${saved.estimateId}/document`, undefined, f.owner)).status).toBe(200);
+  });
+  it.each([
+    "UPDATE sessions SET mfa_until=NULL WHERE user_id='sale-owner'",
+    "UPDATE users SET role='customer' WHERE id='sale-owner'",
+    "UPDATE account_credentials SET password_hash='changed' WHERE user_id='sale-owner'",
+    "UPDATE appointments SET price_cents=1",
+    "UPDATE orders SET status='cancelled'",
+  ])('rechecks final-write access and source revisions: %s', async sql => {
+    const f = await fixture(); const page = await f.preview();
+    const batch = env.DB.batch.bind(env.DB); let once = true;
+    const spy = vi.spyOn(env.DB, 'batch').mockImplementation(async statements => {
+      if (once && statements.length === 2) { once = false; db.sqlite.exec(sql); }
+      return batch(statements);
+    });
+    expect((await request('/me/sales', f.save(page.token), f.owner)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM sale_estimates').get()!.n).toBe(0);
+  });
+  it('rolls back on audit failure and preserves replay after source changes or review expiry', async () => {
+    const f = await fixture(); const page = await f.preview(); const body = f.save(page.token);
+    db.sqlite.exec("CREATE TRIGGER fail_sale_audit BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test'); END;");
+    expect((await request('/me/sales', body, f.owner)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM sale_estimates').get()!.n).toBe(0);
+    db.sqlite.exec('DROP TRIGGER fail_sale_audit');
+    const saved = await (await request('/me/sales', body, f.owner)).json();
+    const unsaved = await f.preview();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse(page.expiresAt) + 60_000);
+    expect((await request('/me/sales', f.save(unsaved.token), f.owner)).status).toBe(409);
+    expect(await (await request('/me/sales', body, f.owner)).json()).toEqual(saved); clock.mockRestore();
+    db.sqlite.exec("UPDATE orders SET status='cancelled'");
+    expect(await (await request('/me/sales', body, f.owner)).json()).toEqual(saved);
+  });
+  it('paginates customer-scoped history and source choices without leaking operational fields', async () => {
+    const f = await fixture(); const page = await f.preview(); await request('/me/sales', f.save(page.token), f.owner);
+    const original = db.sqlite.prepare('SELECT * FROM sale_estimates').get()!;
+    for (let index = 0; index < 30; index++) {
+      const id = `estimate-${index.toString().padStart(3, '0')}`;
+      const snapshot = { ...JSON.parse(String(original.snapshot_json)), id };
+      db.sqlite.prepare('INSERT INTO sale_estimates(id,actor_user_id,customer_user_id,appointment_id,request_key,request_fingerprint,review_key,snapshot_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+        .run(id, 'sale-owner', 'alice', 'detail-appointment', id, id, id, JSON.stringify(snapshot), String(original.created_at));
+    }
+    const first = await (await request('/me/estimates', undefined, f.alice)).json(); expect(first.items).toHaveLength(25);
+    const second = await (await request(`/me/estimates?cursor=${encodeURIComponent(first.nextCursor)}`, undefined, f.alice)).json(); expect(second.items).toHaveLength(6); expect(second.nextCursor).toBeNull();
+    expect(new Set([...first.items, ...second.items].map(item => item.id)).size).toBe(31);
+    expect((await request(`/me/estimates?cursor=${encodeURIComponent(first.nextCursor)}`, undefined, f.bob)).status).toBe(400);
+    expect((await request('/me/sales?customerId=alice', undefined, f.owner)).status).toBe(400);
+    expect((await request('/me/sales/sources?kind=order&kind=appointment', undefined, f.owner)).status).toBe(400);
+    const sources = await request('/me/sales/sources?kind=appointment', undefined, f.owner); expect(sources.status).toBe(200);
+    expect(await sources.text()).not.toMatch(/SECRET|note|email|password/);
+  });
+});
 
 describe('server commerce requests', () => {
   const product = { id:'pomade',name:'Matte pomade',slug:'matte-pomade',category:'Grooming',description:'Matte finish',baseSku:'POM',status:'published',pickupEnabled:true,shippingEnabled:true,imageUrl:'',imageAlt:'',variants:[{id:'matte',name:'Matte',sku:'POM-M',priceCents:1500,stockOnHand:2,active:true}] };

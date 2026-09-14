@@ -1,0 +1,12 @@
+.sale-estimate-list { list-style: none; margin: 1.25rem 0; padding: 0; display: grid; gap: 1rem; }
+.sale-estimate-record { border-block-start: 1px solid #777; padding-block: 1rem; min-width: 0; }
+.sale-estimate-record summary { cursor: pointer; min-height: 44px; padding: .6rem; overflow-wrap: anywhere; }
+.sale-estimate-record summary span { display: block; margin-top: .4rem; font-size: .9rem; }
+.sale-estimate-record summary:focus-visible { outline: 2px solid #d6bc76; outline-offset: 4px; }
+.sale-estimate-summary { min-width: 0; overflow-wrap: anywhere; }
+.sale-estimate-summary .customer-order-items li { flex-wrap: wrap; }
+.sale-estimate-summary .customer-order-totals div { gap: 1rem; }
+@media (max-width: 520px) {
+  .sale-estimate-summary .customer-order-totals div { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+  .sale-estimate-summary .customer-order-totals dd { margin: 0; text-align: start; }
+}

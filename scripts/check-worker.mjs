@@ -248,6 +248,20 @@ try {
   assert.equal((await call(`/me/professional/visits/${visitId}`, undefined, applicantCookie)).status, 404);
   assert.equal((await call('/me/professional/visits', undefined, detailCookie)).status, 403);
   const cancellationPath = `/me/appointments/${visitId}/cancellation`;
+  const estimateInput = { appointmentId: visitId, orderId: null, discountCents: 0, discountReason: '', taxCents: null, shippingCents: null, chargeNote: '' };
+  const estimatePreviewResponse = await call('/me/sales/preview', estimateInput, staffCookie);
+  assert.equal(estimatePreviewResponse.status, 200, await estimatePreviewResponse.clone().text());
+  const estimatePreview = await estimatePreviewResponse.json();
+  const estimateSave = { ...estimateInput, token: estimatePreview.token, requestKey: randomUUID(), currentPassword: 'A runtime test passphrase 2026' };
+  const duplicateEstimates = await Promise.all([call('/me/sales', estimateSave, staffCookie), call('/me/sales', estimateSave, staffCookie)]);
+  for (const response of duplicateEstimates) assert.equal(response.status, 200, await response.clone().text());
+  const savedEstimate = await duplicateEstimates[0].json();
+  assert.equal((await duplicateEstimates[1].json()).estimateId, savedEstimate.estimateId);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM sale_estimates WHERE appointment_id=?').bind(visitId).first()).n, 1);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE action='sale_estimate_issued' AND entity_id=?").bind(savedEstimate.estimateId).first()).n, 1);
+  assert.equal((await call(`/me/estimates/${savedEstimate.estimateId}/document`, undefined, detailCookie)).status, 200);
+  assert.equal((await call(`/me/estimates/${savedEstimate.estimateId}/document`, undefined, applicantCookie)).status, 404);
+  assert.equal((await db.prepare('SELECT status FROM appointments WHERE id=?').bind(visitId).first()).status, 'confirmed');
   const reschedulePath = `/me/appointments/${visitId}/reschedule`;
   const changePage = await (await call(reschedulePath, undefined, detailCookie)).json();
   const replacementResponse = await call(`${reschedulePath}?date=${bookingDate}`, undefined, detailCookie);
@@ -291,5 +305,5 @@ try {
   const purchases=await Promise.all([call('/me/orders/request',purchase,detailCookie),call('/me/orders/request',{...purchase,requestKey:randomUUID()},secondCookie)]);
   assert.deepEqual(purchases.map(r=>r.status).sort(),[200,409],'Two customers reserved the last inventory item');
   assert.equal((await db.prepare("SELECT stock_reserved FROM product_variants WHERE id='race-variant'").first()).stock_reserved,1);
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, duplicate rescheduling and opposing decisions, assigned visit isolation, inventory competition, and transactional notifications.');
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, duplicate estimates and private documents, duplicate rescheduling and opposing decisions, assigned visit isolation, inventory competition, and transactional notifications.');
 } finally { await worker.dispose(); }

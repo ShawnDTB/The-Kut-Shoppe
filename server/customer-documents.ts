@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { CustomerAccount, CustomerAppointmentDetail, CustomerOrderDetail } from '../src/shared/customer';
 import { ApiError } from './types';
+import type { SaleEstimate } from '../src/shared/sales';
 
 const escape = (value: string | number) => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
 const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value / 100);
@@ -28,4 +29,18 @@ export function orderDocument(account: CustomerAccount, order: CustomerOrderDeta
     <table><caption>Recorded order items</caption><thead><tr><th scope="col">Item</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Total</th></tr></thead><tbody>${order.items.map(item => `<tr><td>${escape(item.productName)}<br>${escape(item.variantName)}</td><td>${escape(item.quantity)}</td><td>${escape(money(item.unitPriceCents))}</td><td>${escape(money(item.quantity * item.unitPriceCents))}</td></tr>`).join('')}</tbody></table>
     <table><caption>Recorded amounts</caption><tbody>${[['Subtotal', order.subtotalCents], ['Shipping', order.shippingCents], ['Tax', order.taxCents], ['Total', order.totalCents]].map(([label, amount]) => `<tr><th scope="row">${escape(label!)}</th><td>${escape(money(Number(amount)))}</td></tr>`).join('')}</tbody></table>
     ${order.fulfillment === 'shipping' ? '<p>Shipping charges and any outstanding payment arrangements must be confirmed with the shop.</p>' : ''}`);
+}
+
+export function estimateDocument(estimate: SaleEstimate) {
+  const amount = (value: number | null) => value === null ? 'Not yet determined' : money(value);
+  const facts = [['Item subtotal', estimate.subtotalCents], ['Discount', estimate.discountCents], ['Items after discount', estimate.netCents], ['Tax', estimate.taxCents], ['Shipping', estimate.shippingCents], ['Estimated total', estimate.totalCents]] as const;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta http-equiv="Content-Security-Policy" content="${escape(documentPolicy)}"><title>Sale estimate | The Kut Shoppe</title><style>${styles}</style></head><body>
+    <header><p>The Kut Shoppe</p><h1>Sale estimate</h1><p>Prepared for ${escape(estimate.customerName)}</p><p>Reference: ${escape(estimate.id)}<br>Issued: ${escape(time(estimate.createdAt, estimate.timeZone))} (${escape(estimate.timeZone)})</p></header>
+    <p class="notice">This is an estimate, not an invoice or payment receipt. It does not request or record payment, reserve stock or confirm an appointment. Any unresolved charges must be confirmed with the shop.</p>
+    ${estimate.appointmentId ? `<p>Appointment: ${escape(estimate.appointmentId)}<br>Recorded time: ${escape(time(estimate.appointmentTime, estimate.timeZone))}</p>` : ''}
+    ${estimate.orderId ? `<p>Order: ${escape(estimate.orderId)}</p>` : ''}
+    <table><caption>Items at issue</caption><thead><tr><th scope="col">Item</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Discount</th><th scope="col">Net</th></tr></thead><tbody>${estimate.lines.map(line => `<tr><td>${escape(line.description)}${line.professionalName ? `<br>${escape(line.professionalName)}` : ''}</td><td>${line.quantity}</td><td>${money(line.unitPriceCents)}</td><td>${money(line.discountCents)}</td><td>${money(line.netCents)}</td></tr>`).join('')}</tbody></table>
+    <table><caption>Estimated amounts (USD)</caption><tbody>${facts.map(([label, value]) => `<tr><th scope="row">${label}</th><td>${amount(value)}</td></tr>`).join('')}</tbody></table>
+    ${estimate.discountReason ? `<p>Discount: ${escape(estimate.discountReason)}</p>` : ''}${estimate.chargeNote ? `<p>Tax/shipping explanation: ${escape(estimate.chargeNote)}</p>` : ''}
+    <footer><p>This is a saved copy of the amounts and details at issue. Later appointment, product and account changes do not update this copy. Confirm current arrangements with the shop. Use your browser’s Print command to print or save as PDF.</p></footer></body></html>`;
 }

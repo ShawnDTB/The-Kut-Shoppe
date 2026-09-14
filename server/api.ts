@@ -7,7 +7,8 @@ import { finishEmailChange, startEmailChange } from './email-change';
 import { historyPage } from './history';
 import { appointmentDetail, orderDetail, withdrawAppointment, requestCancellation } from './customer-records';
 import { appointmentCalendar } from './calendar';
-import { appointmentDocument, orderDocument, documentPolicy } from './customer-documents';
+import { appointmentDocument, orderDocument, estimateDocument, documentPolicy } from './customer-documents';
+import { previewEstimate, saveEstimate, estimates, estimateDetail, saleSources } from './sales';
 import { changeAppointment, changeAvailability, reschedulePage } from './rescheduling';
 import { requireFrontDesk, walkIns, createWalkIn, progressWalkIn } from './front-desk';
 import { walkInAvailability } from './booking';
@@ -135,6 +136,30 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (path.startsWith('/api/v1/me/sales') || path.startsWith('/api/v1/me/estimates')) {
+    const admin = path.startsWith('/api/v1/me/sales');
+    const base = admin ? '/api/v1/me/sales' : '/api/v1/me/estimates';
+    const params = new URL(request.url).searchParams;
+    const validParams = (allowed: string[]) => {
+      if ([...params.keys()].some(key => !allowed.includes(key) || params.getAll(key).length !== 1)) throw new ApiError(400, 'This sale request is not supported.');
+    };
+    if (admin) await requireFrontDesk(env, account.id, sessionHash);
+    if (path === base && request.method === 'GET') { validParams(['cursor']); return json(await estimates(env, account.id, sessionHash, admin, params.get('cursor'))); }
+    if (admin && path === `${base}/sources` && request.method === 'GET') { validParams(['kind','cursor']); return json(await saleSources(env, account.id, sessionHash, params.get('kind') ?? '', params.get('cursor'))); }
+    if (admin && [base, `${base}/preview`].includes(path) && request.method === 'POST') {
+      validParams([]); await rateLimit(env, `sale-estimates:${account.id}`, 40);
+      return json(path === base ? await saveEstimate(env, account.id, sessionHash, body) : await previewEstimate(env, account.id, sessionHash, body));
+    }
+    const match = path.slice(base.length).match(/^\/([A-Za-z0-9_-]{1,128})(\/document)?$/);
+    if (match && request.method === 'GET') {
+      validParams([]); const estimate = await estimateDetail(env, account.id, sessionHash, admin, match[1]!);
+      if (!match[2]) return json({ estimate });
+      const headers = privateHeaders('text/html; charset=utf-8'); headers.set('Content-Security-Policy', documentPolicy);
+      headers.set('Content-Disposition', `attachment; filename="kut-shoppe-estimate-${estimate.id}.html"`);
+      return new Response(estimateDocument(estimate), { headers });
+    }
+    throw new ApiError(404, 'This sale action is not available.');
+  }
   if (path.startsWith('/api/v1/me/front-desk')) {
     await requireFrontDesk(env, account.id, sessionHash);
     const params = new URL(request.url).searchParams;

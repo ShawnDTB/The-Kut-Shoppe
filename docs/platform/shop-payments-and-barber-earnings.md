@@ -1,12 +1,14 @@
 # Shop payments and barber earnings
 
-Decision proposal, September 13, 2026. Code inspected at `4d5f8e8` on `dev-branch`. This document defines the next financial implementation; it does not activate payments or establish an approved compensation agreement.
+Decision proposal, September 13, 2026; employee clarification and first implementation added September 14. Baseline code inspected at `4d5f8e8` on `dev-branch`. This document defines the financial implementation; it does not activate payments or establish an approved compensation agreement. See [sale estimate milestone](sales-estimates-milestone.md) for the implemented first increment and its limits.
 
 ## Direction supplied by the user
 
 The shop currently uses Booksy. The user believes Kash wants customer payments collected by the shop into its business bank account, with barbers receiving their earnings daily or weekly. Product commissions would reward barbers for promoting merchandise in person and online. No separate payment processor is known to be established.
 
-Use a single shop seller as the working design. Kash still needs to confirm the legal selling entity, worker arrangements, compensation rates and payment schedule. A barber login identifies the professional and their earnings; it does not automatically make that barber a separate merchant or give them access to the business bank balance.
+The user confirmed on September 14 that the barbers are employees. Use a single shop seller and employee payroll as the working design. Kash still needs to confirm the legal selling entity, compensation rates, payroll provider and payment schedule. A barber login identifies the employee and their earnings; it does not make them a separate merchant or give them access to the business bank balance.
+
+Employee statements must distinguish gross compensation, reported tips, payroll adjustments and confirmed net pay. The payroll provider is responsible for withholding/tax calculation and payroll reporting; the website must not label a sales commission subtotal as take-home pay. Include timekeeping/base-pay and overtime inputs where applicable when defining the payroll handoff. A customer discount or unpaid visit must not silently reduce required employee compensation. Employee wages, tips and other compensation have reporting obligations. [IRS employment taxes](https://www.irs.gov/businesses/small-businesses-self-employed/employment-taxes).
 
 ## Processor recommendation
 
@@ -21,7 +23,7 @@ These are processing rates, not total ownership costs; hardware, subscriptions, 
 
 For the proposed custom web front desk, prototype against the **Square Terminal API** before buying hardware. Do not assume a Square Reader, an existing Booksy reader, or any device displaying the Square brand uses the same integration. Terminal checkout does not accept cash; the counter application records cash separately. Test terminal tipping, cancelled/unknown outcomes and receipt printing on the intended device.
 
-Do not introduce separate connected merchant accounts solely to calculate barber commissions. If Kash instead confirms that individual barbers sell their own services as separate businesses, revisit the seller and funds-flow design before charging. Charge configuration affects merchant-of-record identity and responsibilities. [Stripe merchant-of-record documentation](https://docs.stripe.com/connect/merchant-of-record).
+Do not introduce separate connected merchant accounts solely to calculate employee commissions. Charge configuration affects merchant-of-record identity and responsibilities; keep the employee payroll handoff separate from customer payment collection. [Stripe merchant-of-record documentation](https://docs.stripe.com/connect/merchant-of-record).
 
 ## Money flow and accounting boundaries
 
@@ -29,11 +31,11 @@ Do not introduce separate connected merchant accounts solely to calculate barber
 2. Card funds are collected through the shop's processor account. Processor settlements reach the business bank subject to fees, refunds and settlement timing. Cash is received in a register and reaches the bank only when someone deposits it.
 3. Each verified payment is allocated to its sale. Service delivery and merchandise fulfillment have independent statuses. An appointment confirmation, completed haircut, or order marked ready is never evidence of payment.
 4. A separate earnings ledger calculates the barber's service share, product commission and allocated tips under a versioned policy. Shop revenue, sales tax, staff liabilities and processor fees remain separate reporting categories.
-5. A pay-period statement is reviewed and handed to the appropriate payroll or contractor-payment process. A completed disbursement reference closes the liability. A submitted transfer or exported file alone is not proof that the barber was paid.
+5. A pay-period statement is reviewed and handed to the employee payroll process. Reconcile gross earnings, withholding, adjustments and the payroll provider's completed net-pay reference. A submitted transfer or exported file alone is not proof that the employee was paid; reconcile related payroll liabilities separately.
 
 Propose **daily reconciliation and a fixed weekly pay run** as the initial operational design, subject to existing agreements and payroll requirements. Barbers can see daily activity even if payment occurs weekly. Processor deposits and staff pay runs are separate schedules. Do not make legally due compensation depend on when a processor releases a deposit or an owner clicks approval.
 
-Centralized collection can simplify reconciliation but does not determine tax treatment. Worker classification must reflect the actual relationship; use the accountant/payroll provider to establish employee versus contractor treatment and required reporting. Keep employee tips separate from the shop commission pool and do not automatically deduct card fees or refunds from wages/tips. Confirm applicable Pennsylvania requirements before configuring compensation. [IRS worker classification](https://www.irs.gov/businesses/small-businesses-self-employed/independent-contractor-self-employed-or-employee), [US Department of Labor tip guidance](https://www.dol.gov/agencies/whd/flsa/tips).
+Centralized collection can simplify reconciliation but does not replace employee payroll and tax reporting. The user has confirmed employee status; do not ask for that classification again or build contractor withdrawals as the default. Keep employee tips separate from the shop commission pool and do not automatically deduct card fees or refunds from wages/tips. Confirm applicable Pennsylvania requirements with the accountant/payroll provider before configuring compensation. [IRS employment taxes](https://www.irs.gov/businesses/small-businesses-self-employed/employment-taxes), [US Department of Labor tip guidance](https://www.dol.gov/agencies/whd/flsa/tips).
 
 ## Proposed commission policy
 
@@ -105,7 +107,7 @@ These are planned features, not newly working UI. Continue shipping reviewable i
 | P3 | Square sandbox website checkout and verified event processing | Success/decline/abandonment, duplicate and out-of-order events, lost responses, expired holds, partial refunds and private receipts tested. Owner has a reconciliation queue. |
 | P4 | Paired terminal checkout, counter tips and electronic refunds | Actual device success/cancellation/timeout, staff permissions, repeat-charge prevention, receipt printing and cash/card reconciliation verified. |
 | P5 | Service earnings, retail attribution, tips and staff statements | Each amount traces to an approved policy/source; discount/rounding/partial-return cases reconcile; staff isolation and owner correction audit pass. No obligation changes silently on a customer refund. |
-| P6 | Pay-run review, payroll/contractor export or supported disbursement adapter | Accountant-approved mapping; repeat export protection; failed/uncertain payment recovery; completion references reconcile. Provider setup and test disbursement evidence precede automation. |
+| P6 | Pay-run review, employee payroll export and confirmed payroll results | Accountant-approved earning/tip/pay-code mapping, applicable timekeeping/base/overtime inputs, withholding/net-pay separation; repeat export protection; failed/uncertain payment recovery; completion references reconcile. Provider setup and test payroll evidence precede automation. |
 | P7 | Booksy cutover and production acceptance | Opening records reconciled, calendar collision risk resolved, backups restored in rehearsal, mobile/accessibility/email/device journeys accepted, explicit release review completed. |
 
 Implement full-payment cash and card paths first unless Kash requires deposits or split tender at launch. Retain an extensible allocation model, but do not imply deposits, stored cards, recurring charges, split payments or instant barber withdrawals are available before their recovery/refund paths are tested.
@@ -116,4 +118,4 @@ Kash can review the proposed seller model, weekly schedule and commission rules 
 
 After processor selection, Kash or an authorized business representative completes identity verification, business-bank linking and acceptance of processor terms directly with the provider. Do not request identity documents, full banking details or account passwords in chat. The development setup then needs a separate sandbox application/location, server-held credentials, verified webhook endpoint, public application/location identifiers where required, and a tested device route. Confirm access permissions and receipt identity before switching to production credentials.
 
-This planning update changes documentation only. It creates no processor account, chooses no live commission rate, moves no money, changes no hosted configuration and does not merge `main`.
+The original planning update was documentation only. The [September 14 implementation](sales-estimates-milestone.md) adds real estimate preparation and private document history. It creates no processor account, chooses no live commission rate, moves no money, changes no hosted configuration and does not merge `main`.
