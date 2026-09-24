@@ -4,6 +4,11 @@ This is the current release entry point. Older milestone documents describe thei
 historical state, not the current migration level or test count. A push to `main`
 publishes source; it does not prove that the live site or its services are ready.
 
+September 24 feature follow-up: [feature completion review](feature-completion-review.md).
+The current schema is **0015**. Website visits now have a shared operational
+lifecycle and assigned-professional history; customers can withdraw unaccepted
+unpaid order requests. Deployment work is paused in favor of feature completion.
+
 Validation on September 22: `npm run check` passed (207 application tests and 12
 release-environment tests, typecheck, lint, build, bundle/output gates and local
 Workers/D1 checks). Running `npm run releasecheck` without production settings
@@ -52,7 +57,7 @@ worker template also has an invalid example origin. Do not deploy either as-is.
    domain, and whether a push to `main` triggers a deployment. The repository's
    Quality workflow validates code; it does not deploy or migrate a database.
 2. Provision isolated staging and production D1 databases. Back up existing data
-   first; rehearse restore. Apply **all migrations through 0013**, in filename
+   first; rehearse restore. Apply **all migrations through 0015**, in filename
    order, using the correct target environment. For existing installations, verify
    the baseline compatibility warning in the customer deployment runbook.
 3. Configure Pages' `DB` binding and actual HTTPS `APP_ORIGIN`. Set private keys

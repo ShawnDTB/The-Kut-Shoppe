@@ -4,13 +4,15 @@ import { requireProfessional } from './staff-requests';
 import { staffMfaGate } from './staff-mfa';
 import { secretHash } from './security';
 import type { StaffVisit, StaffVisitSummary, StaffVisitsPage } from '../src/shared/staff-visits';
+import { visitPendingFields } from './visit-lifecycle';
+import { availableVisitActions } from '../src/shared/visit-actions';
 
 const fields = `a.id,COALESCE(u.display_name,a.guest_name,'Guest') AS customerName,a.source,s.name AS serviceName,l.name AS locationName,l.timezone AS timeZone,
   a.starts_at AS startsAt,a.ends_at AS endsAt,a.status`;
 // An accepted visit must be assigned to this professional. A requested-staff
 // preference does not confer access after assignment to someone else.
 const scope = `FROM appointments a LEFT JOIN users u ON u.id=a.customer_user_id JOIN services s ON s.id=a.service_id JOIN locations l ON l.id=a.location_id
-  WHERE a.source IN ('website','walk_in') AND a.assigned_staff_id=? AND a.status IN ('confirmed','reschedule_proposed','checked_in','in_service')
+  WHERE a.source IN ('website','walk_in') AND a.assigned_staff_id=? AND a.status IN ('confirmed','reschedule_proposed','checked_in','in_service','completed','cancelled','no_show')
   AND EXISTS (SELECT 1 FROM staff_profiles sp JOIN users actor ON actor.id=sp.user_id JOIN sessions se ON se.user_id=actor.id
     WHERE sp.id=a.assigned_staff_id AND actor.id=? AND se.token_hash=? AND sp.setup_status='approved'
       AND actor.status='active' AND actor.email_verified_at IS NOT NULL AND actor.role IN ('staff','manager','owner','admin')
@@ -18,9 +20,12 @@ const scope = `FROM appointments a LEFT JOIN users u ON u.id=a.customer_user_id 
 const validTimes = `(julianday(a.starts_at) IS NOT NULL AND julianday(a.ends_at)>julianday(a.starts_at)
   AND a.starts_at GLOB '????-??-??T??:??:*' AND a.ends_at GLOB '????-??-??T??:??:*'
   AND (a.starts_at GLOB '*Z' OR a.starts_at GLOB '*[+-]??:??') AND (a.ends_at GLOB '*Z' OR a.ends_at GLOB '*[+-]??:??'))`;
-export async function staffVisits(env: Env, userId: string, session: string, value: string | null): Promise<StaffVisitsPage> {
+export async function staffVisits(env: Env, userId: string, session: string, value: string | null, view = 'active'): Promise<StaffVisitsPage> {
+  if (!['active','history'].includes(view)) throw new ApiError(400, 'Choose active visits or visit history.');
   const staffId = await requireProfessional(env, userId, session);
-  const sign = (payload: string) => secretHash(env, `staff-visits-v1:${userId}:${staffId}:${payload}`);
+  const sign = (payload: string) => secretHash(env, `staff-visits-v2:${userId}:${staffId}:${view}:${payload}`);
+  const filter = view === 'history' ? "a.status IN ('completed','cancelled','no_show')" : "a.status IN ('confirmed','reschedule_proposed','checked_in','in_service')";
+  const direction = view === 'history' ? 'DESC' : 'ASC';
   let cursor: { at: number; id: string } | null = null;
   if (value !== null) {
     try {
@@ -33,10 +38,10 @@ export async function staffVisits(env: Env, userId: string, session: string, val
   }
   const rows = await env.DB.batch<{ results: unknown[] }>([
     env.DB.prepare(`SELECT ${fields},julianday(a.starts_at) AS sortAt ${scope} AND ${validTimes}
-      AND (julianday(a.ends_at)>julianday('now') OR a.status IN ('checked_in','in_service'))
-      ${cursor ? 'AND (julianday(a.starts_at),a.id)>(?,?)' : ''} ORDER BY julianday(a.starts_at),a.id LIMIT 26`)
+      AND ${filter}
+      ${cursor ? `AND (julianday(a.starts_at),a.id)${view === 'history' ? '<' : '>'}(?,?)` : ''} ORDER BY julianday(a.starts_at) ${direction},a.id ${direction} LIMIT 26`)
       .bind(staffId, userId, session, ...(cursor ? [cursor.at, cursor.id] : [])),
-    env.DB.prepare(`SELECT count(*) AS count ${scope} AND COALESCE(${validTimes},0)=0`).bind(staffId, userId, session),
+    env.DB.prepare(`SELECT count(*) AS count ${scope} AND ${filter} AND COALESCE(${validTimes},0)=0`).bind(staffId, userId, session),
   ]);
   const selected = rows[0]!.results as (StaffVisitSummary & { sortAt: number })[];
   const last = selected[24]; const payload = selected.length > 25 && last ? Buffer.from(JSON.stringify({ at: last.sortAt, id: last.id })).toString('base64url') : null;
@@ -47,8 +52,8 @@ export async function staffVisits(env: Env, userId: string, session: string, val
 export async function staffVisit(env: Env, userId: string, session: string, id: string): Promise<StaffVisit> {
   const staffId = await requireProfessional(env, userId, session);
   const row = await env.DB.prepare(`SELECT ${fields},a.price_cents AS priceCents,a.customer_note AS customerNote,
-    a.proposed_starts_at AS proposedStartsAt,a.proposed_ends_at AS proposedEndsAt ${scope} AND a.id=?`)
+    a.proposed_starts_at AS proposedStartsAt,a.proposed_ends_at AS proposedEndsAt,a.updated_at AS updatedAt,${visitPendingFields} ${scope} AND a.id=?`)
     .bind(staffId, userId, session, id).first<StaffVisit>();
   if (!row) throw new ApiError(404, 'This visit is not available to your professional account.');
-  return row;
+  return { ...row, cancellationPending: Boolean(row.cancellationPending), changePending: Boolean(row.changePending), actions: availableVisitActions(row) };
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { accountApi, downloadAppointmentCalendar, downloadAccountDocument } from '../data/customer-api';
 import { followAccountLink } from '../data/customer-navigation';
 import { AppointmentRescheduling } from './AppointmentRescheduling';
+import { OrderWithdrawal } from './OrderWithdrawal';
 import { business } from '../data/site';
 import type { CustomerAppointmentDetail, CustomerOrderDetail, CustomerProfile } from '../shared/customer';
 
@@ -107,6 +108,7 @@ export function CustomerOrderDetails({ id, onBack }: { id: string; onBack: () =>
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  const [notice, setNotice] = useState('');
   useEffect(() => {
     let active = true;
     void accountApi<{ order: CustomerOrderDetail }>(`/me/orders/${encodeURIComponent(id)}`)
@@ -116,6 +118,7 @@ export function CustomerOrderDetails({ id, onBack }: { id: string; onBack: () =>
     return () => { active = false; };
   }, [id, attempt]);
   return <DetailFrame kind="orders" onBack={onBack}>
+    {notice ? <p role="status" className="customer-notice">{notice}</p> : null}
     {loading ? <p role="status">Loading order…</p> : null}{error ? <p className="form-error" role="alert">{error}</p> : null}
     {order ? <div aria-busy={loading}><p className="customer-status">{label(order.status)}</p><h3>Order {order.id.slice(-8)}</h3><p>Placed {time(order.createdAt)} (Eastern) · {label(order.fulfillment)}</p>
       {order.items.length ? <ul className="customer-order-items">{order.items.map((item) => <li key={item.id}><div><h4>{item.productName}</h4><p>{item.variantName}</p></div><span>{item.quantity} × {money(item.unitPriceCents)}</span><strong>{money(item.quantity * item.unitPriceCents)}</strong></li>)}</ul>
@@ -124,6 +127,7 @@ export function CustomerOrderDetails({ id, onBack }: { id: string; onBack: () =>
       <dl className="customer-order-totals">{([['Subtotal', order.subtotalCents], ['Shipping', order.shippingCents], ['Tax', order.taxCents], ['Recorded total', order.totalCents]] as const).map(([name, amount]) => <div key={name}><dt>{name}</dt><dd>{money(amount)}</dd></div>)}</dl>
       <p className="customer-fine-print">These are the amounts saved with the order, not current product prices. This page does not process payments or refunds.</p>
       {order.itemsComplete ? <DocumentDownload id={id} kind="orders" /> : null}
+      {order.canWithdraw && !loading ? <OrderWithdrawal key={`${id}:${order.updatedAt}`} id={id} updatedAt={order.updatedAt} onSaved={message => { setNotice(message); setOrder(null); setLoading(true); setAttempt(value => value + 1); }} /> : null}
       {order.fulfillment === 'shipping' ? <section><h3>Ship-to address</h3>{order.shippingAddress ? <Address value={order.shippingAddress} /> : <p>The recorded shipping address is unavailable. Contact the shop to check it.</p>}{order.trackingNumber ? <p className="customer-record-note">Tracking number: {order.trackingNumber}</p> : null}</section> : <p>Check the order status or contact the shop before collecting your order.</p>}
       <p>For order changes, payment questions, or refund requests, <a href={business.phoneHref}>call {business.phone}</a>.</p>
     </div> : null}

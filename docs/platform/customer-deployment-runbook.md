@@ -1,7 +1,7 @@
 # Customer deployment runbook
 
 **Current release:** start with [release readiness](release-readiness.md). Apply
-all migrations through **0013**. The milestone updates and test totals below are
+all migrations through **0015**. The milestone updates and test totals below are
 historical; they do not override the current release checklist. The detailed
 security, baseline compatibility and provider-acceptance guidance still applies.
 

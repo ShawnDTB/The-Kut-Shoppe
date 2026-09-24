@@ -1,5 +1,13 @@
 # Launch implementation backlog
 
+**September 24 update:** [feature completion review](feature-completion-review.md)
+records the current gaps and priority order. Shared website/walk-in check-in,
+service/completion, cancellations/no-shows, professional history and customer
+withdrawal of unaccepted unpaid orders are implemented with migrations through
+**0015**. Manager calendar/history pagination, money collection and financial
+receipts remain unfinished. The user now authorizes feature pushes to `main`;
+older dev-only workflow references below describe prior milestones.
+
 Baseline: `3071cc8`, September 13, 2026. See [audit and competitor findings](launch-readiness-audit.md). Prior completed cancellation work is documented separately in [appointment cancellation](appointment-cancellation.md).
 
 Implementation progress after audit commit `90e7cad`: [mobile navigation and dashboard milestone](mobile-dashboard-milestone.md). Tasks not listed below remain planned.

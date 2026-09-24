@@ -93,6 +93,35 @@ export async function adminOrders(env:Env,user:string,session:string){
   const result=await env.DB.batch<Rows<Record<string,unknown>>>([env.DB.prepare(`SELECT o.*,u.email AS account_email FROM orders o LEFT JOIN users u ON u.id=o.customer_user_id WHERE ${gate(true)} ORDER BY CASE WHEN o.status IN ('completed','declined','cancelled','refunded') THEN 1 ELSE 0 END,o.created_at DESC,o.id DESC LIMIT 101`).bind(user,session),env.DB.prepare(`SELECT i.*,v.product_id FROM order_items i JOIN product_variants v ON v.id=i.variant_id WHERE ${gate(true)}`).bind(user,session),env.DB.prepare('SELECT value FROM commerce_revision WHERE id=1')]);
   return {revision:Number(result[2]!.results[0]!.value),more:result[0]!.results.length>100,orders:result[0]!.results.slice(0,100).map(o=>({id:o.id,canProcess:Boolean(o.request_key),status:String(o.status).replaceAll('_','-'),fulfillment:o.fulfillment_type,subtotalCents:o.subtotal_cents,totalCents:o.total_cents,shippingCents:o.shipping_cents,taxCents:o.tax_cents,customer:{name:o.guest_name??'',email:o.account_email??o.guest_email??'',phone:o.guest_phone??''},shippingAddress:shippingAddress(o.shipping_address_json?String(o.shipping_address_json):null),trackingNumber:o.tracking_number??'',internalNote:'',ownerActionRequired:Boolean(o.owner_action_required),createdAt:o.created_at,updatedAt:o.updated_at,items:result[1]!.results.filter(i=>i.order_id===o.id).map(i=>({productId:i.product_id,variantId:i.variant_id,name:i.product_name,variantName:i.variant_name,sku:i.sku,quantity:i.quantity,unitPriceCents:i.unit_price_cents}))})) as unknown as Array<StoreOrder & {canProcess:boolean}>};
 }
+export async function withdrawOrder(env: Env, user: string, session: string, id: string, updatedAt: string) {
+  requireCommerce(env);
+  const read = async () => {
+    const rows = await env.DB.batch<Rows<Record<string, unknown>>>([
+      env.DB.prepare('SELECT status,updated_at,request_key,customer_withdrawn_from FROM orders WHERE id=? AND customer_user_id=?').bind(id, user),
+      env.DB.prepare('SELECT value FROM commerce_revision WHERE id=1'),
+    ]);
+    const order = rows[0]!.results[0];
+    if (!order) throw new ApiError(404, 'This order is not available in your account.');
+    return { order, revision: Number(rows[1]!.results[0]!.value) };
+  };
+  const replay = (order: Record<string, unknown>) => order.status === 'cancelled' && order.customer_withdrawn_from === updatedAt;
+  const snapshot = await read();
+  if (replay(snapshot.order)) return { message: 'Your order request is already withdrawn.' };
+  if (!snapshot.order.request_key || !['submitted','payment_required'].includes(String(snapshot.order.status)) || snapshot.order.updated_at !== updatedAt) {
+    throw new ApiError(409, 'This request changed or the shop has started processing it. Refresh the order; contact the shop for further changes.');
+  }
+  const now = new Date().toISOString();
+  try {
+    await commit(env, user, session, snapshot.revision, false, 'customer_order_withdrawn', receipt => [
+      env.DB.prepare(`UPDATE orders SET status='cancelled',customer_withdrawn_from=?,owner_action_required=0,updated_at=? WHERE id=? AND customer_user_id=? AND ${claimed}`).bind(updatedAt, now, id, user, receipt),
+      env.DB.prepare(`UPDATE product_variants SET stock_reserved=stock_reserved-(SELECT SUM(i.quantity) FROM order_items i WHERE i.order_id=? AND i.variant_id=product_variants.id),updated_at=?
+        WHERE id IN (SELECT variant_id FROM order_items WHERE order_id=?) AND ${claimed}`).bind(id, now, id, receipt),
+    ]);
+  } catch (error) {
+    if (!replay((await read()).order)) throw error;
+  }
+  return { message: 'Order request withdrawn. Reserved items have been released. No refund was processed.' };
+}
 export async function processOrder(env:Env,user:string,session:string,id:string,body:Record<string,unknown>){
   await requireCommerceAdmin(env,user,session);allowFields(body,['status','revision','trackingNumber']);const revision=number(body.revision);const status=stringField(body,'status',30,1).replaceAll('-','_');const tracking=stringField(body,'trackingNumber',150);
   const order=await env.DB.prepare('SELECT status,fulfillment_type AS fulfillment FROM orders WHERE id=? AND request_key IS NOT NULL').bind(id).first<{status:string;fulfillment:string}>();if(!order)throw new ApiError(404,'Order request not found.');

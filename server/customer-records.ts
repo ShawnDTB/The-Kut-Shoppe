@@ -126,7 +126,9 @@ export async function orderDetail(env: Env, userId: string, id: string): Promise
   const results = await env.DB.batch<{ results: unknown[] }>([
     env.DB.prepare(`SELECT id, status, fulfillment_type AS fulfillment, total_cents AS totalCents, created_at AS createdAt,
       subtotal_cents AS subtotalCents, shipping_cents AS shippingCents, tax_cents AS taxCents,
-      shipping_address_json AS addressJson, tracking_number AS trackingNumber FROM orders WHERE id = ? AND customer_user_id = ?`).bind(id, userId),
+      shipping_address_json AS addressJson, tracking_number AS trackingNumber,updated_at AS updatedAt,
+      (request_key IS NOT NULL AND status IN ('submitted','payment_required') AND ?='true') AS canWithdraw
+      FROM orders WHERE id = ? AND customer_user_id = ?`).bind(env.COMMERCE_ENABLED ?? 'false', id, userId),
     env.DB.prepare(`SELECT i.id, i.product_name AS productName, i.variant_name AS variantName, i.quantity, i.unit_price_cents AS unitPriceCents
       FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.id = ? AND o.customer_user_id = ?
       ORDER BY i.created_at, i.id LIMIT 101`).bind(id, userId),
@@ -135,6 +137,6 @@ export async function orderDetail(env: Env, userId: string, id: string): Promise
   if (!row) throw new ApiError(404, 'This order is not available in your account.');
   const items = results[1]!.results as CustomerOrderItem[];
   const { addressJson, ...summary } = row;
-  return { ...summary, shippingAddress: row.fulfillment === 'shipping' ? shippingAddress(addressJson) : null,
+  return { ...summary, canWithdraw: Boolean(summary.canWithdraw), shippingAddress: row.fulfillment === 'shipping' ? shippingAddress(addressJson) : null,
     items: items.slice(0, 100), itemsComplete: items.length <= 100 };
 }

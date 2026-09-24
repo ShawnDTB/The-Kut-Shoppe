@@ -18,8 +18,9 @@ import { confirmMfaEnrollment, mfaStatus, startMfaEnrollment, unlockStaffMfa } f
 import { reviewQueue, reviewSetup, saveSetup, setupPage } from './professional-setup';
 import { changeSchedule, schedulePage } from './professional-schedule';
 import { staffVisit, staffVisits } from './staff-visits';
+import { progressVisit } from './visit-lifecycle';
 import { customerDashboard } from './customer-dashboard';
-import { catalog, createOrder, requireCommerceAdmin, saveProduct, adminOrders, processOrder } from './commerce';
+import { catalog, createOrder, requireCommerceAdmin, saveProduct, adminOrders, processOrder, withdrawOrder } from './commerce';
 
 const genericEmailMessage = 'If this email can be used for that request, a code will arrive shortly. Check your spam folder too.';
 // A fixed dummy credential gives nonexistent accounts the same expensive check.
@@ -210,11 +211,15 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (path.startsWith('/api/v1/me/professional/')) {
     const params = new URL(request.url).searchParams;
     if (action === 'GET /api/v1/me/professional/visits') {
-      if ([...params.keys()].some((key) => key !== 'cursor') || params.getAll('cursor').length > 1) throw new ApiError(400, 'Reload your visits.');
-      return json(await staffVisits(env, account.id, sessionHash, params.get('cursor')));
+      if ([...params.keys()].some((key) => !['cursor','view'].includes(key) || params.getAll(key).length > 1)) throw new ApiError(400, 'Reload your visits.');
+      return json(await staffVisits(env, account.id, sessionHash, params.get('cursor'), params.get('view') ?? 'active'));
     }
     const visit = path.match(/^\/api\/v1\/me\/professional\/visits\/([A-Za-z0-9_-]{1,128})$/);
     if (visit && request.method === 'GET' && params.size === 0) return json({ visit: await staffVisit(env, account.id, sessionHash, visit[1]!) });
+    if (visit && request.method === 'POST' && params.size === 0) {
+      await rateLimit(env, `visit-password:${account.id}`, 20);
+      return json(await progressVisit(env, account.id, sessionHash, visit[1]!, body, true));
+    }
     if (path === '/api/v1/me/professional/schedule' && params.size === 0) {
       if (request.method === 'GET') return json(await schedulePage(env, account.id, sessionHash));
       if (request.method === 'POST') {
@@ -309,6 +314,10 @@ async function route(request: Request, env: Env): Promise<Response> {
       headers.set('Content-Security-Policy', documentPolicy);
       headers.set('Content-Disposition', `attachment; filename="kut-shoppe-${kind === 'appointments' ? 'appointment' : 'order'}.html"`);
       return new Response(content, { headers });
+    }
+    if (request.method === 'POST' && kind === 'orders' && operation === 'withdraw') {
+      allowFields(body, ['updatedAt']); await rateLimit(env, `withdraw-order:${account.id}`, 20);
+      return json(await withdrawOrder(env, account.id, sessionHash, id, stringField(body, 'updatedAt', 40, 1)));
     }
     if (request.method === 'GET' && kind === 'appointments' && operation === 'calendar') {
       const headers = privateHeaders('text/calendar; charset=utf-8');

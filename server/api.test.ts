@@ -637,7 +637,8 @@ describe('front desk walk-ins', () => {
       expect((await request(`/me/front-desk/visits/${id}`, body, f.owner)).status).toBe(200);
     }
     expect((await f.list()).items[0].status).toBe('completed');
-    expect(db.sqlite.prepare('SELECT count(*) AS n FROM walk_in_operations').get()!.n).toBe(4);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM walk_in_operations').get()!.n).toBe(1);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM visit_operations').get()!.n).toBe(3);
   });
   it('rejects customer access, same-slot competition, stale actions, and starting before the scheduled time', async () => {
     const f = await fixture();
@@ -663,6 +664,122 @@ describe('front desk walk-ins', () => {
       return batch(statements);
     });
     expect((await request('/me/front-desk/visits', f.payload, f.owner)).status).toBe(409); spy.mockRestore();
+  });
+});
+describe('shared visit lifecycle', () => {
+  async function fixture() {
+    const f = await staffFixture();
+    expect((await request(f.path, f.decision, f.staff)).status).toBe(200);
+    const path = `/me/professional/visits/${f.id}`;
+    db.sqlite.prepare('UPDATE appointments SET starts_at=?,ends_at=? WHERE id=?').run(new Date(Date.now() - 60000).toISOString(), new Date(Date.now() + 3600000).toISOString(), f.id);
+    const detail = async () => (await (await request(path, undefined, f.staff)).json()).visit;
+    const body = async (action: string) => ({ action, updatedAt: (await detail()).updatedAt, requestKey: randomUUID(), currentPassword: password });
+    return { ...f, visitPath: path, detail, body };
+  }
+  it('lets the assigned professional run a website visit, retry safely, and retain completed history', async () => {
+    const f = await fixture();
+    for (const action of ['checked_in','in_service','completed']) {
+      const body = await f.body(action);
+      expect((await f.detail()).actions).toContain(action);
+      expect((await request(f.visitPath, body, f.staff)).status).toBe(200);
+      expect((await request(f.visitPath, body, f.staff)).status).toBe(200);
+      expect((await (await request(`/me/appointments/${f.id}`, undefined, f.alice)).json()).appointment.status).toBe(action);
+    }
+    expect((await f.detail()).status).toBe('completed');
+    expect((await f.detail()).actions).toEqual([]);
+    expect((await (await request('/me/professional/visits', undefined, f.staff)).json()).items).toHaveLength(0);
+    expect((await (await request('/me/professional/visits?view=history', undefined, f.staff)).json()).items[0].id).toBe(f.id);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM visit_operations').get()!.n).toBe(3);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.event_type LIKE 'visit_%'").get()!.n).toBe(6);
+  });
+  it('blocks other customers/professionals and supports manager oversight of website visits', async () => {
+    const f = await fixture(); const body = await f.body('checked_in');
+    expect((await request(f.visitPath, body, f.alice)).status).toBe(403);
+    const outsider = await seed('outsider','staff'); await enrollMfa(outsider);
+    db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,setup_status,created_at,updated_at) VALUES ('outsider-staff','outsider','Other','other','approved',?,?)").run(new Date().toISOString(), new Date().toISOString());
+    expect((await request(f.visitPath, body, outsider)).status).toBe(404);
+    const manager = await seed('manager','manager'); await enrollMfa(manager);
+    const list = await (await request('/me/front-desk/visits', undefined, manager)).json();
+    expect(list.items[0]).toMatchObject({ id: f.id, source: 'website', name: 'Customer alice' });
+    expect((await request(`/me/front-desk/visits/${f.id}`, body, manager)).status).toBe(200);
+  });
+  it('keeps overdue confirmations visible and permits no-show only after scheduled start', async () => {
+    const f = await fixture();
+    db.sqlite.prepare('UPDATE appointments SET starts_at=?,ends_at=? WHERE id=?').run(new Date(Date.now() + 3600000).toISOString(), new Date(Date.now() + 7200000).toISOString(), f.id);
+    expect((await request(f.visitPath, await f.body('no_show'), f.staff)).status).toBe(409);
+    db.sqlite.prepare('UPDATE appointments SET starts_at=?,ends_at=? WHERE id=?').run(new Date(Date.now() - 7200000).toISOString(), new Date(Date.now() - 3600000).toISOString(), f.id);
+    expect((await (await request('/me/professional/visits', undefined, f.staff)).json()).items[0].id).toBe(f.id);
+    expect((await request(f.visitPath, await f.body('checked_in'), f.staff)).status).toBe(409);
+    expect((await request(f.visitPath, await f.body('no_show'), f.staff)).status).toBe(200);
+  });
+  it('resolves a pending cancellation after start without recording a charge or refund', async () => {
+    const f = await fixture();
+    db.sqlite.prepare("UPDATE appointments SET cancellation_state='pending' WHERE id=?").run(f.id);
+    expect((await f.detail()).actions).toEqual(['cancelled']);
+    expect((await request(f.visitPath, await f.body('checked_in'), f.staff)).status).toBe(409);
+    expect((await request(f.visitPath, await f.body('cancelled'), f.staff)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT status,cancellation_state FROM appointments WHERE id=?').get(f.id)).toEqual({ status: 'cancelled', cancellation_state: 'approved' });
+  });
+  it('lets the professional decline a pending cancellation after start so check-in can proceed', async () => {
+    const f = await fixture(); db.sqlite.prepare("UPDATE appointments SET cancellation_state='pending' WHERE id=?").run(f.id);
+    expect((await request(f.path, { action: 'keep', updatedAt: (await f.detail()).updatedAt, decisionKey: randomUUID(), currentPassword: password }, f.staff)).status).toBe(200);
+    expect((await request(f.visitPath, await f.body('checked_in'), f.staff)).status).toBe(200);
+  });
+  it('blocks live rescheduling conflicts and closes expired changes on a saved visit action', async () => {
+    const f = await fixture(); const now = new Date().toISOString();
+    db.sqlite.prepare(`INSERT INTO appointment_changes(id,appointment_id,requested_by,kind,status,original_starts_at,original_ends_at,starts_at,ends_at,expires_at,created_at)
+      SELECT 'visit-change',id,customer_user_id,'customer_request','pending',starts_at,ends_at,starts_at,ends_at,?,? FROM appointments WHERE id=?`)
+      .run(new Date(Date.now() + 3600000).toISOString(), now, f.id);
+    expect((await request(f.visitPath, await f.body('checked_in'), f.staff)).status).toBe(409);
+    db.sqlite.prepare("UPDATE appointment_changes SET expires_at=? WHERE id='visit-change'").run(new Date(Date.now() - 60000).toISOString());
+    expect((await request(f.visitPath, await f.body('checked_in'), f.staff)).status).toBe(200);
+    expect(db.sqlite.prepare("SELECT status FROM appointment_changes WHERE id='visit-change'").get()!.status).toBe('expired');
+  });
+  it.each(['mfa','password','assignment','cancellation','session'])('rechecks %s at the transaction boundary', async kind => {
+    const f = await fixture(); const body = await f.body('checked_in'); const batch = env.DB.batch.bind(env.DB);
+    const spy = vi.spyOn(env.DB, 'batch').mockImplementation(async statements => {
+      if (statements.length === 7) {
+        if (kind === 'mfa') db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='professional'");
+        if (kind === 'password') db.sqlite.exec("UPDATE account_credentials SET password_hash='changed' WHERE user_id='professional'");
+        if (kind === 'assignment') db.sqlite.prepare('UPDATE appointments SET assigned_staff_id=NULL WHERE id=?').run(f.id);
+        if (kind === 'cancellation') db.sqlite.prepare("UPDATE appointments SET cancellation_state='pending' WHERE id=?").run(f.id);
+        if (kind === 'session') db.sqlite.exec("UPDATE sessions SET revoked_at='2026-01-01' WHERE user_id='professional'");
+      }
+      return batch(statements);
+    });
+    expect((await request(f.visitPath, body, f.staff)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM visit_operations').get()!.n).toBe(0);
+    expect(db.sqlite.prepare('SELECT status FROM appointments WHERE id=?').get(f.id)!.status).toBe('confirmed');
+  });
+  it('rolls back the status, operation and notification when audit fails', async () => {
+    const f = await fixture(); const body = await f.body('checked_in');
+    db.sqlite.exec("CREATE TRIGGER fail_visit BEFORE INSERT ON audit_events WHEN NEW.action LIKE 'visit_%' BEGIN SELECT RAISE(ABORT,'test'); END");
+    expect((await request(f.visitPath, body, f.staff)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT status FROM appointments WHERE id=?').get(f.id)!.status).toBe('confirmed');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM visit_operations').get()!.n).toBe(0);
+    db.sqlite.exec('DROP TRIGGER fail_visit');
+    expect((await request(f.visitPath, body, f.staff)).status).toBe(200);
+    expect((await request(f.visitPath, { ...body, action: 'cancelled' }, f.staff)).status).toBe(409);
+  });
+  it('prevents a professional from starting another visit while a prior service is still open', async () => {
+    const f = await fixture();
+    expect((await request(f.visitPath, await f.body('checked_in'), f.staff)).status).toBe(200);
+    db.sqlite.prepare(`INSERT INTO appointments(id,assigned_staff_id,service_id,location_id,starts_at,ends_at,price_cents,status,source,created_at,updated_at)
+      SELECT 'overrun',assigned_staff_id,service_id,location_id,'2000-01-01T09:00:00Z','2000-01-01T10:00:00Z',price_cents,'in_service','walk_in',created_at,updated_at FROM appointments WHERE id=?`).run(f.id);
+    expect((await request(f.visitPath, await f.body('in_service'), f.staff)).status).toBe(409);
+    const previous = await (await request('/me/professional/visits/overrun', undefined, f.staff)).json();
+    expect((await request('/me/professional/visits/overrun', { action: 'completed', updatedAt: previous.visit.updatedAt, requestKey: randomUUID(), currentPassword: password }, f.staff)).status).toBe(200);
+    expect((await request(f.visitPath, await f.body('in_service'), f.staff)).status).toBe(200);
+  });
+  it('paginates terminal history without duplicates and binds the cursor to its view', async () => {
+    const f = await fixture(); const now = new Date().toISOString();
+    for (let i = 0; i < 28; i++) db.sqlite.prepare(`INSERT INTO appointments(id,customer_user_id,assigned_staff_id,service_id,location_id,starts_at,ends_at,price_cents,status,source,created_at,updated_at)
+      SELECT ?,customer_user_id,assigned_staff_id,service_id,location_id,starts_at,ends_at,price_cents,'completed','website',?,? FROM appointments WHERE id=?`).run(`history-${String(i).padStart(2,'0')}`, now, now, f.id);
+    const first = await (await request('/me/professional/visits?view=history', undefined, f.staff)).json();
+    const second = await (await request(`/me/professional/visits?view=history&cursor=${first.nextCursor}`, undefined, f.staff)).json();
+    expect(first.items).toHaveLength(25); expect(second.items).toHaveLength(3);
+    expect(new Set([...first.items, ...second.items].map(item => item.id)).size).toBe(28);
+    expect((await request(`/me/professional/visits?cursor=${first.nextCursor}`, undefined, f.staff)).status).toBe(400);
   });
 });
 describe('private printable customer documents', () => {
@@ -726,7 +843,7 @@ describe('confirmed appointment cancellation', () => {
     expect(db.sqlite.prepare('SELECT status,cancellation_state FROM appointments').get()).toEqual({ status: 'confirmed', cancellation_state: 'declined' });
     expect((await f.available()).slots.some((s: { startsAt: string }) => s.startsAt === f.payload.startsAt)).toBe(false);
   });
-  it('enforces ownership, current MFA, operations availability and future website appointments', async () => {
+  it('enforces ownership/MFA for cancellation and lets staff resolve an existing request after start', async () => {
     const f = await fixture(); const other = await seed('other');
     expect((await request(f.cancellationPath, { updatedAt: f.updatedAt }, other)).status).toBe(404);
     env.STAFF_OPERATIONS_ENABLED = 'false';
@@ -741,7 +858,7 @@ describe('confirmed appointment cancellation', () => {
     expect((await request(f.path, decision, await createSession(env, 'professional'))).status).toBe(403);
     expect((await request(f.path, { ...decision, currentPassword: 'wrong' }, f.staff)).status).toBe(400);
     db.sqlite.exec("UPDATE appointments SET starts_at='2000-01-01T12:00:00.000Z'");
-    expect((await request(f.path, decision, f.staff)).status).toBe(409);
+    expect((await request(f.path, decision, f.staff)).status).toBe(200);
   });
   it('rechecks customer sessions and staff MFA at the final cancellation write', async () => {
     const f = await fixture(); const original = db.batch.bind(db);
@@ -1142,11 +1259,11 @@ describe('assigned professional visits', () => {
     const detail = await (await request(`${path}/${fixture.id}`, undefined, fixture.staff)).json();
     expect(detail.visit.customerNote).toBe('A test note'); expect(detail.visit.priceCents).toBe(3200);
     expect(JSON.stringify(detail)).not.toMatch(/alice@example|customer_user_id|password|internal_note/);
-    expect((await request(`${path}/${fixture.id}`, {}, fixture.staff)).status).toBe(404);
+    expect((await request(`${path}/${fixture.id}`, {}, fixture.staff)).status).toBe(400);
     db.sqlite.exec("UPDATE appointments SET source='migration'");
     expect((await request(`${path}/${fixture.id}`, undefined, fixture.staff)).status).toBe(404);
   });
-  it('excludes completed, past, unassigned and requested records while flagging invalid times', async () => {
+  it('retains overdue active visits, separates completed history, and flags invalid times', async () => {
     const { staff, locationId } = await staffFixture(); const now = new Date().toISOString();
     const future = new Date(Date.now() + 86400000).toISOString(); const end = new Date(Date.now() + 90000000).toISOString();
     for (const [id, state, start, finish, assigned] of [
@@ -1154,8 +1271,8 @@ describe('assigned professional visits', () => {
       ['past', 'confirmed', '2000-01-01T09:00:00Z', '2000-01-01T10:00:00Z', 'book-staff'], ['completed', 'completed', future, end, 'book-staff'],
       ['unassigned', 'confirmed', future, end, null], ['invalid', 'confirmed', null, null, 'book-staff'],
     ] as const) db.sqlite.prepare("INSERT INTO appointments(id,customer_user_id,requested_staff_id,assigned_staff_id,service_id,location_id,price_cents,status,starts_at,ends_at,created_at,updated_at) VALUES (?,'alice','book-staff',?,'book-service',?,3200,?,?,?,?,?)").run(id, assigned, locationId, state, start, finish, now, now);
-    const page = await (await request(path, undefined, staff)).json(); expect(page.items.map((item: { id: string }) => item.id)).toEqual(['old-active', 'future']); expect(page.needsTimeReview).toBe(1);
-    expect((await request(`${path}/completed`, undefined, staff)).status).toBe(404);
+    const page = await (await request(path, undefined, staff)).json(); expect(page.items.map((item: { id: string }) => item.id)).toEqual(['old-active', 'past', 'future']); expect(page.needsTimeReview).toBe(1);
+    expect((await request(`${path}/completed`, undefined, staff)).status).toBe(200);
   });
   it('paginates equal-time visits by ID and binds the cursor to the professional', async () => {
     const { staff, locationId } = await staffFixture(); const now = new Date().toISOString();
@@ -1525,6 +1642,48 @@ describe('server commerce requests', () => {
     const data=await (await request('/me/commerce/orders',undefined,owner)).json();
     expect((await request(`/me/commerce/orders/${orderId}`,{status:'cancelled',revision:data.revision,trackingNumber:''},owner)).status).toBe(200);
     expect(db.sqlite.prepare("SELECT stock_on_hand,stock_reserved FROM product_variants WHERE id='matte'").get()).toMatchObject({stock_on_hand:2,stock_reserved:0});
+  });
+  it('lets customers withdraw only their own unaccepted request and releases stock exactly once', async () => {
+    const { alice, bob } = await fixture(); const { orderId } = await (await request('/me/orders/request', order(), alice)).json();
+    const detail = await (await request(`/me/orders/${orderId}`, undefined, alice)).json();
+    expect(detail.order.canWithdraw).toBe(true); const body = { updatedAt: detail.order.updatedAt }; const path = `/me/orders/${orderId}/withdraw`;
+    expect((await request(path, body, bob)).status).toBe(404);
+    expect((await request(path, { updatedAt: 'stale' }, alice)).status).toBe(409);
+    expect((await request(path, body, alice)).status).toBe(200);
+    expect((await request(path, body, alice)).status).toBe(200);
+    expect((await (await request(`/me/orders/${orderId}`, undefined, alice)).json()).order).toMatchObject({ status: 'cancelled', canWithdraw: false });
+    expect(db.sqlite.prepare("SELECT stock_on_hand,stock_reserved FROM product_variants WHERE id='matte'").get()).toMatchObject({ stock_on_hand: 2, stock_reserved: 0 });
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='customer_order_withdrawn'").get()!.n).toBe(1);
+  });
+  it('blocks withdrawal after acceptance and does not release another order reservation', async () => {
+    const { alice, owner } = await fixture(); const { orderId } = await (await request('/me/orders/request', order(), alice)).json();
+    const detail = await (await request(`/me/orders/${orderId}`, undefined, alice)).json();
+    const { revision } = await (await request('/me/commerce/orders', undefined, owner)).json();
+    expect((await request(`/me/commerce/orders/${orderId}`, { status: 'accepted', revision, trackingNumber: '' }, owner)).status).toBe(200);
+    expect((await request(`/me/orders/${orderId}/withdraw`, { updatedAt: detail.order.updatedAt }, alice)).status).toBe(409);
+    expect(db.sqlite.prepare("SELECT stock_reserved FROM product_variants WHERE id='matte'").get()!.stock_reserved).toBe(1);
+  });
+  it('rolls back withdrawal and stock changes together if audit fails', async () => {
+    const { alice } = await fixture(); const { orderId } = await (await request('/me/orders/request', order(), alice)).json();
+    const detail = await (await request(`/me/orders/${orderId}`, undefined, alice)).json();
+    db.sqlite.exec("CREATE TRIGGER fail_withdrawal BEFORE INSERT ON audit_events WHEN NEW.action='customer_order_withdrawn' BEGIN SELECT RAISE(ABORT,'test'); END");
+    expect((await request(`/me/orders/${orderId}/withdraw`, { updatedAt: detail.order.updatedAt }, alice)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT status FROM orders WHERE id=?').get(orderId)!.status).toBe('submitted');
+    expect(db.sqlite.prepare("SELECT stock_reserved FROM product_variants WHERE id='matte'").get()!.stock_reserved).toBe(1);
+  });
+  it.each(['acceptance','session'])('rejects a concurrent %s change at withdrawal commit', async kind => {
+    const { alice } = await fixture(); const { orderId } = await (await request('/me/orders/request', order(), alice)).json();
+    const detail = await (await request(`/me/orders/${orderId}`, undefined, alice)).json();
+    const batch = env.DB.batch.bind(env.DB);
+    const spy = vi.spyOn(env.DB, 'batch').mockImplementation(async statements => {
+      if (statements.length === 4) {
+        if (kind === 'acceptance') db.sqlite.prepare("UPDATE orders SET status='accepted' WHERE id=?").run(orderId);
+        else db.sqlite.exec("UPDATE sessions SET revoked_at='2026-01-01' WHERE user_id='shop-alice'");
+      }
+      return batch(statements);
+    });
+    expect((await request(`/me/orders/${orderId}/withdraw`, { updatedAt: detail.order.updatedAt }, alice)).status).toBe(409); spy.mockRestore();
+    expect(db.sqlite.prepare("SELECT stock_reserved FROM product_variants WHERE id='matte'").get()!.stock_reserved).toBe(1);
   });
 });
 

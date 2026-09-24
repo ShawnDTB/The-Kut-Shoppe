@@ -3,10 +3,15 @@ import { accountApi } from '../data/customer-api';
 import { StaffAuthenticator } from './StaffAuthenticator';
 import type { BookingAvailability, BookingOption } from '../shared/booking';
 import type { FrontDeskPage, WalkInVisit } from '../shared/front-desk';
+import { visitActionLabels } from '../shared/visit-actions';
 
 const label = (value: string) => value.replaceAll('_', ' ');
 const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value / 100);
-const when = (value: string, timeZone: string) => new Intl.DateTimeFormat('en-US', { timeZone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+const when = (value: string, timeZone: string) => {
+  if (!value || !Number.isFinite(Date.parse(value))) return 'Time needs review';
+  try { return new Intl.DateTimeFormat('en-US', { timeZone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)); }
+  catch { return 'Time zone needs review'; }
+};
 const today = (timeZone: string) => new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 function Desk() {
   const [options, setOptions] = useState<BookingOption[]>([]); const [visits, setVisits] = useState<FrontDeskPage | null>(null);
@@ -47,8 +52,7 @@ function Desk() {
     catch (failure) { setError(`${failure instanceof Error ? failure.message : 'Please try again.'} Retry the same action or refresh to check its status.`); }
     finally { setBusy(false); setPassword(''); }
   };
-  const actions: Record<string, string[]> = { confirmed: ['checked_in','cancelled','no_show'], checked_in: ['in_service','cancelled'], in_service: ['completed'] };
-  return <section aria-busy={busy || loading}><h2>Front desk</h2><p>Schedule today’s guest walk-ins and track their visit. A customer account or email address is not required.</p>
+  return <section aria-busy={busy || loading}><h2>Front desk</h2><p>Manage website appointments and guest walk-ins from check-in through completion. Adding a walk-in does not require a customer account or email address.</p>
     {error ? <p className="form-error" role="alert">{error}</p> : null}{notice ? <p className="customer-notice" role="status">{notice}</p> : null}{loading ? <p role="status">Loading front desk…</p> : null}
     {visits && !loading ? <>
       {review ? <form className="customer-form customer-security-section" onSubmit={event => void save(event)}><h3>Review visit action</h3><p>{review.summary}</p><p>This updates the appointment only. It does not collect cash or charge a card.</p><label>Your current password<input type="password" autoComplete="current-password" required maxLength={128} disabled={busy} value={password} onChange={event => setPassword(event.target.value)} /></label><div className="customer-form-actions"><button className="button" disabled={busy}>{busy ? 'Saving…' : 'Confirm visit action'}</button><button className="button button-secondary" type="button" disabled={busy} onClick={refresh}>Refresh before changing action</button></div></form> : <form className="customer-form" onSubmit={createReview}>
@@ -57,7 +61,7 @@ function Desk() {
         <button className="button button-secondary" type="button" disabled={busy || selection === ''} onClick={() => void findTimes()}>Find today’s openings</button>
         {available ? <><p>Times for {available.date} ({available.option.timeZone}). Availability is checked again when saved.</p>{available.slots.length ? <fieldset className="customer-time-options"><legend>Choose an opening</legend>{available.slots.map(slot => <label key={slot.startsAt}><input type="radio" required name="walk-in-time" checked={startsAt === slot.startsAt} disabled={busy} onChange={() => setStartsAt(slot.startsAt)} />{when(slot.startsAt, available.option.timeZone)}</label>)}</fieldset> : <p>No openings remain today. A guest should not be promised a reserved time without an available opening.</p>}<button className="button" disabled={busy || !startsAt}>Review walk-in</button></> : null}
       </form>}
-      <section className="customer-security-section"><h3>Active and recently updated walk-ins</h3>{visits.more ? <p className="customer-notice">Showing the first 100 visits. Additional history requires shop support.</p> : null}<ul className="customer-records">{visits.items.map(visit => <li key={visit.id}><div><h4>{visit.name} · {visit.serviceName}</h4><p>{visit.professionalName} · {when(visit.startsAt, visit.timeZone)} ({visit.timeZone})</p><p>{label(visit.status)} · Recorded price {money(visit.priceCents)}</p>{['confirmed','checked_in','in_service','completed'].includes(visit.status) ? <p><a href={`/account?view=sales&appointment=${encodeURIComponent(visit.id)}`}>Prepare sale estimate</a></p> : null}<div className="customer-form-actions">{(actions[visit.status] ?? []).map(action => <button className="button button-secondary" key={action} disabled={busy || Boolean(review)} onClick={() => progress(visit, action)}>{label(action)}</button>)}</div></div></li>)}</ul>{!visits.items.length ? <p>No active or recently updated walk-ins.</p> : null}</section>
+      <section className="customer-security-section"><h3>Active and recently updated visits</h3>{visits.more ? <p className="customer-notice">Showing the first 100 visits. Additional history requires shop support.</p> : null}<ul className="customer-records">{visits.items.map(visit => <li key={visit.id}><div><h4>{visit.name} · {visit.serviceName}</h4><p>{visit.professionalName} · {when(visit.startsAt, visit.timeZone)} ({visit.timeZone})</p><p>{label(visit.source)} · {label(visit.status)} · Recorded price {money(visit.priceCents)}</p>{visit.changePending ? <p>Resolve the pending rescheduling request with the assigned professional first.</p> : null}{visit.cancellationPending ? <p>The customer requested cancellation. Cancel visit approves that request.</p> : null}{['confirmed','checked_in','in_service','completed'].includes(visit.status) ? <p><a href={`/account?view=sales&appointment=${encodeURIComponent(visit.id)}`}>Prepare sale estimate</a></p> : null}<div className="customer-form-actions">{visit.actions.map(action => <button className="button button-secondary" key={action} disabled={busy || Boolean(review)} onClick={() => progress(visit, action)}>{visitActionLabels[action]}</button>)}</div></div></li>)}</ul>{!visits.items.length ? <p>No active or recently updated visits.</p> : null}</section>
     </> : null}<button className="text-button" disabled={busy || loading} onClick={refresh}>Refresh front desk</button>
   </section>;
 }

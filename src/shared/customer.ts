@@ -51,6 +51,8 @@ export interface CustomerOrderItem {
   unitPriceCents: number;
 }
 export interface CustomerOrderDetail extends CustomerOrder {
+  updatedAt: string;
+  canWithdraw: boolean;
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;

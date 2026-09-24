@@ -101,7 +101,7 @@ export async function decideRequest(env: Env, userId: string, sessionHash: strin
       WHERE id=? AND source='website' AND status=? AND updated_at=? AND customer_user_id=?
         AND (?=0 OR cancellation_state='pending')
         AND COALESCE(assigned_staff_id,requested_staff_id)=? AND (? IS NULL OR (SELECT version FROM booking_revision WHERE id=1)=?)
-        AND (?='decline' OR (julianday(starts_at)>julianday(?) AND EXISTS
+        AND (? IN ('decline','cancel','keep') OR (julianday(starts_at)>julianday(?) AND EXISTS
           (SELECT 1 FROM users customer WHERE customer.id=appointments.customer_user_id AND customer.status='active' AND customer.email_verified_at IS NOT NULL)))
         AND EXISTS (SELECT 1 FROM users u JOIN staff_profiles sp ON sp.user_id=u.id JOIN sessions se ON se.user_id=u.id JOIN account_credentials c ON c.user_id=u.id
           WHERE u.id=? AND sp.id=? AND sp.setup_status='approved' AND u.role IN ('staff','manager','owner','admin')

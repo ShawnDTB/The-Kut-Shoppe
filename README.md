@@ -1,7 +1,10 @@
 ## Current release entry point
 
 Start with [release readiness and deployment](docs/platform/release-readiness.md).
-The current schema includes migrations through **0013**. Run `npm run check` for
+The current schema includes migrations through **0015**. See the
+[feature completion review](docs/platform/feature-completion-review.md) for the
+shared appointment lifecycle, professional visit history and customer order
+withdrawal milestone. Run `npm run check` for
 code verification and `npm run releasecheck` for the separate, offline hosting
 environment preflight. The committed hosting templates are not live production
 configuration. Booking/shop workflows are preserved; electronic payments, paid

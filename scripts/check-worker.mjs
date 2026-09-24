@@ -36,13 +36,20 @@ try {
     const original = await readFile(`migrations/${file}`, 'utf8');
     for (const statement of migrationStatements(original)) await db.prepare(statement).run();
   }
-  const call = (path, body, cookie, method = body ? 'POST' : 'GET') => worker.dispatchFetch(`${origin}/api/v1${path}`, {
-    method, headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Kut-Request': '1', 'CF-Connecting-IP': '192.0.2.25', ...(cookie ? { Cookie: cookie.split(';')[0] } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const call = async (path, body, cookie, method = body ? 'POST' : 'GET') => {
+    const response = await worker.dispatchFetch(`${origin}/api/v1${path}`, {
+      method, headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Kut-Request': '1', 'CF-Connecting-IP': '192.0.2.25', ...(cookie ? { Cookie: cookie.split(';')[0] } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    // Capture the real HTTP result once. Assertions and diagnostics can inspect
+    // that snapshot without cloning/consuming Miniflare's response stream twice
+    // (the previous eager diagnostic clone failed under the Node 22 CI runner).
+    const text = await response.text();
+    return { status: response.status, headers: response.headers, text: async () => text, json: async () => JSON.parse(text) };
+  };
   assert.equal((await call('/me')).status, 401);
   const registered = await call('/auth/register', { name: 'Runtime Customer', email: 'runtime@example.test', password: 'A runtime test passphrase 2026', turnstileToken: 'test-only' });
-  assert.equal(registered.status, 202, `Registration failed in Workers: ${await registered.clone().text()}`);
+  assert.equal(registered.status, 202, `Registration failed in Workers: ${await registered.text()}`);
   const { challengeId } = await registered.json();
   const code = deliveries.at(-1).text.match(/code is (\d{8})/)[1];
   const verified = await call('/auth/verify', { challengeId, code });
@@ -77,7 +84,7 @@ try {
   assert.equal(secondPage.items.length, 5); assert.equal(secondPage.nextCursor, null);
   assert.equal(new Set([...firstPage.items, ...secondPage.items].map((row) => row.id)).size, 30);
   const change = await call('/me/email/start', { email: 'updated-runtime@example.test', currentPassword: 'A runtime test passphrase 2026' }, activeCookie);
-  assert.equal(change.status, 202, await change.clone().text());
+  assert.equal(change.status, 202, await change.text());
   const changeCodes = { challengeId: (await change.json()).challengeId,
     currentCode: deliveries.at(-2).text.match(/code is (\d{8})/)[1], newCode: deliveries.at(-1).text.match(/code is (\d{8})/)[1] };
   // Actual concurrent Workers/D1 requests: only one can commit this change.
@@ -98,7 +105,7 @@ try {
   await db.prepare(`INSERT INTO appointments(id,customer_user_id,service_id,location_id,price_cents,status,source,created_at,updated_at)
     VALUES ('runtime-request',?,'runtime-service',?,2500,'requested','website',?,?)`).bind(account.id, location.id, now, now).run();
   const withdrawals = await Promise.all([call('/me/appointments/runtime-request/withdraw', { updatedAt: now }, detailCookie), call('/me/appointments/runtime-request/withdraw', { updatedAt: now }, detailCookie)]);
-  for (const response of withdrawals) assert.equal(response.status, 200, await response.clone().text());
+  for (const response of withdrawals) assert.equal(response.status, 200, await response.text());
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_withdrew_request'").first()).n, 1);
   assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE action='customer_withdrew_request'").first()).n, 1);
   const withdrawn = await (await call('/me/appointments/runtime-request', undefined, detailCookie)).json();
@@ -138,7 +145,7 @@ try {
   const nextAvailable = await (await call(availabilityPath, undefined, detailCookie)).json();
   const retryRequest = { ...firstRequest, startsAt: nextAvailable.slots[0].startsAt, quote: nextAvailable.quote, requestKey: randomUUID() };
   const retries = await Promise.all([call('/me/booking/requests', retryRequest, detailCookie), call('/me/booking/requests', retryRequest, detailCookie)]);
-  for (const response of retries) assert.equal(response.status, 200, await response.clone().text());
+  for (const response of retries) assert.equal(response.status, 200, await response.text());
   const retryId = (await retries[0].json()).appointmentId;
   assert.equal(retryId, (await retries[1].json()).appointmentId);
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE event_type='customer_requested_appointment'").first()).n, 2);
@@ -188,7 +195,7 @@ try {
   const nextDetail = await (await call(`/me/professional/requests/${retryId}`, undefined, staffCookie)).json();
   const decline = { ...decision, action: 'decline', updatedAt: nextDetail.request.updatedAt, decisionKey: randomUUID() };
   const duplicateDecisions = await Promise.all([call(`/me/professional/requests/${retryId}`, decline, staffCookie), call(`/me/professional/requests/${retryId}`, decline, staffCookie)]);
-  for (const response of duplicateDecisions) assert.equal(response.status, 200, await response.clone().text());
+  for (const response of duplicateDecisions) assert.equal(response.status, 200, await response.text());
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id=? AND event_type='professional_declined'").bind(retryId).first()).n, 1);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM appointment_notifications n JOIN appointment_events e ON e.id=n.event_id WHERE e.appointment_id=?').bind(retryId).first()).n, 4);
   assert.equal((await call(`/me/professional/requests/${retryId}`, undefined, detailCookie)).status, 403);
@@ -250,11 +257,11 @@ try {
   const cancellationPath = `/me/appointments/${visitId}/cancellation`;
   const estimateInput = { appointmentId: visitId, orderId: null, discountCents: 0, discountReason: '', taxCents: null, shippingCents: null, chargeNote: '' };
   const estimatePreviewResponse = await call('/me/sales/preview', estimateInput, staffCookie);
-  assert.equal(estimatePreviewResponse.status, 200, await estimatePreviewResponse.clone().text());
+  assert.equal(estimatePreviewResponse.status, 200, await estimatePreviewResponse.text());
   const estimatePreview = await estimatePreviewResponse.json();
   const estimateSave = { ...estimateInput, token: estimatePreview.token, requestKey: randomUUID(), currentPassword: 'A runtime test passphrase 2026' };
   const duplicateEstimates = await Promise.all([call('/me/sales', estimateSave, staffCookie), call('/me/sales', estimateSave, staffCookie)]);
-  for (const response of duplicateEstimates) assert.equal(response.status, 200, await response.clone().text());
+  for (const response of duplicateEstimates) assert.equal(response.status, 200, await response.text());
   const savedEstimate = await duplicateEstimates[0].json();
   assert.equal((await duplicateEstimates[1].json()).estimateId, savedEstimate.estimateId);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM sale_estimates WHERE appointment_id=?').bind(visitId).first()).n, 1);
@@ -265,12 +272,12 @@ try {
   const reschedulePath = `/me/appointments/${visitId}/reschedule`;
   const changePage = await (await call(reschedulePath, undefined, detailCookie)).json();
   const replacementResponse = await call(`${reschedulePath}?date=${bookingDate}`, undefined, detailCookie);
-  assert.equal(replacementResponse.status, 200, await replacementResponse.clone().text());
+  assert.equal(replacementResponse.status, 200, await replacementResponse.text());
   const replacement = await replacementResponse.json(); assert.ok(replacement.slots.length);
   const move = { action: 'request', updatedAt: changePage.updatedAt, version: changePage.version, requestKey: randomUUID(),
     date: bookingDate, startsAt: replacement.slots.at(-1).startsAt, quote: replacement.quote };
   const duplicateMoves = await Promise.all([call(reschedulePath, move, detailCookie), call(reschedulePath, move, detailCookie)]);
-  for (const response of duplicateMoves) assert.equal(response.status, 200, await response.clone().text());
+  for (const response of duplicateMoves) assert.equal(response.status, 200, await response.text());
   assert.equal((await db.prepare('SELECT count(*) AS n FROM appointment_changes WHERE appointment_id=?').bind(visitId).first()).n, 1);
   const pendingMove = await (await call(reschedulePath, undefined, detailCookie)).json();
   assert.equal(pendingMove.startsAt, changePage.startsAt, 'A pending change moved the original reservation');
@@ -305,5 +312,32 @@ try {
   const purchases=await Promise.all([call('/me/orders/request',purchase,detailCookie),call('/me/orders/request',{...purchase,requestKey:randomUUID()},secondCookie)]);
   assert.deepEqual(purchases.map(r=>r.status).sort(),[200,409],'Two customers reserved the last inventory item');
   assert.equal((await db.prepare("SELECT stock_reserved FROM product_variants WHERE id='race-variant'").first()).stock_reserved,1);
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, duplicate estimates and private documents, duplicate rescheduling and opposing decisions, assigned visit isolation, inventory competition, and transactional notifications.');
+  const winningPurchase = purchases.findIndex(response => response.status === 200);
+  const buyerCookie = [detailCookie, secondCookie][winningPurchase];
+  const { orderId: withdrawalOrderId } = await purchases[winningPurchase].json();
+  const withdrawalDetail = await (await call(`/me/orders/${withdrawalOrderId}`,undefined,buyerCookie)).json();
+  const withdrawalBody = { updatedAt: withdrawalDetail.order.updatedAt };
+  const duplicateWithdrawals = await Promise.all([
+    call(`/me/orders/${withdrawalOrderId}/withdraw`,withdrawalBody,buyerCookie),
+    call(`/me/orders/${withdrawalOrderId}/withdraw`,withdrawalBody,buyerCookie),
+  ]);
+  for (const response of duplicateWithdrawals) assert.equal(response.status,200,await response.text());
+  assert.equal((await db.prepare("SELECT stock_reserved FROM product_variants WHERE id='race-variant'").first()).stock_reserved,0);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM audit_events WHERE action='customer_order_withdrawn'").first()).n,1);
+  // Run the full visit lifecycle against D1, including competing identical
+  // retries. A completed service is not a financial transaction.
+  await db.prepare(`INSERT INTO appointments(id,customer_user_id,assigned_staff_id,service_id,location_id,starts_at,ends_at,price_cents,status,source,created_at,updated_at)
+    SELECT 'lifecycle-runtime',customer_user_id,assigned_staff_id,service_id,location_id,?,?,price_cents,'confirmed','website',?,? FROM appointments WHERE id=?`)
+    .bind(new Date(Date.now()-60000).toISOString(),new Date(Date.now()+3600000).toISOString(),now,now,visitId).run();
+  const lifecyclePath = '/me/professional/visits/lifecycle-runtime';
+  for (const action of ['checked_in','in_service','completed']) {
+    const detail = await (await call(lifecyclePath, undefined, staffCookie)).json();
+    const body = { action, updatedAt: detail.visit.updatedAt, requestKey: randomUUID(), currentPassword: 'A runtime test passphrase 2026' };
+    const responses = await Promise.all([call(lifecyclePath, body, staffCookie),call(lifecyclePath, body, staffCookie)]);
+    for (const response of responses) assert.equal(response.status,200,await response.text());
+  }
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM visit_operations WHERE appointment_id='lifecycle-runtime'").first()).n,3);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id='lifecycle-runtime'").first()).n,3);
+  assert.ok((await (await call('/me/professional/visits?view=history',undefined,staffCookie)).json()).items.some(item=>item.id==='lifecycle-runtime'));
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, duplicate estimates and private documents, rescheduling/cancellation races, assigned visit isolation and lifecycle retries, inventory competition, and transactional notifications.');
 } finally { await worker.dispose(); }
