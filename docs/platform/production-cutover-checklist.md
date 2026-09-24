@@ -1,5 +1,10 @@
 # Production Cutover Checklist
 
+**Historical planning inventory:** this list predates the implemented account,
+rescheduling, walk-in and commerce APIs. An unchecked item below is not evidence
+that its code is missing. Use [release readiness](release-readiness.md) for the
+current implementation/activation distinction and migrations through **0013**.
+
 This checklist separates the integrated browser prototype from a secure production release.
 
 ## Platform core

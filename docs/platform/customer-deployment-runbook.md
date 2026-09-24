@@ -1,5 +1,10 @@
 # Customer deployment runbook
 
+**Current release:** start with [release readiness](release-readiness.md). Apply
+all migrations through **0013**. The milestone updates and test totals below are
+historical; they do not override the current release checklist. The detailed
+security, baseline compatibility and provider-acceptance guidance still applies.
+
 Latest milestone: apply migrations through **0010** and read [appointment cancellation requests](appointment-cancellation.md). Existing confirmed website visits can now accept customer cancellation requests for assigned-professional review. Local review applies the migration automatically; no hosted resources have been changed.
 
 Current recovery: apply migrations through **0009** and read [shop and booking recovery](restored-commerce-and-booking.md). Commerce request APIs use the independent `COMMERCE_ENABLED` setting, enabled automatically for local review and false in committed hosted defaults. Historical test counts and migration notes below describe earlier milestones; `npm run check` is the current verification gate.

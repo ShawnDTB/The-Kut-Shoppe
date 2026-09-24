@@ -1,3 +1,13 @@
+## Current release entry point
+
+Start with [release readiness and deployment](docs/platform/release-readiness.md).
+The current schema includes migrations through **0013**. Run `npm run check` for
+code verification and `npm run releasecheck` for the separate, offline hosting
+environment preflight. The committed hosting templates are not live production
+configuration. Booking/shop workflows are preserved; electronic payments, paid
+receipts and employee payroll are not yet implemented. The milestone notes below
+are historical and must not be used as the current deployment checklist.
+
 <div align="center">
 
 **Original booking page restored:** `/book` again starts with **Barber / Loctician**, followed by the original service-row and weekly-calendar layout. The restored Barber journey uses the current account and scheduling APIs. See [booking page restoration](docs/platform/booking-page-restoration.md) for the exact baseline comparison and review steps.
