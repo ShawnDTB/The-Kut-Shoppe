@@ -1,23 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { ApiError, type Env } from './types';
-import { allowFields, secretHash, stringField, verifyPassword } from './security';
+import { allowFields, secretHash, stringField } from './security';
 import { requireFrontDesk } from './front-desk';
-import { staffMfaGate } from './staff-mfa';
+import { cashGate as gate, authorizeCash as authorize } from './cash-access';
+import { openRegisterSql, registerBalanceSql } from './register';
 import { estimateDetail, prepare, signed, pageCursor } from './sales';
 import { cents } from './sale-amounts';
 import type { CashReceipt, CounterPage, FinalizedSale, ReceiptPage } from '../src/shared/counter';
 import type { SaleEstimate } from '../src/shared/sales';
 
-const gate = `EXISTS(SELECT 1 FROM users u JOIN sessions se ON se.user_id=u.id WHERE u.id=? AND se.token_hash=? AND u.status='active'
- AND u.email_verified_at IS NOT NULL AND u.role IN ('owner','manager','admin') AND ${staffMfaGate()})`;
-async function authorize(env: Env, actor: string, session: string, body: Record<string, unknown>) {
- await requireFrontDesk(env, actor, session);
- if (env.CASH_SALES_ENABLED !== 'true') throw new ApiError(503,'Cash sales are not enabled in this environment.');
- if (typeof body.currentPassword !== 'string' || !body.currentPassword.length || body.currentPassword.length>128) throw new ApiError(400,'Enter your current password.');
- const row=await env.DB.prepare('SELECT password_hash AS hash FROM account_credentials WHERE user_id=?').bind(actor).first<{hash:string}>();
- if (!row || !await verifyPassword(body.currentPassword,row.hash)) throw new ApiError(400,'The current password is incorrect.');
- return row.hash;
-}
 export async function finalizeSale(env:Env,actor:string,session:string,body:Record<string,unknown>) {
  allowFields(body,['estimateId','currentPassword']); const hash=await authorize(env,actor,session,body);
  const estimateId=stringField(body,'estimateId',128,1);
@@ -60,20 +51,23 @@ export async function counterSale(env:Env,actor:string,session:string,id:string)
   state:receipts.some(r=>r.kind==='void')?'void':receipts.some(r=>r.kind==='refund')?'refunded':receipts.some(r=>r.kind==='payment')?'paid':'unpaid',receipts};
 }
 export async function recordCash(env:Env,actor:string,session:string,id:string,body:Record<string,unknown>) {
- allowFields(body,['action','cashReceivedCents','tipCents','reason','requestKey','currentPassword']);
+ allowFields(body,['action','cashReceivedCents','tipCents','reason','requestKey','currentPassword','registerId']);
  const hash=await authorize(env,actor,session,body); const action=stringField(body,'action',10,1);
  if(!['payment','refund','void'].includes(action))throw new ApiError(400,'Choose payment, refund or void.');
+ const registerId=body.registerId===undefined?'':stringField(body,'registerId',128);
  const received=cents(body.cashReceivedCents); const tip=cents(body.tipCents); const reason=stringField(body,'reason',300);
  const key=stringField(body,'requestKey',36,36);
  if(!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(key))throw new ApiError(400,'Review this cash action again.');
  if(action!=='payment' && (!reason || received || tip))throw new ApiError(400,'Explain a refund/void and leave cash received and new tip at zero.');
- const fingerprint=secretHash(env,JSON.stringify({id,action,received,tip,reason}));
+ const fingerprint=secretHash(env,JSON.stringify({id,action,received,tip,reason,registerId}));
  const replay=async()=>{
-  const row=await env.DB.prepare(`SELECT id,fingerprint FROM cash_sale_events WHERE actor_user_id=? AND request_key=? AND ${gate}`).bind(actor,key,actor,session).first<{id:string;fingerprint:string}>();
-  if(row&&row.fingerprint!==fingerprint)throw new ApiError(409,'This action key was already used with different details.');
+  const row=await env.DB.prepare(`SELECT id,fingerprint,EXISTS(SELECT 1 FROM cash_register_entries r WHERE r.cash_event_id=cash_sale_events.id) AS registered FROM cash_sale_events WHERE actor_user_id=? AND request_key=? AND ${gate}`).bind(actor,key,actor,session).first<{id:string;fingerprint:string;registered:number}>();
+  const legacyFingerprint=secretHash(env,JSON.stringify({id,action,received,tip,reason}));
+  if(row&&row.fingerprint!==fingerprint&&(row.registered||registerId||row.fingerprint!==legacyFingerprint))throw new ApiError(409,'This action key was already used with different details.');
   return row?{receiptId:row.id}:null;
  };
  const prior=await replay();if(prior)return prior;
+ if(action!=='void'&&!registerId)throw new ApiError(400,'Open the cash register and review this cash action again.');
  const sale=await counterSale(env,actor,session,id);const paid=sale.receipts.find(r=>r.kind==='payment');
  const concurrent=await replay();if(concurrent)return concurrent;
  if(action==='refund'?sale.state!=='paid':sale.state!=='unpaid')throw new ApiError(409,'This sale has already changed. Refresh its records.');
@@ -86,13 +80,16 @@ export async function recordCash(env:Env,actor:string,session:string,id:string,b
  await env.DB.batch([
   env.DB.prepare(`INSERT INTO cash_sale_events(id,sale_id,actor_user_id,request_key,fingerprint,kind,amount_cents,tip_cents,snapshot_json,created_at)
    SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${gate} AND EXISTS(SELECT 1 FROM account_credentials WHERE user_id=? AND password_hash=?)
+   AND (?='void' OR (${openRegisterSql('?')} AND (?!='refund' OR ${registerBalanceSql('?')}>=?)))
    AND NOT EXISTS(SELECT 1 FROM cash_sale_events WHERE sale_id=? AND kind IN ('refund','void'))
    AND (?='refund' AND EXISTS(SELECT 1 FROM cash_sale_events WHERE sale_id=? AND id=? AND kind='payment')
         OR ?!='refund' AND NOT EXISTS(SELECT 1 FROM cash_sale_events WHERE sale_id=? AND kind='payment'))
-   ON CONFLICT DO NOTHING`).bind(receiptId,id,actor,key,fingerprint,action,amount,receipt.tipCents,JSON.stringify(receipt),now,actor,session,actor,hash,id,action,id,paid?.id??null,action,id),
+   ON CONFLICT DO NOTHING`).bind(receiptId,id,actor,key,fingerprint,action,amount,receipt.tipCents,JSON.stringify(receipt),now,actor,session,actor,hash,action,registerId,action,registerId,amount,id,action,id,paid?.id??null,action,id),
+  ...(action==='void'?[]:[env.DB.prepare(`INSERT INTO cash_register_entries(id,register_id,cash_event_id,kind,amount_cents,reason,created_at)
+    SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM cash_sale_events WHERE id=?)`).bind(randomUUID(),registerId,receiptId,action,action==='refund'?-amount:amount,reason,now,receiptId)]),
   env.DB.prepare(`INSERT INTO audit_events(id,actor_user_id,action,entity_type,entity_id,created_at) SELECT ?,?,?,'sale',?,? WHERE EXISTS(SELECT 1 FROM cash_sale_events WHERE id=?)`).bind(randomUUID(),actor,`cash_${action}_recorded`,id,now,receiptId),
  ]);
- const result=await replay();if(!result)throw new ApiError(409,'Another cashier updated this sale, or your access changed. Refresh before accepting or returning cash.');return result;
+ const result=await replay();if(!result)throw new ApiError(409,'The sale/register changed, available cash is insufficient, or your access changed. Refresh before accepting or returning cash.');return result;
 }
 export async function counterPage(env:Env,actor:string,session:string,value:string|null):Promise<CounterPage> {
  await requireFrontDesk(env,actor,session);const scope=`counter:${actor}`;const cursor=pageCursor(env,scope,value);

@@ -70,7 +70,7 @@ export function signed(env: Env, scope: string, value: unknown) {
   const payload = Buffer.from(JSON.stringify(value)).toString('base64url');
   return `${payload}.${secretHash(env, `sales-v1:${scope}:${payload}`)}`;
 }
-function decoded<T>(env: Env, scope: string, token: string): T {
+export function decoded<T>(env: Env, scope: string, token: string): T {
   try {
     if (token.length > 2048 || !/^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/.test(token)) throw Error();
     const [payload, signature] = token.split('.') as [string, string];

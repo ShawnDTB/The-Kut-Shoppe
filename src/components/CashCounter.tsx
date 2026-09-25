@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { accountApi, downloadAccountDocument } from '../data/customer-api';
 import type { CashReceipt, CounterPage, FinalizedSale, ReceiptPage } from '../shared/counter';
 import type { SaleEstimate } from '../shared/sales';
+import type { RegisterPage } from '../shared/register';
 import { EstimateSummary } from './SaleEstimates';
 import { StaffAuthenticator } from './StaffAuthenticator';
 
@@ -51,7 +52,7 @@ export function CustomerReceipts() {
     <button className="text-button" disabled={busy} onClick={() => { setPage(null); setAttempt(value => value + 1); }}>Refresh receipts</button>
   </section>;
 }
-type CashAction = { action: 'payment' | 'refund' | 'void'; cashReceivedCents: number; tipCents: number; reason: string; requestKey: string };
+type CashAction = { action: 'payment' | 'refund' | 'void'; cashReceivedCents: number; tipCents: number; reason: string; requestKey: string; registerId: string };
 function CashActions({ sale, onChanged }: { sale: FinalizedSale; onChanged: () => Promise<void> }) {
   const [action, setAction] = useState<CashAction['action']>(sale.state === 'paid' ? 'refund' : 'payment');
   const [received, setReceived] = useState(''); const [tip, setTip] = useState('0'); const [reason, setReason] = useState('');
@@ -60,14 +61,20 @@ function CashActions({ sale, onChanged }: { sale: FinalizedSale; onChanged: () =
   if (sale.state === 'void' || sale.state === 'refunded') return <p>This sale is closed. Its original records remain available below.</p>;
   const paid = sale.receipts.find(receipt => receipt.kind === 'payment');
   const amount = review?.action === 'refund' ? paid!.amountCents : review?.action === 'void' ? 0 : sale.totalCents + (review?.tipCents ?? 0);
-  const preview = (event: FormEvent) => {
-    event.preventDefault(); setError('');
+  const preview = async (event: FormEvent) => {
+    event.preventDefault(); if(lock.current)return;lock.current=true;setBusy(true);setError('');
     try {
-      const input: CashAction = { action, cashReceivedCents: action === 'payment' ? cashCents(received) : 0, tipCents: action === 'payment' ? cashCents(tip) : 0, reason: reason.trim(), requestKey: crypto.randomUUID() };
+      const input: CashAction = { action, cashReceivedCents: action === 'payment' ? cashCents(received) : 0, tipCents: action === 'payment' ? cashCents(tip) : 0, reason: reason.trim(), requestKey: crypto.randomUUID(), registerId: '' };
       if (action === 'payment' && input.cashReceivedCents < sale.totalCents + input.tipCents) throw new Error('Cash received must cover the full sale and tip.');
       if (action !== 'payment' && !input.reason) throw new Error('Enter a reason for this action.');
+      if(action!=='void'){
+        const register=await accountApi<RegisterPage>('/me/register');
+        if(!register.open)throw new Error('Open the cash register before reviewing a payment or refund.');
+        if(action==='refund'&&register.open.totals.expectedCents<paid!.amountCents)throw new Error('The register needs more cash before this refund. Record cash added, then review again.');
+        input.registerId=register.open.id;
+      }
       setReview(input);
-    } catch (failure) { setError(messageOf(failure)); }
+    } catch (failure) { setError(messageOf(failure)); } finally {lock.current=false;setBusy(false);}
   };
   const save = async (event: FormEvent) => {
     event.preventDefault(); if (!review || lock.current) return; lock.current = true; setBusy(true); setError(''); setPending(true);
@@ -83,11 +90,11 @@ function CashActions({ sale, onChanged }: { sale: FinalizedSale; onChanged: () =
     <label>Your current password<input type="password" required maxLength={128} autoComplete="current-password" value={password} disabled={busy} onChange={event => setPassword(event.target.value)} /></label>
     <button className="button" disabled={busy}>{busy ? 'Saving…' : pending ? 'Retry same cash action' : 'Confirm cash record'}</button>
     {!pending ? <button type="button" className="text-button" disabled={busy} onClick={() => { setReview(null); setPassword(''); }}>Back to cash details</button> : null}
-  </form> : <form className="customer-form" onSubmit={preview}><h3>{sale.state === 'paid' ? 'Full cash refund' : 'Record cash or void sale'}</h3>
+  </form> : <form className="customer-form" onSubmit={event=>void preview(event)}><h3>{sale.state === 'paid' ? 'Full cash refund' : 'Record cash or void sale'}</h3>
     {sale.state === 'unpaid' ? <label>Action<select value={action} onChange={event => setAction(event.target.value as CashAction['action'])}><option value="payment">Collect cash</option><option value="void">Void unpaid sale</option></select></label> : <p>Refund the complete original payment of {money(paid!.amountCents)}, including {money(paid!.tipCents)} in tips.</p>}
     {action === 'payment' ? <><label>Cash received ($)<input required inputMode="decimal" maxLength={10} value={received} onChange={event => setReceived(event.target.value)} /></label>
       {sale.estimate.lines.some(line => line.kind === 'service' && line.professionalId) ? <label>Service tip ($)<input required inputMode="decimal" maxLength={10} value={tip} onChange={event => setTip(event.target.value)} /></label> : null}</> : <label>Reason (shown on receipt)<input required maxLength={300} value={reason} onChange={event => setReason(event.target.value)} /></label>}
-    <button className="button">Review cash action</button></form>}</div>;
+    <button className="button" disabled={busy}>{busy?'Reviewing…':'Review cash action'}</button></form>}</div>;
 }
 function CounterDesk() {
   const [page, setPage] = useState<CounterPage | null>(null); const [sale, setSale] = useState<FinalizedSale | null>(null); const [estimate, setEstimate] = useState<SaleEstimate | null>(null);
@@ -122,7 +129,7 @@ function CounterDesk() {
     catch (failure) { setError(messageOf(failure)); } finally { setBusy(false); }
   };
   return <section><h2>Sales & cash</h2><p>Finalize completed services and accepted pickup orders, then record cash collected at the shop. Card payments are not connected.</p>
-    <p><a href="/account?view=sales">Prepare a sale estimate</a> · <a href="/admin/orders">Manage order fulfillment</a></p>
+    <p><a href="/account?view=register">Open or reconcile the cash register</a> · <a href="/account?view=sales">Prepare a sale estimate</a> · <a href="/admin/orders">Manage order fulfillment</a></p>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
     {estimate ? <form className="customer-form" onSubmit={event => void finalize(event)}><h3>Finalize reviewed estimate</h3><EstimateSummary estimate={estimate} />
       <p>This fixes the item prices, discount and charges for the sale. It does not record payment. All charges must be determined, services completed and pickup orders accepted first.</p>

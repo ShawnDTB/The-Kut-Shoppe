@@ -21,6 +21,7 @@ const fill=async(label:string,value:string)=>{const field=[...element.querySelec
 it('reviews change due and freezes the cash action across a lost response, then shows the saved receipt',async()=>{
   let sale=original;let attempts=0;
   api.mockImplementation(async(path,body)=>{
+    if(path==='/me/register')return{open:{id:'register-one'}};
     if(path==='/me/counter')return{items:[sale],nextCursor:null};
     if(path==='/me/counter/sale-one'&&body){attempts++;if(attempts===1)throw new Error('Connection lost');sale={...original,state:'paid',receipts:[receipt]};return{receiptId:receipt.id};}
     if(path==='/me/counter/sale-one')return{sale};throw new Error(path);
@@ -37,7 +38,7 @@ it('reviews change due and freezes the cash action across a lost response, then 
   expect(element.textContent).toContain('Full cash refund');expect(element.textContent).toContain('Cash payment · $26.00');
 });
 it('rejects underpayment before creating any cash record',async()=>{
-  api.mockImplementation(async path=>path==='/me/counter'?{items:[original],nextCursor:null}:{sale:original});
+  api.mockImplementation(async path=>path==='/me/register'?{open:{id:'register-one'}}:path==='/me/counter'?{items:[original],nextCursor:null}:{sale:original});
   await act(async()=>root.render(createElement(CashCounter)));await fill('Cash received','23.98');await click('Review cash action');
   expect(element.textContent).toContain('Cash received must cover the full sale and tip');expect(api.mock.calls.every(([,body])=>body===undefined)).toBe(true);
 });

@@ -351,7 +351,11 @@ try {
   const saleId=(await finalizations[0].json()).saleId;assert.equal((await finalizations[1].json()).saleId,saleId);
   const salePath=`/me/counter/${saleId}`;
   const cashSale=(await (await call(salePath,undefined,staffCookie)).json()).sale;
-  const cashBody={action:'payment',cashReceivedCents:cashSale.totalCents+1000,tipCents:500,reason:'',requestKey:randomUUID(),currentPassword:'A runtime test passphrase 2026'};
+  const openBody={action:'open',registerId:'',amountCents:10000,reason:'Test float',token:'',requestKey:randomUUID(),currentPassword:'A runtime test passphrase 2026'};
+  const registerOpenings=await Promise.all([call('/me/register',openBody,staffCookie),call('/me/register',openBody,staffCookie)]);
+  for(const response of registerOpenings)assert.equal(response.status,200,await response.text());
+  const registerId=(await registerOpenings[0].json()).registerId;assert.equal((await registerOpenings[1].json()).registerId,registerId);
+  const cashBody={action:'payment',cashReceivedCents:cashSale.totalCents+1000,tipCents:500,reason:'',requestKey:randomUUID(),currentPassword:'A runtime test passphrase 2026',registerId};
   const payments=await Promise.all([call(salePath,cashBody,staffCookie),call(salePath,cashBody,staffCookie)]);
   for(const response of payments)assert.equal(response.status,200,await response.text());
   const receiptId=(await payments[0].json()).receiptId;assert.equal((await payments[1].json()).receiptId,receiptId);
@@ -377,5 +381,20 @@ try {
   ]);
   assert.deepEqual(competingCash.map(response=>response.status).sort(),[200,409]);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM cash_sale_events WHERE sale_id=?').bind(raceSale).first()).n,1,'Competing payment/void both committed');
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, private documents, rescheduling/cancellation races, visit lifecycle, inventory competition, transactional notifications, concurrent finalized sales, cash collection and refunds.');
+  const registerReview=(await (await call('/me/register',undefined,staffCookie)).json()).open;
+  const closeBody={action:'close',registerId,amountCents:registerReview.totals.expectedCents,reason:'Counted test drawer',token:registerReview.closeToken,requestKey:randomUUID(),currentPassword:cashBody.currentPassword};
+  const registerRace=await Promise.all([
+    call('/me/register',closeBody,staffCookie),
+    call('/me/register',{...openBody,action:'paid_in',registerId,amountCents:100,reason:'Concurrent cash added',requestKey:randomUUID()},staffCookie),
+  ]);
+  assert.deepEqual(registerRace.map(response=>response.status).sort(),[200,409],'Closing and a stale cash adjustment both committed');
+  if(registerRace[0].status===409){
+    const fresh=(await (await call('/me/register',undefined,staffCookie)).json()).open;
+    assert.equal(fresh.totals.expectedCents,closeBody.amountCents+100);
+    const close=await call('/me/register',{...closeBody,amountCents:fresh.totals.expectedCents,token:fresh.closeToken,requestKey:randomUUID()},staffCookie);assert.equal(close.status,200,await close.text());
+  }else assert.equal((await call('/me/register',closeBody,staffCookie)).status,200);
+  assert.equal((await (await call('/me/register',undefined,staffCookie)).json()).open,null);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM cash_register_closures WHERE register_id=?').bind(registerId).first()).n,1);
+  assert.equal((await call(salePath,cashBody,staffCookie)).status,200,'A receipt retry failed after register closing');
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, private documents, rescheduling/cancellation races, visit lifecycle, inventory competition, transactional notifications, concurrent cash sales/refunds and register opening/closing races.');
 } finally { await worker.dispose(); }

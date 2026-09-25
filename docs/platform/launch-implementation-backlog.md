@@ -6,9 +6,13 @@ service/completion, cancellations/no-shows, professional history and customer
 withdrawal of unaccepted unpaid orders are implemented with migrations through
 **0015**. Migration **0016** adds [finalized sales, cash collection and private
 paid/refund receipts](cash-sales-milestone.md). Manager calendar/history pagination,
-register reconciliation, electronic payments and employee earnings remain
+electronic payments and employee earnings remain
 unfinished. The user now authorizes feature pushes to `main`;
 older dev-only workflow references below describe prior milestones.
+
+September 25: [register reconciliation](cash-register-milestone.md), migration
+0017, adds opening cash, movements, deposit removals and immutable counted
+closings with variance. New cash requests are pinned to their reviewed register.
 
 Baseline: `3071cc8`, September 13, 2026. See [audit and competitor findings](launch-readiness-audit.md). Prior completed cancellation work is documented separately in [appointment cancellation](appointment-cancellation.md).
 

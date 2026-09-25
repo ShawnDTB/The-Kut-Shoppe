@@ -7,6 +7,11 @@ flows while testing these changes.
 
 ## What works
 
+September 25 follow-up: [register reconciliation](cash-register-milestone.md) in
+0017 now requires an open, reviewed register for new cash payments/refunds and
+adds cash movements, deposits and counted closing. Apply all migrations through
+0017 for current code; the original 0016 milestone description follows.
+
 - Account → Sales preparation creates a reviewed, immutable estimate from a
   native appointment, a native product order, or both for the same account.
 - A saved estimate links to Account → Sales & cash. Finalization requires
@@ -47,7 +52,7 @@ in the terminal output and test information only. Enroll the owner authenticator
    (including an explanation). Review, save, then open the saved estimate.
 3. Choose **Review and finalize sale**. Review the unchanged amounts, enter the
    owner password and finalize. Confirm the sale is **unpaid**.
-4. Enter cash received and a service tip, review change, then confirm the cash
+4. Open and count the cash register first. Enter cash received and a service tip, review change, then confirm the cash
    record. Confirm **paid**, download the receipt and view it as the customer.
 5. Refund it in full with a reason. Confirm **refunded** and separate original
    payment/refund receipts. The completed visit remains completed.

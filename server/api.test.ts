@@ -1459,6 +1459,8 @@ describe('finalized sales and cash receipts', () => {
     env.STAFF_OPERATIONS_ENABLED = 'true'; env.CASH_SALES_ENABLED = 'true'; env.COMMERCE_ENABLED = 'true';
     const owner = await seed('cash-owner', 'owner'); await enrollMfa(owner);
     const alice = await seed('alice'); const bob = await seed('bob'); const now = seedRecords();
+    db.sqlite.prepare("INSERT INTO register_operations(id,register_id,actor_user_id,request_key,fingerprint,kind,amount_cents,reason,created_at) VALUES ('opening-test','cash-register-test','cash-owner','opening-key','test-only','open',10000,'Test float',?)").run(now);
+    db.sqlite.prepare("INSERT INTO cash_register_sessions(id,opening_operation_id,opening_cents,created_at) VALUES ('cash-register-test','opening-test',10000,?)").run(now);
     db.sqlite.exec("UPDATE appointments SET status='completed';");
     db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,created_at,updated_at) VALUES ('cash-professional','cash-owner','Cash Barber','cash-barber',?,?)").run(now,now);
     db.sqlite.exec("UPDATE appointments SET assigned_staff_id='cash-professional'");
@@ -1473,7 +1475,7 @@ describe('finalized sales and cash receipts', () => {
       const response = await request('/me/counter', { estimateId, currentPassword: password }, owner);
       expect(response.status,await response.clone().text()).toBe(200); return (await response.json()).saleId as string;
     };
-    const action = (kind = 'payment', overrides = {}) => ({ action: kind, cashReceivedCents: kind === 'payment' ? 3000 : 0, tipCents: kind === 'payment' ? 201 : 0, reason: kind === 'payment' ? '' : 'Test correction', requestKey: randomUUID(), currentPassword: password, ...overrides });
+    const action = (kind = 'payment', overrides = {}) => ({ action: kind, cashReceivedCents: kind === 'payment' ? 3000 : 0, tipCents: kind === 'payment' ? 201 : 0, reason: kind === 'payment' ? '' : 'Test correction', requestKey: randomUUID(), currentPassword: password, registerId:kind==='void'?'':'cash-register-test', ...overrides });
     return { owner, alice, bob, input, estimate, finalize, action, now };
   }
   it('finalizes exact amounts, records cash/change/tips once, and preserves private immutable receipt snapshots', async () => {
@@ -1542,8 +1544,8 @@ describe('finalized sales and cash receipts', () => {
     "DELETE FROM sessions WHERE user_id='cash-owner'",
     "UPDATE account_credentials SET password_hash='changed' WHERE user_id='cash-owner'",
   ])('rejects a cash write when access changes immediately before commit: %s',async sql=>{
-    const f=await fixture();const sale=await f.finalize();const batch=env.DB.batch.bind(env.DB);let calls=0;
-    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{if(statements.length===2&&++calls===2)db.sqlite.exec(sql);return batch(statements);});
+    const f=await fixture();const sale=await f.finalize();const batch=env.DB.batch.bind(env.DB);let once=true;
+    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{if(once&&statements.length===3){once=false;db.sqlite.exec(sql);}return batch(statements);});
     expect((await request(`/me/counter/${sale}`,f.action(),f.owner)).status).toBe(409);spy.mockRestore();
     expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_sale_events').get()!.n).toBe(0);
   });
@@ -1614,6 +1616,55 @@ describe('finalized sales and cash receipts', () => {
     expect((await cancel()).status).toBe(200);
     expect(db.sqlite.prepare('SELECT stock_on_hand,stock_reserved FROM product_variants').get()).toEqual({stock_on_hand:10,stock_reserved:0});
   });
+  it('reconciles cash, tips, refunds and physical adjustments, then freezes a counted closing snapshot',async()=>{
+    const f=await fixture();const sale=await f.finalize();const payment=f.action();
+    expect((await request(`/me/counter/${sale}`,payment,f.owner)).status).toBe(200);
+    const movement=(action:string,amountCents:number)=>({action,amountCents,registerId:'cash-register-test',reason:'Test movement',token:'',requestKey:randomUUID(),currentPassword:password});
+    for(const [action,amount] of [['deposit',1000],['paid_out',600],['paid_in',200]] as const){
+      const body=movement(action,amount);const first=await request('/me/register',body,f.owner);expect(first.status).toBe(200);
+      expect(await (await request('/me/register',body,f.owner)).json()).toEqual(await first.json());
+    }
+    expect((await request(`/me/counter/${sale}`,f.action('refund'),f.owner)).status).toBe(200);
+    const page=await (await request('/me/register',undefined,f.owner)).json();
+    expect(page.open.totals).toEqual({openingCents:10000,paymentsCents:2600,refundsCents:2600,paidInCents:200,paidOutCents:600,depositsCents:1000,entryCount:5,expectedCents:8600});
+    const closing={...movement('close',8550),token:page.open.closeToken,reason:'Counted $0.50 short'};
+    const first=await request('/me/register',closing,f.owner);expect(first.status).toBe(200);
+    expect(await (await request('/me/register',closing,f.owner)).json()).toEqual(await first.json());
+    // A cash retry still recovers its original receipt after the shift closes.
+    expect((await request(`/me/counter/${sale}`,payment,f.owner)).status).toBe(200);
+    const history=await (await request('/me/register',undefined,f.owner)).json();expect(history.open).toBeNull();
+    expect(history.items[0].close).toMatchObject({countedCents:8550,varianceCents:-50,totals:page.open.totals});
+    expect((await request('/me/register',movement('paid_in',100),f.owner)).status).toBe(409);
+    const ledger=await (await request('/me/register/cash-register-test/entries',undefined,f.owner)).json();expect(ledger.items).toHaveLength(5);
+    expect(ledger.items.filter((item:{receiptId:string|null})=>item.receiptId)).toHaveLength(2);
+    expect(()=>db.sqlite.exec('UPDATE cash_register_entries SET amount_cents=1')).toThrow(/immutable/);
+    expect(()=>db.sqlite.exec('DELETE FROM cash_register_closures')).toThrow(/retention/);
+  });
+  it('pins new cash to its reviewed register and stops a refund when drawer cash was removed',async()=>{
+    const f=await fixture();const sale=await f.finalize();const payment=f.action();
+    const open=await (await request('/me/register',undefined,f.owner)).json();
+    expect((await request('/me/register',{action:'close',registerId:'cash-register-test',amountCents:10000,reason:'',token:open.open.closeToken,requestKey:randomUUID(),currentPassword:password},f.owner)).status).toBe(200);
+    const next=await request('/me/register',{action:'open',registerId:'',amountCents:0,reason:'New drawer count',token:'',requestKey:randomUUID(),currentPassword:password},f.owner);expect(next.status).toBe(200);
+    const registerId=(await next.json()).registerId;
+    expect((await request(`/me/counter/${sale}`,payment,f.owner)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_sale_events').get()!.n).toBe(0);
+    expect((await request(`/me/counter/${sale}`,{...payment,registerId,requestKey:randomUUID()},f.owner)).status).toBe(200);
+    const deposit={action:'deposit',registerId,amountCents:2600,reason:'Removed for deposit',token:'',requestKey:randomUUID(),currentPassword:password};
+    expect((await request('/me/register',deposit,f.owner)).status).toBe(200);
+    expect((await request(`/me/counter/${sale}`,f.action('refund',{registerId}),f.owner)).status).toBe(409);
+    expect((await (await request('/me/register',undefined,f.owner)).json()).open.totals.expectedCents).toBe(0);
+    expect((await (await request(`/me/counter/${sale}`,undefined,f.owner)).json()).sale.state).toBe('paid');
+  });
+  it('recovers pre-register cash requests without silently assigning historical cash to a drawer',async()=>{
+    const f=await fixture();const sale=await f.finalize();const original=f.action();const {registerId:unused,...body}=original;void unused;
+    const fingerprint=secretHash(env,JSON.stringify({id:sale,action:'payment',received:3000,tip:201,reason:''}));
+    const estimate=(await (await request(`/me/counter/${sale}`,undefined,f.owner)).json()).sale.estimate;
+    const snapshot={id:'legacy-paid',saleId:sale,createdAt:f.now,kind:'payment',sale:estimate,amountCents:2600,tipCents:201,cashReceivedCents:3000,changeCents:400,reason:'',originalReceiptId:null,sellerName:'The Kut Shoppe',sellerAddress:'518 Main Street'};
+    db.sqlite.prepare("INSERT INTO cash_sale_events(id,sale_id,actor_user_id,request_key,fingerprint,kind,amount_cents,tip_cents,snapshot_json,created_at) VALUES ('legacy-paid',?,'cash-owner',?,?,'payment',2600,201,?,?)").run(sale,body.requestKey,fingerprint,JSON.stringify(snapshot),f.now);
+    expect(await (await request(`/me/counter/${sale}`,body,f.owner)).json()).toEqual({receiptId:'legacy-paid'});
+    expect((await request(`/me/counter/${sale}`,{...body,tipCents:200},f.owner)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_register_entries').get()!.n).toBe(0);
+  });
   it('rechecks sale protection inside cancellation even when a caller predicts the next commerce revision',async()=>{
     const f=await fixture();db.sqlite.exec("UPDATE orders SET request_key='native-cash-race',status='accepted',fulfillment_type='pickup'");
     const revision=Number(db.sqlite.prepare('SELECT value FROM commerce_revision').get()!.value);
@@ -1629,6 +1680,78 @@ describe('finalized sales and cash receipts', () => {
     spy.mockRestore();expect(response.status).toBe(409);expect(once).toBe(false);
     expect(db.sqlite.prepare('SELECT status FROM orders').get()!.status).toBe('accepted');
     expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='order_processed'").get()!.n).toBe(0);
+  });
+});
+
+describe('cash register controls',()=>{
+  async function fixture(){
+    env.STAFF_OPERATIONS_ENABLED='true';env.CASH_SALES_ENABLED='true';
+    const owner=await seed('register-owner','owner');await enrollMfa(owner);const other=await seed('register-customer');
+    const body=(action='open',amountCents=5000,registerId='',token='')=>({action,amountCents,registerId,token,reason:'Test count',requestKey:randomUUID(),currentPassword:password});
+    const openBody=body();const result=await request('/me/register',openBody,owner);expect(result.status,await result.clone().text()).toBe(200);
+    return{owner,other,body,openBody,id:(await result.json()).registerId as string};
+  }
+  it('opens once, binds retries, rejects insufficient cash and keeps customer accounts out',async()=>{
+    const f=await fixture();expect((await (await request('/me/register',f.openBody,f.owner)).json()).registerId).toBe(f.id);
+    expect((await request('/me/register',{...f.openBody,amountCents:4000},f.owner)).status).toBe(409);
+    expect((await request('/me/register',f.body(),f.owner)).status).toBe(409);
+    for(const path of ['/me/register',`/me/register/${f.id}`,`/me/register/${f.id}/entries`])expect((await request(path,undefined,f.other)).status).toBe(403);
+    expect((await request('/me/register',f.body('paid_out',5001,f.id),f.owner)).status).toBe(409);
+    expect((await request('/me/register',{...f.body('paid_in',100,f.id),currentPassword:'wrong'},f.owner)).status).toBe(400);
+    expect((await request('/me/register',{...f.body('paid_in',100,f.id),reason:''},f.owner)).status).toBe(400);
+  });
+  it('invalidates a closing review on balanced intervening movements, enforces variance notes and session binding',async()=>{
+    const f=await fixture();const page=await (await request('/me/register',undefined,f.owner)).json();
+    expect((await request('/me/register',{...f.body('close',4999,f.id,page.open.closeToken),reason:''},f.owner)).status).toBe(400);
+    const manager=await seed('register-manager','manager');await enrollMfa(manager);
+    expect((await request('/me/register',f.body('close',5000,f.id,page.open.closeToken),manager)).status).toBe(400);
+    for(const kind of ['paid_in','paid_out'])expect((await request('/me/register',f.body(kind,100,f.id),f.owner)).status).toBe(200);
+    expect((await request('/me/register',f.body('close',5000,f.id,page.open.closeToken),f.owner)).status).toBe(409);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_register_closures').get()!.n).toBe(0);
+  });
+  it.each([
+    "UPDATE sessions SET mfa_until=NULL WHERE user_id='register-owner'",
+    "UPDATE users SET role='customer' WHERE id='register-owner'",
+    "UPDATE account_credentials SET password_hash='changed' WHERE user_id='register-owner'",
+  ])('rechecks movement authorization at commit: %s',async sql=>{
+    const f=await fixture();const batch=env.DB.batch.bind(env.DB);let once=true;
+    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{if(once&&statements.length===3){once=false;db.sqlite.exec(sql);}return batch(statements);});
+    expect((await request('/me/register',f.body('paid_in',100,f.id),f.owner)).status).toBe(409);spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_register_entries').get()!.n).toBe(0);
+  });
+  it('rolls back a movement and its operation if auditing fails',async()=>{
+    const f=await fixture();const body=f.body('paid_in',100,f.id);
+    db.sqlite.exec("CREATE TRIGGER fail_register_audit BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test audit'); END;");
+    expect((await request('/me/register',body,f.owner)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_register_entries').get()!.n).toBe(0);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM register_operations').get()!.n).toBe(1);
+    db.sqlite.exec('DROP TRIGGER fail_register_audit');expect((await request('/me/register',body,f.owner)).status).toBe(200);
+  });
+  it('checks closing freshness again inside the commit',async()=>{
+    const f=await fixture();const page=await (await request('/me/register',undefined,f.owner)).json();
+    const batch=env.DB.batch.bind(env.DB);let once=true;
+    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{
+      if(once&&statements.length===3){once=false;
+        db.sqlite.prepare("INSERT INTO register_operations(id,register_id,actor_user_id,request_key,fingerprint,kind,amount_cents,reason,created_at) VALUES ('race-in',?,'register-owner','race-in','test','paid_in',100,'Concurrent cash',?)").run(f.id,new Date().toISOString());
+        db.sqlite.prepare("INSERT INTO cash_register_entries(id,register_id,operation_id,kind,amount_cents,reason,created_at) VALUES ('race-entry',?,'race-in','paid_in',100,'Concurrent cash',?)").run(f.id,new Date().toISOString());
+      }return batch(statements);
+    });
+    expect((await request('/me/register',f.body('close',5000,f.id,page.open.closeToken),f.owner)).status).toBe(409);spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_register_closures').get()!.n).toBe(0);
+  });
+  it('paginates register activity and binds cursors to the viewing account and register',async()=>{
+    const f=await fixture();const now=new Date().toISOString();
+    for(let i=0;i<27;i++){
+      const id=`history-${String(i).padStart(2,'0')}`;
+      db.sqlite.prepare("INSERT INTO register_operations(id,register_id,actor_user_id,request_key,fingerprint,kind,amount_cents,reason,created_at) VALUES (?,?,'register-owner',?,'test','paid_in',100,'Test cash',?)").run(id,f.id,id,now);
+      db.sqlite.prepare("INSERT INTO cash_register_entries(id,register_id,operation_id,kind,amount_cents,reason,created_at) VALUES (?,?,?,'paid_in',100,'Test cash',?)").run(id,f.id,id,now);
+    }
+    const path=`/me/register/${f.id}/entries`;const first=await (await request(path,undefined,f.owner)).json();expect(first.items).toHaveLength(25);
+    const next=await (await request(`${path}?cursor=${encodeURIComponent(first.nextCursor)}`,undefined,f.owner)).json();expect(next.items).toHaveLength(2);expect(next.nextCursor).toBeNull();
+    expect(new Set([...first.items,...next.items].map((item:{id:string})=>item.id)).size).toBe(27);
+    const manager=await seed('history-manager','manager');await enrollMfa(manager);
+    expect((await request(`${path}?cursor=${encodeURIComponent(first.nextCursor)}`,undefined,manager)).status).toBe(400);
+    expect((await (await request('/me/register',undefined,f.owner)).json()).open.totals.expectedCents).toBe(7700);
   });
 });
 
