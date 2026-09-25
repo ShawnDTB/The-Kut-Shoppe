@@ -30,10 +30,10 @@ export async function catalog(env: Env, admin = false) {
   })) as unknown as StoreProduct[];
   return { products, revision: Number(result[3]!.results[0]!.value) };
 }
-async function commit(env: Env, user: string, session: string, revision: number, admin: boolean, kind: string, build: (receipt: string) => Statement[]) {
+async function commit(env: Env, user: string, session: string, revision: number, admin: boolean, kind: string, build: (receipt: string) => Statement[], condition?: { sql: string; values: unknown[] }) {
   const receipt = randomUUID(); const now = new Date().toISOString();
   const result = await env.DB.batch<Rows<unknown>>([
-    env.DB.prepare(`INSERT INTO commerce_receipts(id,user_id,kind,created_at) SELECT ?,?,?,? WHERE (SELECT value FROM commerce_revision WHERE id=1)=? AND ${gate(admin)}`).bind(receipt, user, kind, now, revision, user, session),
+    env.DB.prepare(`INSERT INTO commerce_receipts(id,user_id,kind,created_at) SELECT ?,?,?,? WHERE (SELECT value FROM commerce_revision WHERE id=1)=? AND ${gate(admin)} AND (${condition?.sql ?? '1'})`).bind(receipt, user, kind, now, revision, user, session, ...(condition?.values ?? [])),
     ...build(receipt),
     env.DB.prepare("INSERT INTO audit_events(id,actor_user_id,action,entity_type,entity_id,created_at) SELECT ?,?,?,'commerce',?,? WHERE EXISTS(SELECT 1 FROM commerce_receipts WHERE id=?)").bind(randomUUID(), user, kind, receipt, now, receipt),
   ]);
@@ -90,8 +90,14 @@ export async function createOrder(env: Env,user:string,session:string,body:Recor
 }
 export async function adminOrders(env:Env,user:string,session:string){
   await requireCommerceAdmin(env,user,session);
-  const result=await env.DB.batch<Rows<Record<string,unknown>>>([env.DB.prepare(`SELECT o.*,u.email AS account_email FROM orders o LEFT JOIN users u ON u.id=o.customer_user_id WHERE ${gate(true)} ORDER BY CASE WHEN o.status IN ('completed','declined','cancelled','refunded') THEN 1 ELSE 0 END,o.created_at DESC,o.id DESC LIMIT 101`).bind(user,session),env.DB.prepare(`SELECT i.*,v.product_id FROM order_items i JOIN product_variants v ON v.id=i.variant_id WHERE ${gate(true)}`).bind(user,session),env.DB.prepare('SELECT value FROM commerce_revision WHERE id=1')]);
-  return {revision:Number(result[2]!.results[0]!.value),more:result[0]!.results.length>100,orders:result[0]!.results.slice(0,100).map(o=>({id:o.id,canProcess:Boolean(o.request_key),status:String(o.status).replaceAll('_','-'),fulfillment:o.fulfillment_type,subtotalCents:o.subtotal_cents,totalCents:o.total_cents,shippingCents:o.shipping_cents,taxCents:o.tax_cents,customer:{name:o.guest_name??'',email:o.account_email??o.guest_email??'',phone:o.guest_phone??''},shippingAddress:shippingAddress(o.shipping_address_json?String(o.shipping_address_json):null),trackingNumber:o.tracking_number??'',internalNote:'',ownerActionRequired:Boolean(o.owner_action_required),createdAt:o.created_at,updatedAt:o.updated_at,items:result[1]!.results.filter(i=>i.order_id===o.id).map(i=>({productId:i.product_id,variantId:i.variant_id,name:i.product_name,variantName:i.variant_name,sku:i.sku,quantity:i.quantity,unitPriceCents:i.unit_price_cents}))})) as unknown as Array<StoreOrder & {canProcess:boolean}>};
+  const result=await env.DB.batch<Rows<Record<string,unknown>>>([env.DB.prepare(`SELECT o.*,u.email AS account_email,
+    (SELECT s.id FROM finalized_sales s WHERE s.order_id=o.id ORDER BY EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind='void'),s.created_at DESC,s.id DESC LIMIT 1) AS sale_id,
+    (SELECT CASE WHEN EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind='void') THEN 'void'
+      WHEN EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind='refund') THEN 'refunded'
+      WHEN EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind='payment') THEN 'paid' ELSE 'unpaid' END
+      FROM finalized_sales s WHERE s.order_id=o.id ORDER BY EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind='void'),s.created_at DESC,s.id DESC LIMIT 1) AS financial_state
+    FROM orders o LEFT JOIN users u ON u.id=o.customer_user_id WHERE ${gate(true)} ORDER BY CASE WHEN o.status IN ('completed','declined','cancelled','refunded') THEN 1 ELSE 0 END,o.created_at DESC,o.id DESC LIMIT 101`).bind(user,session),env.DB.prepare(`SELECT i.*,v.product_id FROM order_items i JOIN product_variants v ON v.id=i.variant_id WHERE ${gate(true)}`).bind(user,session),env.DB.prepare('SELECT value FROM commerce_revision WHERE id=1')]);
+  return {revision:Number(result[2]!.results[0]!.value),more:result[0]!.results.length>100,orders:result[0]!.results.slice(0,100).map(o=>({id:o.id,canProcess:Boolean(o.request_key),saleId:o.sale_id??null,financialState:o.financial_state??'not_finalized',status:String(o.status).replaceAll('_','-'),fulfillment:o.fulfillment_type,subtotalCents:o.subtotal_cents,totalCents:o.total_cents,shippingCents:o.shipping_cents,taxCents:o.tax_cents,customer:{name:o.guest_name??'',email:o.account_email??o.guest_email??'',phone:o.guest_phone??''},shippingAddress:shippingAddress(o.shipping_address_json?String(o.shipping_address_json):null),trackingNumber:o.tracking_number??'',internalNote:'',ownerActionRequired:Boolean(o.owner_action_required),createdAt:o.created_at,updatedAt:o.updated_at,items:result[1]!.results.filter(i=>i.order_id===o.id).map(i=>({productId:i.product_id,variantId:i.variant_id,name:i.product_name,variantName:i.variant_name,sku:i.sku,quantity:i.quantity,unitPriceCents:i.unit_price_cents}))})) as unknown as Array<StoreOrder & {canProcess:boolean;saleId:string|null;financialState:string}>};
 }
 export async function withdrawOrder(env: Env, user: string, session: string, id: string, updatedAt: string) {
   requireCommerce(env);
@@ -127,9 +133,18 @@ export async function processOrder(env:Env,user:string,session:string,id:string,
   const order=await env.DB.prepare('SELECT status,fulfillment_type AS fulfillment FROM orders WHERE id=? AND request_key IS NOT NULL').bind(id).first<{status:string;fulfillment:string}>();if(!order)throw new ApiError(404,'Order request not found.');
   const next:Record<string,string[]>={submitted:['accepted','declined','cancelled'],payment_required:['accepted','declined','cancelled'],accepted:['preparing','cancelled'],preparing:[order.fulfillment==='pickup'?'ready_for_pickup':'shipped','cancelled'],ready_for_pickup:['completed','cancelled'],shipped:['completed']};
   if(!next[order.status]?.includes(status)||status==='shipped'&&!tracking)throw new ApiError(400,'Choose a valid next status and provide tracking for shipping.');
+  if (['cancelled','declined'].includes(status) && await env.DB.prepare(`SELECT id FROM finalized_sales s WHERE s.order_id=?
+    AND NOT EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind IN ('void','refund'))`).bind(id).first()) {
+    throw new ApiError(409,'Void the unpaid sale or record its full cash refund before cancelling this order. A refund does not automatically restock merchandise.');
+  }
   const items=await env.DB.prepare('SELECT variant_id AS id,quantity FROM order_items WHERE order_id=?').bind(id).all<{id:string;quantity:number}>();const now=new Date().toISOString();const release=['declined','cancelled','completed'].includes(status);
   await commit(env,user,session,revision,true,'order_processed',receipt=>[
     env.DB.prepare(`UPDATE orders SET status=?,tracking_number=?,owner_action_required=0,updated_at=? WHERE id=? AND ${claimed}`).bind(status,tracking,now,id,receipt),
     ...(release?items.results.map(i=>env.DB.prepare(`UPDATE product_variants SET stock_reserved=stock_reserved-?,stock_on_hand=stock_on_hand-?,updated_at=? WHERE id=? AND ${claimed}`).bind(i.quantity,status==='completed'?i.quantity:0,now,i.id,receipt)):[]),
-  ]);return {message:'Order updated.'};
+  ], {
+    sql: `EXISTS(SELECT 1 FROM orders WHERE id=? AND status=? AND fulfillment_type=?)
+      AND (? NOT IN ('cancelled','declined') OR NOT EXISTS(SELECT 1 FROM finalized_sales s WHERE s.order_id=?
+        AND NOT EXISTS(SELECT 1 FROM cash_sale_events e WHERE e.sale_id=s.id AND e.kind IN ('void','refund'))))`,
+    values: [id,order.status,order.fulfillment,status,id],
+  });return {message:'Order updated.'};
 }

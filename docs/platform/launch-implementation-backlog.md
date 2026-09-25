@@ -4,8 +4,10 @@
 records the current gaps and priority order. Shared website/walk-in check-in,
 service/completion, cancellations/no-shows, professional history and customer
 withdrawal of unaccepted unpaid orders are implemented with migrations through
-**0015**. Manager calendar/history pagination, money collection and financial
-receipts remain unfinished. The user now authorizes feature pushes to `main`;
+**0015**. Migration **0016** adds [finalized sales, cash collection and private
+paid/refund receipts](cash-sales-milestone.md). Manager calendar/history pagination,
+register reconciliation, electronic payments and employee earnings remain
+unfinished. The user now authorizes feature pushes to `main`;
 older dev-only workflow references below describe prior milestones.
 
 Baseline: `3071cc8`, September 13, 2026. See [audit and competitor findings](launch-readiness-audit.md). Prior completed cancellation work is documented separately in [appointment cancellation](appointment-cancellation.md).
@@ -29,10 +31,10 @@ Follow-up implementation: [rescheduling, guest walk-ins and printable documents]
 | D3 | Printable current booking/request documents and order acknowledgements implemented | Detailed confirmation emails and immutable issued financial documents remain. |
 | E1–E3 | Owner/manager guest walk-in scheduling and lifecycle implemented; professionals see assigned guest visits | Dedicated front-desk permissions, unscheduled queue, account linking, full day/week calendar and pagination. |
 | D1 | Shop-owned collection proposed from owner-direction discussion; Square/Stripe comparison and onboarding plan documented | Kash must confirm seller, compensation/payroll, tax/shipping and processor/device choices before activation. |
-| D2/D4, E4/E5, F1–F5 | Financial integration planned against the proposed shop seller model | Cash/card collection, paid receipts, refunds, terminal and register reconciliation are not implemented. |
+| D2/D4, E4/E5, F1–F5 | Finalized sales, full cash collection/refunds, unpaid voids and private receipts implemented in 0016 | Register reconciliation, guest retail carts, card/terminal payments, partial refunds and shipping checkout remain unfinished. |
 | H1–H5 | Service earnings, retail attribution, tip accounting and pay-run requirements documented | No live commission rate, ledger writer, staff statement or disbursement workflow is implemented. |
 
-Next: implement the shared sale and receipt foundation using the proposed shop-owned collection model, then cash/register operations and processor sandbox checkout. The user reports Booksy is currently used and believes Kash wants centralized business-bank collection plus service earnings and retail commissions for barbers. Treat those policies as provisional, with Square recommended for evaluation. See [shop payments, barber earnings and Booksy transition](shop-payments-and-barber-earnings.md) for P1–P7 implementation order, processor research, onboarding requirements and acceptance criteria. Continue A/B visual and complete customer journey acceptance before launch.
+Next: finish cash/register reconciliation, processor sandbox checkout and approved employee compensation policies on the new finalized-sale records. The user reports Booksy is currently used and believes Kash wants centralized business-bank collection plus service earnings and retail commissions for barbers. Treat those policies as provisional, with Square recommended for evaluation. See [shop payments, barber earnings and Booksy transition](shop-payments-and-barber-earnings.md) for P1–P7 implementation order, processor research, onboarding requirements and acceptance criteria. Continue A/B visual and complete customer journey acceptance before launch.
 
 Priority means implementation order and launch impact, not an estimated delivery date. Size is omitted until the payment/hardware and business decisions are resolved. Implement each milestone as a coherent working journey with source, migration, tests and a review guide on `dev-branch`.
 

@@ -5,9 +5,11 @@ historical state, not the current migration level or test count. A push to `main
 publishes source; it does not prove that the live site or its services are ready.
 
 September 24 feature follow-up: [feature completion review](feature-completion-review.md).
-The current schema is **0015**. Website visits now have a shared operational
+The current schema is **0016**. Website visits now have a shared operational
 lifecycle and assigned-professional history; customers can withdraw unaccepted
-unpaid order requests. Deployment work is paused in favor of feature completion.
+unpaid order requests. [Cash sales and paid receipts](cash-sales-milestone.md)
+now connect estimates to finalized sales, full cash collection/refunds and private
+documents. Deployment work is paused in favor of feature completion.
 
 Validation on September 22: `npm run check` passed (207 application tests and 12
 release-environment tests, typecheck, lint, build, bundle/output gates and local
@@ -25,7 +27,7 @@ no remote branch, hosting configuration or database was changed during this pass
 | Native booking | Availability, requests, staff decisions, cancellation and rescheduling | Approved schedules/policies, staff MFA, notification worker, Booksy migration/cutover |
 | Staff operations | Professional setup, schedules, assigned visits, guest walk-ins | Verified owner bootstrap and employee access, actual shop-device acceptance |
 | Store | Catalog, inventory reservations, unpaid order requests and fulfillment | Verified products/stock, shipping/tax policies, payment and refund integration |
-| Documents | Booking/order acknowledgements and immutable sale estimates | These are **not paid receipts**; payment reconciliation and financial receipts remain unfinished |
+| Sales/documents | Immutable estimates, finalized sales, cash collection/change, full cash refunds, unpaid voids and private paid/refund receipts | Approved seller/tax policy, register reconciliation, card payments, partial refunds and real counter/printing acceptance |
 | Employee compensation | Design only | Approved commission policies, earnings ledger and payroll integration; no employee withdrawals |
 
 Do not switch off Booksy while simultaneously opening an unsynchronized native
@@ -57,7 +59,7 @@ worker template also has an invalid example origin. Do not deploy either as-is.
    domain, and whether a push to `main` triggers a deployment. The repository's
    Quality workflow validates code; it does not deploy or migrate a database.
 2. Provision isolated staging and production D1 databases. Back up existing data
-   first; rehearse restore. Apply **all migrations through 0015**, in filename
+   first; rehearse restore. Apply **all migrations through 0016**, in filename
    order, using the correct target environment. For existing installations, verify
    the baseline compatibility warning in the customer deployment runbook.
 3. Configure Pages' `DB` binding and actual HTTPS `APP_ORIGIN`. Set private keys
@@ -74,8 +76,8 @@ worker template also has an invalid example origin. Do not deploy either as-is.
    npm run releasecheck
    ```
 
-   It reads `APP_ORIGIN`, all six feature flags from the templates (including
-   `APPOINTMENT_EMAIL_ENABLED`), `AUTH_SECRET`, `MFA_ENCRYPTION_KEY`,
+   It reads `APP_ORIGIN`, all seven feature flags from the templates (including
+   `APPOINTMENT_EMAIL_ENABLED` and `CASH_SALES_ENABLED`), `AUTH_SECRET`, `MFA_ENCRYPTION_KEY`,
    `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, and `MAIL_FROM`.
    Also supply `D1_DATABASE_ID` and `NOTIFICATIONS_D1_DATABASE_ID` as preflight-only
    values copied from the intended bindings. These two variables **do not create
@@ -96,6 +98,9 @@ as limited, not a complete online booking/payment product.
   booking/cancellation/rescheduling and record ownership with separate accounts.
 - Test owner and employee MFA, role boundaries, simultaneous appointment requests,
   walk-in transitions, stock conflicts, estimate retries and document printing.
+- Test finalized sales, competing cash actions, full refunds, voids, customer/guest
+  receipt isolation and cancellation of paid pickup orders. Reconcile physical
+  cash separately; register sessions and counted closing are not implemented yet.
 - Test mobile navigation, keyboard use, zoom, errors and actual shop devices.
 - Verify backup recovery, notification failures, redacted alerts, incident owner,
   customer privacy requests and approved retention rules (including immutable

@@ -6,6 +6,14 @@ not call a screen complete merely because its route renders.
 
 ## Completed in this milestone
 
+### Finalized sales and cash follow-up
+
+Migration 0016 and the [cash milestone](cash-sales-milestone.md) add the working
+estimate → finalized sale → cash → receipt journey, with full refunds, unpaid
+voids, private customer/guest documents and payment-aware order cancellation.
+The earlier lifecycle/withdrawal milestone below remains intact. Cash register
+reconciliation, processor checkout and employee earnings are still separate work.
+
 ### Appointment operations
 
 Previously, website appointments could be requested, confirmed and rescheduled,
@@ -54,7 +62,7 @@ without contacting the shop, even before anyone accepted it.
 
 ## Review instructions
 
-Apply additive migrations **0014** and **0015**, after 0013, before serving this
+Apply additive migrations **0014**, **0015** and **0016**, after 0013, before serving this
 code. `npm run review` applies local migrations automatically; use test data only.
 No hosted database or feature flag is changed by this milestone.
 
@@ -86,7 +94,7 @@ that snapshot for diagnostics and assertions; the API itself is not mocked.
 
 | Priority | Incomplete journey | Completion target |
 |---|---|---|
-| 1 | Finalized sale → cash collection → paid receipt | Immutable priced sale, explicit tax/shipping, tender and change, correction/refund rules, receipt and register reconciliation; never mark an estimate paid |
+| 1 | Cash operations follow-through | Finalized sales, full collection/refunds and receipts now work; add register reconciliation, guest retail carts and partial refunds |
 | 2 | Store request → operational fulfillment | Paginated/filterable owner queue (currently 100), acceptance/pickup/shipping notifications and delivery exceptions, reservation expiry, stock adjustments/returns |
 | 3 | Online/in-person card payment | Approved shop merchant processor, hosted/tokenized checkout, durable attempts, signed webhook reconciliation, uncertain outcomes and refunds; actual terminal testing |
 | 4 | Employee earnings → payroll statement | Approved effective-dated commission rules, retail attribution, tips, adjustments, gross earnings and payroll export; not self-service employee bank withdrawals |

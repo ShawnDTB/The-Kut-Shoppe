@@ -26,7 +26,7 @@ function DocumentDownload({ id, kind }: { id: string; kind: 'appointments' | 'or
     finally { setBusy(false); }
   };
   return <div className="customer-detail-action"><button className="button button-secondary" disabled={busy} onClick={() => void download()}>{busy ? 'Preparing document…' : kind === 'appointments' ? 'Download appointment document' : 'Download order acknowledgement'}</button>
-    <p className="customer-fine-print">A printable copy of your current record. This is not a payment receipt.</p>{error ? <p className="form-error" role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}</div>;
+    <p className="customer-fine-print">A printable copy of your current record. This is not a payment receipt. <a href="/account?view=receipts">View payment receipts</a>.</p>{error ? <p className="form-error" role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}</div>;
 }
 function DetailFrame({ kind, onBack, children }: { kind: 'appointments' | 'orders'; onBack: () => void; children: ReactNode }) {
   const heading = useRef<HTMLHeadingElement>(null);

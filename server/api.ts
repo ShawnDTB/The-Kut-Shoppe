@@ -7,7 +7,8 @@ import { finishEmailChange, startEmailChange } from './email-change';
 import { historyPage } from './history';
 import { appointmentDetail, orderDetail, withdrawAppointment, requestCancellation } from './customer-records';
 import { appointmentCalendar } from './calendar';
-import { appointmentDocument, orderDocument, estimateDocument, documentPolicy } from './customer-documents';
+import { appointmentDocument, orderDocument, estimateDocument, cashReceiptDocument, documentPolicy } from './customer-documents';
+import { finalizeSale, counterSale, recordCash, counterPage, receiptDetail, receiptPage } from './counter';
 import { previewEstimate, saveEstimate, estimates, estimateDetail, saleSources } from './sales';
 import { changeAppointment, changeAvailability, reschedulePage } from './rescheduling';
 import { requireFrontDesk, walkIns, createWalkIn, progressWalkIn } from './front-desk';
@@ -137,6 +138,30 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (path.startsWith('/api/v1/me/counter') || path.startsWith('/api/v1/me/receipts') || path.startsWith('/api/v1/me/cash-receipts')) {
+    const params = new URL(request.url).searchParams;
+    const list = path === '/api/v1/me/counter' || path === '/api/v1/me/receipts';
+    if (list && request.method === 'GET') {
+      if ([...params.keys()].some(key => key !== 'cursor' || params.getAll(key).length !== 1)) throw new ApiError(400,'Refresh this history.');
+      return json(path.endsWith('/counter') ? await counterPage(env,account.id,sessionHash,params.get('cursor')) : await receiptPage(env,account.id,params.get('cursor')));
+    }
+    if (params.size) throw new ApiError(400,'This sale request is not supported.');
+    if (path === '/api/v1/me/counter' && request.method === 'POST') {
+      await rateLimit(env,`cash-password:${account.id}`,20); return json(await finalizeSale(env,account.id,sessionHash,body));
+    }
+    const sale = path.match(/^\/api\/v1\/me\/counter\/([A-Za-z0-9_-]{1,128})$/);
+    if (sale && request.method === 'GET') return json({sale:await counterSale(env,account.id,sessionHash,sale[1]!)});
+    if (sale && request.method === 'POST') { await rateLimit(env,`cash-password:${account.id}`,20); return json(await recordCash(env,account.id,sessionHash,sale[1]!,body)); }
+    const receipt = path.match(/^\/api\/v1\/me\/(receipts|cash-receipts)\/([A-Za-z0-9_-]{1,128})(\/document)?$/);
+    if (receipt && request.method === 'GET') {
+      const value = await receiptDetail(env,account.id,sessionHash,receipt[2]!,receipt[1]==='cash-receipts');
+      if (!receipt[3]) return json({receipt:value});
+      const headers = privateHeaders('text/html; charset=utf-8'); headers.set('Content-Security-Policy',documentPolicy);
+      headers.set('Content-Disposition',`attachment; filename="kut-shoppe-cash-${value.id}.html"`);
+      return new Response(cashReceiptDocument(value),{headers});
+    }
+    throw new ApiError(404,'This sale action is not available.');
+  }
   if (path.startsWith('/api/v1/me/sales') || path.startsWith('/api/v1/me/estimates')) {
     const admin = path.startsWith('/api/v1/me/sales');
     const base = admin ? '/api/v1/me/sales' : '/api/v1/me/estimates';

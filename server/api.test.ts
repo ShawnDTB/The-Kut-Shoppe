@@ -13,6 +13,10 @@ import { deliverAppointmentNotifications } from './appointment-notifications';
 import { totp } from './totp';
 import type { EstimateInput } from '../src/shared/sales';
 
+// Integration tests intentionally run real password hashing and all migrations.
+// Allow slower shared CI/preview CPUs without weakening application timeouts.
+vi.setConfig({ testTimeout: 15_000 });
+
 // Actual SQLite executes the repository migrations and every API query. Only
 // network delivery/bot services are replaced; authorization is never mocked.
 class SqliteDatabase implements Database {
@@ -1449,6 +1453,184 @@ async function register(email = 'new@example.test') {
   expect(response.status).toBe(202);
   return await response.json() as { challengeId: string };
 }
+
+describe('finalized sales and cash receipts', () => {
+  async function fixture() {
+    env.STAFF_OPERATIONS_ENABLED = 'true'; env.CASH_SALES_ENABLED = 'true'; env.COMMERCE_ENABLED = 'true';
+    const owner = await seed('cash-owner', 'owner'); await enrollMfa(owner);
+    const alice = await seed('alice'); const bob = await seed('bob'); const now = seedRecords();
+    db.sqlite.exec("UPDATE appointments SET status='completed';");
+    db.sqlite.prepare("INSERT INTO staff_profiles(id,user_id,professional_name,public_slug,created_at,updated_at) VALUES ('cash-professional','cash-owner','Cash Barber','cash-barber',?,?)").run(now,now);
+    db.sqlite.exec("UPDATE appointments SET assigned_staff_id='cash-professional'");
+    const input: EstimateInput = { appointmentId: 'detail-appointment', orderId: null, discountCents: 101, discountReason: 'Loyalty', taxCents: 0, shippingCents: 0, chargeNote: 'Test zero charge confirmed' };
+    const estimate = async (data = input) => {
+      const preview = await request('/me/sales/preview', data, owner); expect(preview.status, await preview.clone().text()).toBe(200);
+      const saved = await request('/me/sales', { ...data, token: (await preview.json()).token, requestKey: randomUUID(), currentPassword: password }, owner);
+      expect(saved.status,await saved.clone().text()).toBe(200); return (await saved.json()).estimateId as string;
+    };
+    const finalize = async (savedId?: string) => {
+      const estimateId = savedId ?? await estimate();
+      const response = await request('/me/counter', { estimateId, currentPassword: password }, owner);
+      expect(response.status,await response.clone().text()).toBe(200); return (await response.json()).saleId as string;
+    };
+    const action = (kind = 'payment', overrides = {}) => ({ action: kind, cashReceivedCents: kind === 'payment' ? 3000 : 0, tipCents: kind === 'payment' ? 201 : 0, reason: kind === 'payment' ? '' : 'Test correction', requestKey: randomUUID(), currentPassword: password, ...overrides });
+    return { owner, alice, bob, input, estimate, finalize, action, now };
+  }
+  it('finalizes exact amounts, records cash/change/tips once, and preserves private immutable receipt snapshots', async () => {
+    const f = await fixture(); db.sqlite.exec("UPDATE services SET name='<script>bad()</script>'");
+    const estimateId = await f.estimate(); const saleId = await f.finalize(estimateId); expect(await f.finalize(estimateId)).toBe(saleId);
+    const path = `/me/counter/${saleId}`; const body = f.action();
+    const paid = await request(path, body, f.owner); expect(paid.status,await paid.clone().text()).toBe(200); const result = await paid.json();
+    expect(await (await request(path, body, f.owner)).json()).toEqual(result);
+    expect((await request(path, {...body,tipCents:202},f.owner)).status).toBe(409);
+    const sale = (await (await request(path,undefined,f.owner)).json()).sale;
+    expect(sale).toMatchObject({state:'paid',totalCents:2399});
+    expect(sale.receipts[0]).toMatchObject({amountCents:2600,tipCents:201,cashReceivedCents:3000,changeCents:400});
+    const documentPath = `/me/receipts/${result.receiptId}/document`;
+    for (const other of [f.bob,f.owner]) expect((await request(documentPath,undefined,other)).status).toBe(404);
+    const document = await request(documentPath,undefined,f.alice); const html = await document.text();
+    expect(html).toContain('Cash payment receipt'); expect(html).toContain('$26.00'); expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toMatch(/<script>|SECRET|cash-owner|fingerprint|request_key/);
+    expect(document.headers.get('Cache-Control')).toContain('no-store'); expect(document.headers.get('Content-Security-Policy')).toContain("default-src 'none'");
+    db.sqlite.exec("UPDATE services SET name='Changed',price_cents=7777; UPDATE users SET display_name='Changed' WHERE id='alice'");
+    expect(await (await request(documentPath,undefined,f.alice)).text()).toBe(html);
+    expect((await (await request('/me/receipts',undefined,f.alice)).json()).items).toHaveLength(1);
+    expect((await (await request('/me/receipts',undefined,f.bob)).json()).items).toHaveLength(0);
+    expect(() => db.sqlite.exec('DELETE FROM finalized_sales')).toThrow(/retention/);
+    expect(() => db.sqlite.exec('UPDATE cash_sale_events SET amount_cents=0')).toThrow(/immutable/);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='cash_payment_recorded'").get()!.n).toBe(1);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM earning_entries').get()!.n).toBe(0);
+  });
+  it('requires current manager authorization, enabled cash, known charges and completed native services', async () => {
+    const f = await fixture(); const id = await f.estimate(); const body = {estimateId:id,currentPassword:password};
+    const staff = await seed('cash-staff','staff'); await enrollMfa(staff);
+    for (const session of [f.alice,staff]) expect((await request('/me/counter',body,session)).status).toBe(403);
+    expect((await request('/me/counter',{...body,currentPassword:'wrong'},f.owner)).status).toBe(400);
+    env.CASH_SALES_ENABLED='false'; expect((await request('/me/counter',body,f.owner)).status).toBe(503); env.CASH_SALES_ENABLED='true';
+    db.sqlite.exec("UPDATE appointments SET status='confirmed'"); expect((await request('/me/counter',body,f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET status='completed'");
+    const unknown=await f.estimate({...f.input,taxCents:null}); expect((await request('/me/counter',{...body,estimateId:unknown},f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE appointments SET price_cents=2800"); expect((await request('/me/counter',body,f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE sessions SET mfa_until=NULL WHERE user_id='cash-owner'"); expect((await request('/me/counter',body,f.owner)).status).toBe(403);
+  });
+  it('rejects underpayment, arbitrary amounts, duplicate charges, voids after payment, and double refunds', async () => {
+    const f=await fixture(); const saleId=await f.finalize(); const path=`/me/counter/${saleId}`;
+    expect((await request(path,f.action('refund'),f.owner)).status).toBe(409);
+    for (const overrides of [{cashReceivedCents:2599},{tipCents:1.1},{cashReceivedCents:-1},{amountCents:1}]) expect((await request(path,f.action('payment',overrides),f.owner)).status).toBe(400);
+    expect((await request(path,f.action(),f.owner)).status).toBe(200);
+    expect((await request(path,f.action(),f.owner)).status).toBe(409);
+    expect((await request(path,f.action('void'),f.owner)).status).toBe(409);
+    const refund=f.action('refund'); const first=await request(path,refund,f.owner); expect(first.status).toBe(200);
+    expect(await (await request(path,refund,f.owner)).json()).toEqual(await first.json());
+    expect((await request(path,f.action('refund'),f.owner)).status).toBe(409);
+    const sale=(await (await request(path,undefined,f.owner)).json()).sale;
+    expect(sale.state).toBe('refunded'); expect(sale.receipts.find((r:{kind:string})=>r.kind==='refund')).toMatchObject({amountCents:2600,tipCents:201,originalReceiptId:sale.receipts.find((r:{kind:string})=>r.kind==='payment').id});
+    expect(db.sqlite.prepare('SELECT status FROM appointments').get()!.status).toBe('completed');
+    const replacement=await f.estimate(); expect((await request('/me/counter',{estimateId:replacement,currentPassword:password},f.owner)).status).toBe(409);
+  });
+  it('allows corrected estimates after an unpaid void, never a second live sale for the same source', async () => {
+    const f=await fixture(); const id=await f.estimate(); const sale=await f.finalize(id); const second=await f.estimate();
+    expect((await request('/me/counter',{estimateId:second,currentPassword:password},f.owner)).status).toBe(409);
+    expect((await request(`/me/counter/${sale}`,f.action('void'),f.owner)).status).toBe(200);
+    expect(await f.finalize(id)).toBe(sale); expect(await f.finalize(second)).not.toBe(sale);
+    expect((await request(`/me/counter/${sale}`,f.action(),f.owner)).status).toBe(409);
+    expect((await (await request('/me/receipts',undefined,f.alice)).json()).items).toHaveLength(0);
+  });
+  it.each([
+    "UPDATE users SET role='customer' WHERE id='cash-owner'",
+    "UPDATE sessions SET mfa_until=NULL WHERE user_id='cash-owner'",
+    "DELETE FROM sessions WHERE user_id='cash-owner'",
+    "UPDATE account_credentials SET password_hash='changed' WHERE user_id='cash-owner'",
+  ])('rejects a cash write when access changes immediately before commit: %s',async sql=>{
+    const f=await fixture();const sale=await f.finalize();const batch=env.DB.batch.bind(env.DB);let calls=0;
+    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{if(statements.length===2&&++calls===2)db.sqlite.exec(sql);return batch(statements);});
+    expect((await request(`/me/counter/${sale}`,f.action(),f.owner)).status).toBe(409);spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_sale_events').get()!.n).toBe(0);
+  });
+  it('rolls back cash events if the audit write fails and recovers the same request on retry', async()=>{
+    const f=await fixture(); const sale=await f.finalize();const body=f.action();
+    db.sqlite.exec("CREATE TRIGGER fail_cash_audit BEFORE INSERT ON audit_events BEGIN SELECT RAISE(ABORT,'test audit failure'); END;");
+    expect((await request(`/me/counter/${sale}`,body,f.owner)).status).toBe(500);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_sale_events').get()!.n).toBe(0);
+    db.sqlite.exec('DROP TRIGGER fail_cash_audit');expect((await request(`/me/counter/${sale}`,body,f.owner)).status).toBe(200);
+  });
+  it.each([
+    "UPDATE account_credentials SET password_hash='changed' WHERE user_id='cash-owner'",
+    "UPDATE appointments SET price_cents=9999",
+    "UPDATE appointments SET status='cancelled'",
+  ])('blocks finalization when credentials or source records change during commit: %s',async sql=>{
+    const f=await fixture();const estimateId=await f.estimate();const batch=env.DB.batch.bind(env.DB);let once=true;
+    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{if(once&&statements.length===2){once=false;db.sqlite.exec(sql);}return batch(statements);});
+    expect((await request('/me/counter',{estimateId,currentPassword:password},f.owner)).status).toBe(409);spy.mockRestore();
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM finalized_sales').get()!.n).toBe(0);
+  });
+  it('issues guest receipts only through the authorized counter and retains history when cash entry is paused',async()=>{
+    const f=await fixture();db.sqlite.exec("UPDATE appointments SET customer_user_id=NULL,guest_name='Walk-in guest'");
+    const sale=await f.finalize();const response=await request(`/me/counter/${sale}`,f.action(),f.owner);expect(response.status).toBe(200);
+    const id=(await response.json()).receiptId;
+    expect((await request(`/me/receipts/${id}/document`,undefined,f.alice)).status).toBe(404);
+    expect((await request(`/me/cash-receipts/${id}/document`,undefined,f.alice)).status).toBe(403);
+    env.CASH_SALES_ENABLED='false';
+    expect((await request(`/me/cash-receipts/${id}/document`,undefined,f.owner)).status).toBe(200);
+    expect((await request(`/me/counter/${sale}`,f.action('refund'),f.owner)).status).toBe(503);
+  });
+  it('paginates receipt and counter history with actor-bound cursors',async()=>{
+    const f=await fixture();const sale=await f.finalize();expect((await request(`/me/counter/${sale}`,f.action(),f.owner)).status).toBe(200);
+    const original=db.sqlite.prepare('SELECT * FROM finalized_sales').get()!;const event=db.sqlite.prepare('SELECT * FROM cash_sale_events').get()!;
+    for(let i=0;i<26;i++){
+      const id=`history-sale-${i.toString().padStart(2,'0')}`;const receiptId=`history-receipt-${i.toString().padStart(2,'0')}`;
+      db.sqlite.prepare('INSERT INTO finalized_sales(id,estimate_id,actor_user_id,customer_user_id,snapshot_json,total_cents,created_at) VALUES (?,?,?,?,?,?,?)').run(id,`history-estimate-${i}`,'cash-owner','alice',original.snapshot_json!,original.total_cents!,original.created_at!);
+      const snapshot={...JSON.parse(String(event.snapshot_json)),id:receiptId,saleId:id};
+      db.sqlite.prepare("INSERT INTO cash_sale_events(id,sale_id,actor_user_id,request_key,fingerprint,kind,amount_cents,tip_cents,snapshot_json,created_at) VALUES (?,?,?,?,?,'payment',?,?,?,?)").run(receiptId,id,'cash-owner',randomUUID(),'test-only',event.amount_cents!,event.tip_cents!,JSON.stringify(snapshot),event.created_at!);
+    }
+    for(const [path,session,other] of [['/me/receipts',f.alice,f.bob],['/me/counter',f.owner,await seed('other-manager','manager')]] as const){
+      if(path==='/me/counter')await enrollMfa(other);
+      const first=await (await request(path,undefined,session)).json();expect(first.items).toHaveLength(25);
+      const second=await (await request(`${path}?cursor=${encodeURIComponent(first.nextCursor)}`,undefined,session)).json();expect(second.items).toHaveLength(2);expect(second.nextCursor).toBeNull();
+      expect(new Set([...first.items,...second.items].map((item:{id:string})=>item.id)).size).toBe(27);
+      expect((await request(`${path}?cursor=${encodeURIComponent(first.nextCursor)}`,undefined,other)).status).toBe(400);
+    }
+  });
+  it('requires accepted pickup orders and refund/void before cancellation, preserving stock until fulfillment', async()=>{
+    const f=await fixture();
+    db.sqlite.prepare("INSERT INTO products(id,name,slug,category,description,base_sku,created_at,updated_at) VALUES ('cash-product','Product','cash-product','test','','CASH',?,?)").run(f.now,f.now);
+    db.sqlite.prepare("INSERT INTO product_variants(id,product_id,name,sku,price_cents,stock_on_hand,stock_reserved,created_at,updated_at) VALUES ('cash-variant','cash-product','Standard','CASH-1',2500,10,1,?,?)").run(f.now,f.now);
+    db.sqlite.prepare("INSERT INTO order_items(id,order_id,variant_id,product_name,variant_name,sku,quantity,unit_price_cents,created_at) VALUES ('cash-item','detail-order','cash-variant','Product','Standard','CASH-1',1,2500,?)").run(f.now);
+    db.sqlite.exec("UPDATE orders SET request_key='native-cash',status='accepted'");
+    const input={...f.input,appointmentId:null,orderId:'detail-order'};
+    const shippingEstimate=await f.estimate(input);expect((await request('/me/counter',{estimateId:shippingEstimate,currentPassword:password},f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE orders SET fulfillment_type='pickup',status='submitted'");
+    const estimate=await f.estimate(input);expect((await request('/me/counter',{estimateId:estimate,currentPassword:password},f.owner)).status).toBe(409);
+    db.sqlite.exec("UPDATE orders SET status='accepted'");const sale=await f.finalize(estimate);
+    const cancel=async()=>request('/me/commerce/orders/detail-order',{status:'cancelled',revision:Number(db.sqlite.prepare('SELECT value FROM commerce_revision').get()!.value),trackingNumber:''},f.owner);
+    expect((await cancel()).status).toBe(409);
+    expect((await request(`/me/counter/${sale}`,f.action(),f.owner)).status).toBe(400); // A merchandise sale cannot receive a service tip.
+    expect((await request(`/me/counter/${sale}`,f.action('payment',{tipCents:0}),f.owner)).status).toBe(200);
+    const managed=(await (await request('/me/commerce/orders',undefined,f.owner)).json()).orders.find((order:{id:string})=>order.id==='detail-order');
+    expect(managed).toMatchObject({saleId:sale,financialState:'paid',status:'accepted'});
+    expect((await cancel()).status).toBe(409);
+    expect((await request(`/me/counter/${sale}`,f.action('refund'),f.owner)).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT stock_on_hand,stock_reserved FROM product_variants').get()).toEqual({stock_on_hand:10,stock_reserved:1});
+    expect((await cancel()).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT stock_on_hand,stock_reserved FROM product_variants').get()).toEqual({stock_on_hand:10,stock_reserved:0});
+  });
+  it('rechecks sale protection inside cancellation even when a caller predicts the next commerce revision',async()=>{
+    const f=await fixture();db.sqlite.exec("UPDATE orders SET request_key='native-cash-race',status='accepted',fulfillment_type='pickup'");
+    const revision=Number(db.sqlite.prepare('SELECT value FROM commerce_revision').get()!.value);
+    const batch=env.DB.batch.bind(env.DB);let once=true;
+    const spy=vi.spyOn(env.DB,'batch').mockImplementation(async statements=>{
+      if(once&&statements.length===3){once=false;
+        // Model another transaction finalizing this order after the early read.
+        db.sqlite.prepare("INSERT INTO finalized_sales(id,estimate_id,actor_user_id,customer_user_id,order_id,snapshot_json,total_cents,created_at) VALUES ('race-sale','race-estimate','cash-owner','alice','detail-order','{}',2500,?)").run(f.now);
+      }
+      return batch(statements);
+    });
+    const response=await request('/me/commerce/orders/detail-order',{status:'cancelled',revision:revision+1,trackingNumber:''},f.owner);
+    spy.mockRestore();expect(response.status).toBe(409);expect(once).toBe(false);
+    expect(db.sqlite.prepare('SELECT status FROM orders').get()!.status).toBe('accepted');
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='order_processed'").get()!.n).toBe(0);
+  });
+});
 
 describe('shared sale estimates', () => {
   async function fixture() {

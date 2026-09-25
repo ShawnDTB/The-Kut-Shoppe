@@ -18,7 +18,7 @@ const workerFile = (await readdir('.wrangler/customer-worker')).find((name) => n
 assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { COMMERCE_ENABLED: 'true', APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
+  d1Databases: ['DB'], bindings: { COMMERCE_ENABLED: 'true', CASH_SALES_ENABLED: 'true', APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
     AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', MFA_ENCRYPTION_KEY: '12'.repeat(32), TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
@@ -339,5 +339,43 @@ try {
   assert.equal((await db.prepare("SELECT count(*) AS n FROM visit_operations WHERE appointment_id='lifecycle-runtime'").first()).n,3);
   assert.equal((await db.prepare("SELECT count(*) AS n FROM appointment_events WHERE appointment_id='lifecycle-runtime'").first()).n,3);
   assert.ok((await (await call('/me/professional/visits?view=history',undefined,staffCookie)).json()).items.some(item=>item.id==='lifecycle-runtime'));
-  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, duplicate estimates and private documents, rescheduling/cancellation races, assigned visit isolation and lifecycle retries, inventory competition, and transactional notifications.');
+  // Real concurrent D1 finalizations, payments and full refunds must produce
+  // exactly one sale and one event per action, including recovery of lost replies.
+  const cashInput = { ...estimateInput, appointmentId: 'lifecycle-runtime', taxCents: 0, shippingCents: 0, chargeNote: 'Runtime test charge confirmed' };
+  const cashPreview = await call('/me/sales/preview',cashInput,staffCookie); assert.equal(cashPreview.status,200,await cashPreview.text());
+  const cashEstimate = await call('/me/sales',{...cashInput,token:(await cashPreview.json()).token,requestKey:randomUUID(),currentPassword:'A runtime test passphrase 2026'},staffCookie);
+  assert.equal(cashEstimate.status,200,await cashEstimate.text());
+  const finalBody = {estimateId:(await cashEstimate.json()).estimateId,currentPassword:'A runtime test passphrase 2026'};
+  const finalizations = await Promise.all([call('/me/counter',finalBody,staffCookie),call('/me/counter',finalBody,staffCookie)]);
+  for(const response of finalizations) assert.equal(response.status,200,await response.text());
+  const saleId=(await finalizations[0].json()).saleId;assert.equal((await finalizations[1].json()).saleId,saleId);
+  const salePath=`/me/counter/${saleId}`;
+  const cashSale=(await (await call(salePath,undefined,staffCookie)).json()).sale;
+  const cashBody={action:'payment',cashReceivedCents:cashSale.totalCents+1000,tipCents:500,reason:'',requestKey:randomUUID(),currentPassword:'A runtime test passphrase 2026'};
+  const payments=await Promise.all([call(salePath,cashBody,staffCookie),call(salePath,cashBody,staffCookie)]);
+  for(const response of payments)assert.equal(response.status,200,await response.text());
+  const receiptId=(await payments[0].json()).receiptId;assert.equal((await payments[1].json()).receiptId,receiptId);
+  assert.equal((await call(`/me/receipts/${receiptId}/document`,undefined,detailCookie)).status,200);
+  assert.equal((await call(`/me/receipts/${receiptId}/document`,undefined,applicantCookie)).status,404);
+  assert.equal((await call(salePath,{...cashBody,requestKey:randomUUID()},staffCookie)).status,409);
+  const refundBody={...cashBody,action:'refund',cashReceivedCents:0,tipCents:0,reason:'Runtime full refund',requestKey:randomUUID()};
+  const refunds=await Promise.all([call(salePath,refundBody,staffCookie),call(salePath,refundBody,staffCookie)]);
+  for(const response of refunds)assert.equal(response.status,200,await response.text());
+  assert.equal((await refunds[0].json()).receiptId,(await refunds[1].json()).receiptId);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM cash_sale_events WHERE sale_id=?').bind(saleId).first()).n,2);
+  assert.equal((await (await call(salePath,undefined,staffCookie)).json()).sale.state,'refunded');
+  await db.prepare(`INSERT INTO appointments(id,customer_user_id,assigned_staff_id,service_id,location_id,price_cents,status,source,created_at,updated_at)
+    SELECT 'cash-race-runtime',customer_user_id,assigned_staff_id,service_id,location_id,price_cents,'completed','website',?,? FROM appointments WHERE id=?`).bind(now,now,visitId).run();
+  const raceInput={...cashInput,appointmentId:'cash-race-runtime'};
+  const racePreview=await call('/me/sales/preview',raceInput,staffCookie);assert.equal(racePreview.status,200,await racePreview.text());
+  const raceEstimate=await call('/me/sales',{...raceInput,token:(await racePreview.json()).token,requestKey:randomUUID(),currentPassword:cashBody.currentPassword},staffCookie);assert.equal(raceEstimate.status,200,await raceEstimate.text());
+  const raceFinal=await call('/me/counter',{estimateId:(await raceEstimate.json()).estimateId,currentPassword:cashBody.currentPassword},staffCookie);assert.equal(raceFinal.status,200,await raceFinal.text());
+  const raceSale=(await raceFinal.json()).saleId;const racePath=`/me/counter/${raceSale}`;
+  const competingCash=await Promise.all([
+    call(racePath,{...cashBody,requestKey:randomUUID()},staffCookie),
+    call(racePath,{...refundBody,action:'void',requestKey:randomUUID()},staffCookie),
+  ]);
+  assert.deepEqual(competingCash.map(response=>response.status).sort(),[200,409]);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM cash_sale_events WHERE sale_id=?').bind(raceSale).first()).n,1,'Competing payment/void both committed');
+  console.log('Cloudflare runtime passed: account/MFA, onboarding, schedule/booking competition, private documents, rescheduling/cancellation races, visit lifecycle, inventory competition, transactional notifications, concurrent finalized sales, cash collection and refunds.');
 } finally { await worker.dispose(); }

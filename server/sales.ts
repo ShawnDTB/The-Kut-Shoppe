@@ -28,7 +28,7 @@ type Appointment = { id: string; customerId: string | null; customerName: string
 type Order = { id: string; customerId: string | null; customerName: string; fulfillment: string; subtotal: number; status: string };
 type OrderLine = { id: string; product: string; variant: string; quantity: number; price: number };
 type Rows<T> = { results: T[] };
-async function prepare(env: Env, actor: string, session: string, input: EstimateInput) {
+export async function prepare(env: Env, actor: string, session: string, input: EstimateInput) {
   if (input.orderId && env.COMMERCE_ENABLED !== 'true') throw new ApiError(503, 'Store access is not open.');
   const batch = await env.DB.batch<Rows<Record<string, unknown>>>([
     env.DB.prepare('SELECT version FROM booking_revision WHERE id=1'),
@@ -66,7 +66,7 @@ async function prepare(env: Env, actor: string, session: string, input: Estimate
   return { estimate, customerId: appointment?.customerId ?? order?.customerId ?? null,
     bookingRevision: Number(batch[0]!.results[0]!.version), commerceRevision: Number(batch[1]!.results[0]!.value) };
 }
-function signed(env: Env, scope: string, value: unknown) {
+export function signed(env: Env, scope: string, value: unknown) {
   const payload = Buffer.from(JSON.stringify(value)).toString('base64url');
   return `${payload}.${secretHash(env, `sales-v1:${scope}:${payload}`)}`;
 }
@@ -122,7 +122,7 @@ export async function saveEstimate(env: Env, actor: string, session: string, bod
   return result;
 }
 type Cursor = { at: string; id: string };
-function pageCursor(env: Env, scope: string, cursor: string | null) {
+export function pageCursor(env: Env, scope: string, cursor: string | null) {
   if (cursor === null) return null;
   const value = decoded<Cursor>(env, scope, cursor);
   if (!value || typeof value.at !== 'string' || value.at.length > 64 || typeof value.id !== 'string' || value.id.length > 128 || !value.id) throw new ApiError(400, 'Refresh this history page.');

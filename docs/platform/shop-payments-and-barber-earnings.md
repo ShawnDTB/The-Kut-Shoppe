@@ -4,6 +4,11 @@ Decision proposal, September 13, 2026; employee clarification and first implemen
 
 ## Direction supplied by the user
 
+Implementation update, September 24: [cash sales milestone](cash-sales-milestone.md)
+now provides finalized sales, cash collection, full refunds, voids and private paid
+receipts. It preserves professional attribution from the estimate but does not
+calculate employee earnings, integrate a processor or reconcile a cash drawer.
+
 The shop currently uses Booksy. The user believes Kash wants customer payments collected by the shop into its business bank account, with barbers receiving their earnings daily or weekly. Product commissions would reward barbers for promoting merchandise in person and online. No separate payment processor is known to be established.
 
 The user confirmed on September 14 that the barbers are employees. Use a single shop seller and employee payroll as the working design. Kash still needs to confirm the legal selling entity, compensation rates, payroll provider and payment schedule. A barber login identifies the employee and their earnings; it does not make them a separate merchant or give them access to the business bank balance.

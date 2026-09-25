@@ -15,16 +15,16 @@ function estimateCents(value: string): number | null {
   if (amount > 100_000_000) throw new Error('This amount exceeds the sale limit.');
   return amount;
 }
-function Summary({ estimate }: { estimate: SaleEstimate }) {
+export function EstimateSummary({ estimate, finalized = false }: { estimate: SaleEstimate; finalized?: boolean }) {
   return <div className="sale-estimate-summary">
     <p><strong>{estimate.customerName}</strong></p>
     {estimate.appointmentId ? <p>Appointment {estimate.appointmentId}{estimate.appointmentTime ? ` · ${date(estimate.appointmentTime, estimate.timeZone)} (${estimate.timeZone})` : ''}</p> : null}
     {estimate.orderId ? <p>Order {estimate.orderId}</p> : null}
     <ul className="customer-order-items">{estimate.lines.map(line => <li key={line.id}><div><h4>{line.description}</h4>{line.professionalName ? <p>{line.professionalName}</p> : null}<p>{line.quantity} × {money(line.unitPriceCents)}{line.discountCents ? ` · Discount ${money(line.discountCents)}` : ''}</p></div><strong>{money(line.netCents)}</strong></li>)}</ul>
-    <dl className="customer-order-totals">{([['Item subtotal', estimate.subtotalCents], ['Discount', estimate.discountCents], ['Items after discount', estimate.netCents], ['Tax', estimate.taxCents], ['Shipping', estimate.shippingCents], ['Estimated total', estimate.totalCents]] as const).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{money(value)}</dd></div>)}</dl>
+    <dl className="customer-order-totals">{([['Item subtotal', estimate.subtotalCents], ['Discount', estimate.discountCents], ['Items after discount', estimate.netCents], ['Tax', estimate.taxCents], ['Shipping', estimate.shippingCents], [finalized ? 'Sale total' : 'Estimated total', estimate.totalCents]] as const).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{money(value)}</dd></div>)}</dl>
     {estimate.discountReason ? <p>Discount: {estimate.discountReason}</p> : null}{estimate.chargeNote ? <p>Tax/shipping explanation: {estimate.chargeNote}</p> : null}
     {estimate.totalCents === null ? <p className="customer-notice">The final total is not yet determined. Confirm the outstanding charges with the shop.</p> : null}
-    <p className="customer-fine-print">An estimate does not request or record payment. Appointment confirmation, product availability and payment arrangements remain separate.</p>
+    {!finalized ? <p className="customer-fine-print">An estimate does not request or record payment. Appointment confirmation, product availability and payment arrangements remain separate.</p> : null}
   </div>;
 }
 function SavedEstimate({ estimate, admin }: { estimate: SaleEstimate; admin: boolean }) {
@@ -35,7 +35,8 @@ function SavedEstimate({ estimate, admin }: { estimate: SaleEstimate; admin: boo
     catch (failure) { setError(messageOf(failure)); } finally { setBusy(false); }
   };
   return <li className="sale-estimate-record"><details><summary><strong>{estimate.customerName} · {money(estimate.totalCents)}</strong><span>Issued {date(estimate.createdAt, estimate.timeZone)} · Reference {estimate.id.slice(-8)}</span></summary>
-    <Summary estimate={estimate} /><p className="customer-fine-print">Saved details at issue. Later appointment, product and account changes do not update this copy.</p>
+    <EstimateSummary estimate={estimate} /><p className="customer-fine-print">Saved details at issue. Later appointment, product and account changes do not update this copy.</p>
+    {admin ? <p><a href={`/account?view=counter&estimate=${encodeURIComponent(estimate.id)}`}>Review and finalize sale</a></p> : null}
     <button className="button button-secondary" disabled={busy} onClick={() => void download()}>{busy ? 'Preparing download…' : 'Download estimate'}</button>
     {error ? <p className="form-error" role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}
   </details></li>;
@@ -112,7 +113,7 @@ function SalesDesk() {
   };
   return <section aria-busy={busy}><h2>Sales preparation</h2><p>Prepare an itemized estimate from a visit, a product order, or both for the same customer. Prices come from the saved records.</p>
     {error ? <p className="form-error" role="alert">{error}</p> : null}{notice ? <p className="customer-notice" role="status">{notice}</p> : null}
-    {review ? <form className="customer-form" onSubmit={event => void save(event)}><h3>Review estimate</h3><Summary estimate={review.preview.estimate} /><p>Saving keeps this copy and makes it available to the linked customer account. Guest copies can be downloaded by the shop.</p>
+    {review ? <form className="customer-form" onSubmit={event => void save(event)}><h3>Review estimate</h3><EstimateSummary estimate={review.preview.estimate} /><p>Saving keeps this copy and makes it available to the linked customer account. Guest copies can be downloaded by the shop.</p>
       <p>Review expires {date(review.preview.expiresAt, review.preview.estimate.timeZone)}. If a response is lost, retry this same save to recover its result.</p>
       <label>Your current password<input type="password" required maxLength={128} autoComplete="current-password" disabled={busy} value={password} onChange={event => setPassword(event.target.value)} /></label>
       <div className="customer-form-actions"><button className="button" disabled={busy}>{busy ? 'Saving…' : pending ? 'Retry saving estimate' : 'Save estimate'}</button>

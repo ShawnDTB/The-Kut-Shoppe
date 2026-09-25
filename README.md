@@ -1,14 +1,16 @@
 ## Current release entry point
 
 Start with [release readiness and deployment](docs/platform/release-readiness.md).
-The current schema includes migrations through **0015**. See the
+The current schema includes migrations through **0016**. See the
 [feature completion review](docs/platform/feature-completion-review.md) for the
 shared appointment lifecycle, professional visit history and customer order
 withdrawal milestone. Run `npm run check` for
 code verification and `npm run releasecheck` for the separate, offline hosting
 environment preflight. The committed hosting templates are not live production
-configuration. Booking/shop workflows are preserved; electronic payments, paid
-receipts and employee payroll are not yet implemented. The milestone notes below
+configuration. [Finalized sales, cash collection, refunds and paid receipts](docs/platform/cash-sales-milestone.md)
+are implemented for completed services and accepted pickup orders. Booking/shop
+workflows are preserved; card processing, register reconciliation and employee
+payroll remain unfinished. The milestone notes below
 are historical and must not be used as the current deployment checklist.
 
 <div align="center">

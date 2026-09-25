@@ -4,7 +4,7 @@ import { URL } from 'node:url';
 // that a provider credential, database binding, or domain is provisioned.
 export function checkReleaseEnvironment(env) {
   const errors = [];
-  const flags = ['ACCOUNTS_ENABLED', 'CUSTOMER_BOOKING_ENABLED', 'STAFF_OPERATIONS_ENABLED', 'STAFF_SETUP_ENABLED', 'COMMERCE_ENABLED', 'APPOINTMENT_EMAIL_ENABLED'];
+  const flags = ['ACCOUNTS_ENABLED', 'CUSTOMER_BOOKING_ENABLED', 'STAFF_OPERATIONS_ENABLED', 'STAFF_SETUP_ENABLED', 'COMMERCE_ENABLED', 'APPOINTMENT_EMAIL_ENABLED', 'CASH_SALES_ENABLED'];
   for (const name of flags) {
     if (!['true', 'false'].includes(env[name])) errors.push(`${name} must explicitly be true or false.`);
   }
@@ -25,6 +25,7 @@ export function checkReleaseEnvironment(env) {
   if (enabled('CUSTOMER_BOOKING_ENABLED') && (!enabled('STAFF_OPERATIONS_ENABLED') || !enabled('APPOINTMENT_EMAIL_ENABLED'))) {
     errors.push('Native booking requires staff operations and appointment email dispatch.');
   }
+  if (enabled('CASH_SALES_ENABLED') && !enabled('STAFF_OPERATIONS_ENABLED')) errors.push('Cash sales require staff operations and verified manager access.');
   if (enabled('ACCOUNTS_ENABLED')) {
     if (!/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(env.D1_DATABASE_ID ?? '') || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(env.D1_DATABASE_ID)) {
       errors.push('D1_DATABASE_ID must identify the provisioned release database, not the all-zero placeholder.');
