@@ -1,5 +1,7 @@
 ## Current release entry point
 
+October 4: [account and dashboard review](docs/platform/accounts-review-2026-10-04.md) adds real staff-access management, individual session revocation, session race fixes, grouped account navigation, and separate client/barber/shop dashboards. The three review passes include functional browser journeys, accessibility and responsive checks, and reduced initial JavaScript. Run `npm run review` for the local account platform; this update is not a live-site deployment.
+
 Start with [release readiness and deployment](docs/platform/release-readiness.md).
 The current schema includes migrations through **0015**. See the
 [feature completion review](docs/platform/feature-completion-review.md) for the

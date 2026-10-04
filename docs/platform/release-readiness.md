@@ -1,5 +1,7 @@
 # Release readiness — September 22, 2026
 
+October 4 account follow-up: [account and dashboard review](accounts-review-2026-10-04.md). Local account functionality, role dashboards, performance and browser accessibility have been reviewed. Hosted activation still requires the configuration and acceptance below; migration level remains **0015**.
+
 This is the current release entry point. Older milestone documents describe their
 historical state, not the current migration level or test count. A push to `main`
 publishes source; it does not prove that the live site or its services are ready.

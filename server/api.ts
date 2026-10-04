@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { accountDirectory, changeAccountRole, accountSessions, revokeAccountSession } from './account-management';
+import { workspaceDashboard } from './workspace-dashboard';
 import { ApiError, type Env } from './types';
 import { allowFields, configured, cookie, emailField, guardRequest, hashPassword, newToken, rateLimit, readBody,
   secretHash, sessionToken, stringField, validatePassword, verifyBot, verifyPassword } from './security';
@@ -137,6 +139,26 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (action === 'GET /api/v1/me/workspace') {
+    if (new URL(request.url).search) throw new ApiError(400, 'This dashboard request is not supported.');
+    return json(await workspaceDashboard(env, account.id, sessionHash));
+  }
+  if (path === '/api/v1/me/accounts' && request.method === 'GET') {
+    const params = new URL(request.url).searchParams;
+    if ([...params.keys()].some(key => key !== 'q') || params.getAll('q').length > 1) throw new ApiError(400, 'This account search is not supported.');
+    return json(await accountDirectory(env, account.id, sessionHash, params.get('q') ?? ''));
+  }
+  const roleChange = path.match(/^\/api\/v1\/me\/accounts\/([^/]+)\/role$/);
+  if (roleChange && request.method === 'POST') {
+    await rateLimit(env, `password:${account.id}`, 5);
+    return json(await changeAccountRole(env, account.id, sessionHash, decodeURIComponent(roleChange[1]!), body));
+  }
+  if (action === 'GET /api/v1/me/sessions') return json(await accountSessions(env, account.id, sessionHash));
+  const sessionRevoke = path.match(/^\/api\/v1\/me\/sessions\/([^/]+)\/revoke$/);
+  if (sessionRevoke && request.method === 'POST') {
+    allowFields(body, []);
+    return json(await revokeAccountSession(env, account.id, sessionHash, decodeURIComponent(sessionRevoke[1]!)));
+  }
   if (path.startsWith('/api/v1/me/sales') || path.startsWith('/api/v1/me/estimates')) {
     const admin = path.startsWith('/api/v1/me/sales');
     const base = admin ? '/api/v1/me/sales' : '/api/v1/me/estimates';

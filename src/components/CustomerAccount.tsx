@@ -1,4 +1,7 @@
-import { useEffect, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { AccountManagement, AccountSessions } from './AccountManagement';
+import { WorkspaceOverview } from './WorkspaceOverview';
+import { accountSections, canOpenAccountView, readAccountRoute, type AccountView as View } from '../data/account-sections';
 import { accountApi, getCustomerSession, loadCustomerSession, setCustomerSession, subscribeToCustomerSession } from '../data/customer-api';
 import { bookingPaths, business } from '../data/site';
 import type { AccountConfig, CustomerAccount as Account, CustomerProfile } from '../shared/customer';
@@ -17,16 +20,6 @@ import { CustomerOverview } from './CustomerOverview';
 import { RestoredBooking as CustomerBooking } from './RestoredBooking';
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
-type View = 'sales' | 'estimates' | 'front-desk' | 'overview' | 'booking' | 'appointments' | 'orders' | 'profile' | 'security' | 'professional' | 'professional-visits' | 'professional-setup' | 'professional-schedule' | 'setup-reviews';
-const views: Array<[View, string]> = [['front-desk', 'Front desk'], ['sales', 'Sales preparation'], ['estimates', 'Estimates'],['overview', 'Overview'], ['booking', 'Book a visit'], ['appointments', 'Appointments'], ['orders', 'Orders'], ['profile', 'Profile'], ['security', 'Security'], ['professional', 'Professional requests'], ['professional-visits', 'Your visits'], ['professional-schedule', 'Availability'], ['professional-setup', 'Professional setup'], ['setup-reviews', 'Setup reviews']];
-function readAccountRoute(): { view: View; record: string | null } {
-  const query = new URLSearchParams(window.location.search);
-  const requested = query.get('view');
-  const path = window.location.pathname.replace(/\/$/, '');
-  const routeViews: Record<string, View> = {'/staff':'professional-visits','/staff/calendar':'professional-visits','/staff/requests':'professional','/staff/setup':'professional-setup','/staff/settings':'professional-schedule'};
-  const view = path === '/book' ? 'booking' : views.some(([key]) => key === requested) ? requested as View : routeViews[path] ?? 'overview';
-  return { view, record: view === 'appointments' || view === 'orders' ? query.get('record') : null };
-}
 
 function AccountAccess({ config, initialMessage }: { config: AccountConfig; initialMessage: string }) {
   const [mode, setMode] = useState<'login' | 'register' | 'recover'>('login');
@@ -42,6 +35,9 @@ function AccountAccess({ config, initialMessage }: { config: AccountConfig; init
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState(initialMessage);
+  const [showPassword, setShowPassword] = useState(false);
+  const accessHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { accessHeading.current?.focus({ preventScroll: true }); }, [mode, challenge]);
   const needsPassword = challenge ? challenge.reset : mode !== 'recover';
   const newPassword = challenge ? challenge.reset : mode === 'register';
   const submit = async (event: FormEvent) => {
@@ -67,22 +63,23 @@ function AccountAccess({ config, initialMessage }: { config: AccountConfig; init
     } catch (failure) { setError(messageOf(failure)); }
     finally { setWorking(false); setToken(''); setAttempt((value) => value + 1); }
   };
-  const switchMode = (next: typeof mode) => { setMode(next); setChallenge(null); setPassword(''); setConfirmPassword(''); setCode(''); setError(''); setMessage(''); setToken(''); setAttempt((value) => value + 1); };
-  return <div className="customer-access"><header><h1>{challenge ? challenge.reset ? 'Reset your password' : 'Check your email' : mode === 'register' ? 'Make yourself at home' : mode === 'recover' ? 'Forgot your password?' : 'Welcome back'}</h1><p>{challenge ? 'Enter the eight-digit code from your email. Codes expire after 10 minutes.' : 'Your appointments, orders, and details, together in one account.'}</p></header>
-    {!challenge ? <nav className="customer-access-nav" aria-label="Account access"><button type="button" aria-current={mode === 'login' ? 'page' : undefined} onClick={() => switchMode('login')}>Sign in</button><button type="button" aria-current={mode === 'register' ? 'page' : undefined} onClick={() => switchMode('register')}>Create account</button></nav> : null}
+  const switchMode = (next: typeof mode) => { setShowPassword(false); setMode(next); setChallenge(null); setPassword(''); setConfirmPassword(''); setCode(''); setError(''); setMessage(''); setToken(''); setAttempt((value) => value + 1); };
+  return <div className="customer-access"><header><h1 ref={accessHeading} tabIndex={-1}>{challenge ? challenge.reset ? 'Reset your password' : 'Check your email' : mode === 'register' ? 'Make yourself at home' : mode === 'recover' ? 'Forgot your password?' : 'Welcome back'}</h1><p>{challenge ? `Enter the eight-digit code sent to ${email}. Codes expire after 10 minutes.` : 'Your appointments, orders, and details, together in one account.'}</p></header>
+    {!challenge ? <nav className="customer-access-nav" aria-label="Account access"><button type="button" disabled={working} aria-current={mode === 'login' ? 'page' : undefined} onClick={() => switchMode('login')}>Sign in</button><button type="button" disabled={working} aria-current={mode === 'register' ? 'page' : undefined} onClick={() => switchMode('register')}>Create account</button></nav> : null}
     <form onSubmit={(event) => void submit(event)} className="customer-form" aria-busy={working}>
       <fieldset disabled={working}>
         {!challenge && mode === 'register' ? <label>Full name<input required autoComplete="name" maxLength={100} minLength={2} value={name} onChange={(event) => setName(event.target.value)} /></label> : null}
         {!challenge ? <label>Email address<input required type="email" autoComplete="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} /></label> : <label>Email code<input required autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{8}" maxLength={8} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} /></label>}
-        {needsPassword ? <label>{newPassword ? 'New password' : 'Password'}<input required type="password" autoComplete={newPassword ? 'new-password' : 'current-password'} minLength={newPassword ? 15 : 1} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} />{newPassword ? <small>Use 15 to 128 characters. Spaces and password managers are welcome.</small> : null}</label> : null}
-        {newPassword ? <label>Confirm password<input required type="password" autoComplete="new-password" maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label> : null}
+        {needsPassword ? <label>{newPassword ? 'New password' : 'Password'}<input required type={showPassword ? 'text' : 'password'} autoComplete={newPassword ? 'new-password' : 'current-password'} minLength={newPassword ? 15 : 1} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} />{newPassword ? <small>Use 15 to 128 characters. Spaces and password managers are welcome.</small> : null}</label> : null}
+        {newPassword ? <label>Confirm password<input required type={showPassword ? 'text' : 'password'} autoComplete="new-password" maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label> : null}
+        {needsPassword ? <button className="text-button account-password-toggle" type="button" aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>{showPassword ? 'Hide password' : 'Show password'}</button> : null}
         {!challenge && mode === 'register' ? <label className="v5-honeypot" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label> : null}
         {!challenge ? <AccountSecurityCheck key={attempt} siteKey={config.turnstileSiteKey} onToken={setToken} /> : null}
         <button className="button" disabled={working || (!challenge && !token)}>{working ? 'Please wait…' : challenge ? challenge.reset ? 'Reset password' : 'Verify email' : mode === 'register' ? 'Create account' : mode === 'recover' ? 'Send reset code' : 'Sign in'}</button>
       </fieldset>
       {error ? <p className="form-error" role="alert">{error}</p> : null}{message ? <p className="customer-notice" role="status">{message}</p> : null}
     </form>
-    {challenge ? <p><button type="button" className="text-button" disabled={working} onClick={() => switchMode(challenge.reset ? 'recover' : 'login')}>Need a new code? Start again</button></p> : mode === 'login' ? <p><button type="button" className="text-button" onClick={() => switchMode('recover')}>Forgot password?</button></p> : null}
+    {challenge ? <p><button type="button" className="text-button" disabled={working} onClick={() => switchMode(challenge.reset ? 'recover' : 'login')}>Need a new code? Start again</button></p> : mode === 'login' ? <p><button type="button" className="text-button" disabled={working} onClick={() => switchMode('recover')}>Forgot password?</button></p> : null}
     <p className="customer-fine-print">Review our <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a>. Prefer to book without a website account? {bookingPaths.map((path, index) => <span key={path.id}>{index ? ' · ' : ''}<a href={path.href} rel="noopener noreferrer">{path.provider}</a></span>)}</p>
   </div>;
 }
@@ -127,7 +124,7 @@ function SecurityPanel({ account, onSignedOut }: { account: Account; onSignedOut
   return <div className="customer-security"><h2>Account security</h2><form className="customer-form" onSubmit={(event) => { event.preventDefault(); void perform(false); }}><fieldset disabled={working}><legend>Change password</legend><label>Current password<input required type="password" autoComplete="current-password" maxLength={128} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label><label>New password<input required type="password" autoComplete="new-password" minLength={15} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} /><small>Use 15 to 128 characters.</small></label><label>Confirm new password<input required type="password" autoComplete="new-password" maxLength={128} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label><button className="button" disabled={working}>{working ? 'Please wait…' : 'Change password'}</button></fieldset><p>Changing your password signs you out on every device.</p></form>
     <CustomerEmailChange currentEmail={account.email} onSignedOut={onSignedOut} />
     {account.role !== 'customer' ? <div className="customer-security-section"><StaffAuthenticator><p>Your authenticator is ready. <a href="/account?view=professional">Open professional requests</a>.</p></StaffAuthenticator></div> : null}
-    <section className="customer-security-section"><h3>Signed-in devices</h3><p>Using a shared device, or concerned about access? End every active session, including this one.</p><button className="button button-secondary" disabled={working} type="button" onClick={() => void perform(true)}>Sign out on every device</button></section>
+    <section className="customer-security-section"><h3>Active sessions</h3><AccountSessions /><p>Using a shared device, or concerned about access? End every active session, including this one.</p><button className="button button-secondary" disabled={working} type="button" onClick={() => void perform(true)}>Sign out on every device</button></section>
     <section className="customer-security-section"><h3>Your information</h3><p>For a copy of your information, a correction, or an account deletion request, <a href={business.phoneHref}>call {business.phone}</a>. See the <a href="/privacy">privacy policy</a> for details.</p></section>{error ? <p role="alert" className="form-error">{error}</p> : null}
   </div>;
 }
@@ -136,23 +133,28 @@ function AccountHome({ account, onSignedOut, bookingEnabled }: { account: Accoun
   const [{ view, record }, setRoute] = useState(readAccountRoute);
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
+  const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const sync = () => setRoute(readAccountRoute());
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
   }, []);
-  const select = (next: View, id: string | null = null) => { setRoute({ view: next, record: id }); window.history.pushState({}, '', `/account?view=${next}${id ? `&record=${encodeURIComponent(id)}` : ''}`); };
+  const select = (next: View, id: string | null = null) => { setRoute({ view: next, record: id }); window.history.pushState({}, '', `/account?view=${next}${id ? `&record=${encodeURIComponent(id)}` : ''}`); window.requestAnimationFrame(() => content.current?.focus({ preventScroll: true })); };
   const logout = async () => {
     setWorking(true); setError('');
     try { await accountApi('/auth/logout', {}); onSignedOut('You have been signed out.'); }
     catch (failure) { setError(messageOf(failure)); } finally { setWorking(false); }
   };
-  return <div className="customer-home"><header className="customer-home-header"><div><p className="customer-kicker">Your Kut Shoppe account</p><h1>Welcome, {account.profile.name.split(/\s+/)[0]}.</h1></div><button className="button button-secondary" type="button" disabled={working} onClick={() => void logout()}>Sign out</button></header>
-    <nav className="customer-nav" aria-label="Account sections">{views.filter(([key]) => key === 'front-desk' || key === 'sales' ? ['owner','manager','developer'].includes(account.role) : key === 'setup-reviews' ? ['owner', 'developer'].includes(account.role) : !key.startsWith('professional') || account.role !== 'customer').map(([key, label]) => <a key={key} href={`/account?view=${key}`} aria-current={view === key ? 'page' : undefined} onClick={(event) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); select(key); } }}>{label}</a>)}{['owner','manager','developer'].includes(account.role)?<><a href="/admin/products">Manage products</a><a href="/admin/orders">Manage orders</a></>:null}</nav>
+  return <div className="customer-home"><header className="customer-home-header"><div><p className="customer-kicker">{account.role === 'customer' ? 'Client account' : account.role === 'barber' ? 'Barber workspace' : 'Shop management'}</p><h1>Welcome, {account.profile.name.split(/\s+/)[0]}.</h1></div><button className="button button-secondary" type="button" disabled={working} onClick={() => void logout()}>Sign out</button></header>
+    <div className="customer-form account-mobile-nav"><label htmlFor="account-section">Account section</label><select id="account-section" value={canOpenAccountView(account.role, view) ? view : 'overview'} onChange={event => { if (event.target.value.startsWith('/')) window.location.assign(event.target.value); else select(event.target.value as View); }}>{accountSections.filter(([key]) => canOpenAccountView(account.role, key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}{['owner', 'manager', 'developer'].includes(account.role) ? <optgroup label="Store management"><option value="/admin/products">Products &amp; inventory</option><option value="/admin/orders">Customer orders</option></optgroup> : null}</select></div>
+    <div className="account-workspace"><nav className="account-sidebar" aria-label="Account sections">{([['work', account.role === 'customer' ? 'Start here' : 'Workspace'], ['chair', 'My chair'], ['personal', 'My visits & orders'], ['account', 'My account']] as const).map(([group, title]) => {
+      const links = accountSections.filter(([key, , section]) => section === group && canOpenAccountView(account.role, key));
+      return links.length ? <div className="account-nav-group" key={group}><p>{title}</p>{links.map(([key, label]) => <a key={key} href={`/account?view=${key}`} aria-current={view === key ? 'page' : undefined} onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); select(key); } }}>{label}</a>)}</div> : null;
+    })}{['owner','manager','developer'].includes(account.role) ? <div className="account-nav-group"><p>Store management</p><a href="/admin/products">Products & inventory</a><a href="/admin/orders">Customer orders</a></div> : null}</nav>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
-    <div className="customer-content">{view === 'sales' ? <SalesPreparation /> : view === 'estimates' ? <CustomerEstimates /> : view === 'front-desk' ? <FrontDesk /> : view === 'overview' ? <CustomerOverview account={account} bookingEnabled={bookingEnabled} /> : view === 'booking' ? bookingEnabled ? <CustomerBooking onBack={() => select('overview')} onOpen={(id) => select('appointments', id)} /> : <p>Website booking is not open. <a href="/book">View booking providers</a>.</p> : view === 'professional-visits' ? <StaffVisits /> : view === 'professional-schedule' ? <ProfessionalSchedule /> : view === 'professional-setup' || view === 'setup-reviews' ? <ProfessionalSetup key={view} review={view === 'setup-reviews'} /> : view === 'professional' ? <StaffRequests /> : view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
+    <div className="customer-content" ref={content} tabIndex={-1} role="region" aria-label={accountSections.find(([key]) => key === view)?.[1] ?? 'Account content'}>{!canOpenAccountView(account.role, view) ? <section><h2>This section needs staff access</h2><p>Your appointments, orders and account settings are available from your dashboard.</p><button className="button" onClick={() => select('overview')}>Back to my dashboard</button></section> : view === 'accounts' ? <AccountManagement account={account} /> : view === 'sales' ? <SalesPreparation /> : view === 'estimates' ? <CustomerEstimates /> : view === 'front-desk' ? <FrontDesk /> : view === 'overview' ? account.role === 'customer' ? <CustomerOverview account={account} bookingEnabled={bookingEnabled} /> : <WorkspaceOverview account={account} /> : view === 'booking' ? bookingEnabled ? <CustomerBooking onBack={() => select('overview')} onOpen={(id) => select('appointments', id)} /> : <p>Website booking is not open. <a href="/book">View booking providers</a>.</p> : view === 'professional-visits' ? <StaffVisits /> : view === 'professional-schedule' ? <ProfessionalSchedule /> : view === 'professional-setup' || view === 'setup-reviews' ? <ProfessionalSetup key={view} review={view === 'setup-reviews'} /> : view === 'professional' ? <StaffRequests /> : view === 'profile' ? <ProfileForm account={account} /> : view === 'security' ? <SecurityPanel account={account} onSignedOut={onSignedOut} />
       : record ? view === 'appointments' ? <CustomerAppointmentDetails key={record} id={record} onBack={() => select('appointments')} /> : <CustomerOrderDetails key={record} id={record} onBack={() => select('orders')} />
-        : <CustomerHistory key={view} kind={view} bookingEnabled={bookingEnabled} onOpen={(id) => select(view, id)} />}</div>
+        : <CustomerHistory key={view} kind={view} bookingEnabled={bookingEnabled} onOpen={(id) => select(view, id)} />}</div></div>
   </div>;
 }
 

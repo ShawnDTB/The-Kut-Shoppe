@@ -4,6 +4,8 @@ export class AccountApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 let account: CustomerAccount | null = null;
+let sessionRevision = 0;
+let sessionRequest: Promise<CustomerAccount | null> | null = null;
 const listeners = new Set<() => void>();
 export const getCustomerSession = () => account;
 export const subscribeToCustomerSession = (listener: () => void) => {
@@ -11,10 +13,13 @@ export const subscribeToCustomerSession = (listener: () => void) => {
   return () => { listeners.delete(listener); };
 };
 export function setCustomerSession(next: CustomerAccount | null) {
+  sessionRevision += 1;
+  sessionRequest = null;
   account = next;
   listeners.forEach((listener) => listener());
 }
 async function accountResponse(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<Response> {
+  const revision = sessionRevision;
   let response: Response;
   try {
     response = await fetch(`/api/v1${path}`, { method, credentials: 'same-origin', cache: 'no-store',
@@ -23,7 +28,7 @@ async function accountResponse(path: string, body?: unknown, method = body === u
   } catch { throw new AccountApiError(0, 'We could not reach your account. Check your connection and try again.'); }
   if (!response.ok) {
     const data = await response.json().catch(() => ({})) as { error?: string };
-    if (response.status === 401 && !path.startsWith('/auth/')) setCustomerSession(null);
+    if (response.status === 401 && !path.startsWith('/auth/') && revision === sessionRevision) setCustomerSession(null);
     throw new AccountApiError(response.status, data.error ?? 'Account access is temporarily unavailable. Please try again later.');
   }
   return response;
@@ -52,13 +57,18 @@ export async function downloadAccountDocument(kind: 'appointments' | 'orders' | 
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
 export async function loadCustomerSession() {
-  try {
-    const result = await accountApi<{ account: CustomerAccount }>('/me');
-    setCustomerSession(result.account);
-    return result.account;
-  } catch (error) {
-    setCustomerSession(null);
-    if (error instanceof AccountApiError && error.status === 401) return null;
-    throw error;
-  }
+  if (sessionRequest) return sessionRequest;
+  const revision = sessionRevision;
+  const pending = (async () => {
+    try {
+      const result = await accountApi<{ account: CustomerAccount }>('/me');
+      if (revision === sessionRevision) setCustomerSession(result.account);
+      return account;
+    } catch (error) {
+      if (error instanceof AccountApiError && error.status === 401) return null;
+      throw error;
+    }
+  })();
+  sessionRequest = pending;
+  try { return await pending; } finally { if (sessionRequest === pending) sessionRequest = null; }
 }

@@ -33,8 +33,8 @@ function isCurrentRoute(currentPath: string, href: string) {
 }
 
 function accountLabel(account: HeaderAccount | null) {
-  if (!account) return 'Account / Login';
-  if (!localPlatformPreview || account.role === 'customer') return account.name.trim().split(/\s+/)[0] || 'Account';
+  if (!account) return 'Sign in';
+  if (!localPlatformPreview || account.role === 'customer') return 'Dashboard';
   return `${account.role.charAt(0).toUpperCase()}${account.role.slice(1)} dashboard`;
 }
 
@@ -196,6 +196,8 @@ function Header({ currentPath }: { currentPath: string }) {
     void loadCustomerSession().catch(() => undefined);
     return () => { unsubscribe(); unsubscribeCart(); };
   }, []);
+
+  if (currentPath === '/account') return <header className="workspace-site-header"><div className="container workspace-header-inner"><a className="workspace-brand" href="/" aria-label="The Kut Shoppe home"><img src={originalAssets.logo} alt="" width="42" height="42" /><strong>The Kut Shoppe</strong></a><nav aria-label="Workspace navigation"><a href="/">Back to website</a>{account ? <a href="/account?view=profile">My account</a> : <a href="/book">Book a visit</a>}</nav></div></header>;
 
   return (
     <>

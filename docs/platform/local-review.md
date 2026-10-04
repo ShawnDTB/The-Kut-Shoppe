@@ -1,5 +1,7 @@
 # Working local review
 
+October 4: [account and dashboard review](accounts-review-2026-10-04.md) adds separate client, barber and management dashboards, staff account search/role changes, and individual session revocation. After MFA, managers/owners can open **Staff access** and grant a verified existing account professional access; professional profile approval remains a separate step.
+
 Latest: the [original booking page](booking-page-restoration.md) restores the Barber/Loctician gateway, service rows, staged panels and weekly calendar on the current backend. Open `/book` with no query string. The [shop and booking recovery](restored-commerce-and-booking.md) also restores catalog, product, cart, unpaid checkout requests and protected product/order management. `/account` opens the dashboard overview.
 
 ```sh
@@ -29,7 +31,7 @@ Use separate browser profiles for simultaneous customer/staff sessions. Staff MF
 
 ## Local services and persistence
 
-The runner enables accounts, commerce requests, native booking requests, staff setup, and staff operations. It applies migrations 0001–0009 to a dedicated persistent local D1 database and generates separate authentication and MFA encryption keys. Application ownership checks, password hashing, secure cookies, MFA, and transaction safeguards are unchanged.
+The runner enables accounts, commerce requests, native booking requests, staff setup, and staff operations. It applies all repository migrations in order (currently 0001–0015) to a dedicated persistent local D1 database and generates separate authentication and MFA encryption keys. Application ownership checks, password hashing, secure cookies, MFA, and transaction safeguards are unchanged.
 
 Account emails go to an in-memory inbox; no messages leave the computer. The inbox keeps at most 100 messages, clears on restart, and uses a fresh random access URL each run. Content is escaped instead of rendering provider HTML. Host/Origin checks and a loopback listener restrict access. Do not expose this runner through a tunnel or use real customer information.
 
@@ -42,7 +44,7 @@ The already ignored `.wrangler/review/` folder holds the database, keys, and gen
 - Isolated hosting/D1 resources, a trusted HTTPS origin, server secrets, configured Turnstile, and a verified email sender. Changing a placeholder database ID does not create a database.
 - Verified owner/staff provisioning in that environment. The local bootstrap is never a production role-grant mechanism.
 - Appointment email Worker deployment/scheduling and provider testing. This review inbox captures account mail only.
-- Customer cancellation/rescheduling requests with staff review and agreed notice/fee rules.
+- Hosted acceptance of the implemented cancellation/rescheduling requests and staff review, with approved shop policies.
 - Online payments, automated order email, tax/shipping quotes and refunds. Unpaid order requests and inventory reservations are implemented; these do not prove payment.
 - Browser/mobile acceptance and the deployment runbook's release checks. Local API checks do not establish production readiness.
 

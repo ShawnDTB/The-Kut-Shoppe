@@ -1444,6 +1444,82 @@ async function seed(id: string, role = 'customer', verified = true) {
   return verified ? createSession(env, id) : '';
 }
 function latestCode() { return deliveries.at(-1)!.text.match(/code is (\d{8})/)![1]!; }
+describe('account management and role dashboards', () => {
+  async function management() {
+    env.STAFF_OPERATIONS_ENABLED = 'true';
+    const owner = await seed('access-owner', 'owner'); await enrollMfa(owner);
+    const client = await seed('access-client');
+    const directory = await (await request('/me/accounts?q=access-client', undefined, owner)).json();
+    const target = directory.items[0];
+    return { owner, client, target, body: { role: 'barber', previousRole: 'customer', updatedAt: target.updatedAt, currentPassword: password } };
+  }
+  it('promotes a verified client using MFA and a password, audits it, and revokes old sessions', async () => {
+    const f = await management(); const other = await createSession(env, 'access-client');
+    expect((await request('/me/accounts/access-client/role', { ...f.body, currentPassword: 'wrong' }, f.owner)).status).toBe(400);
+    expect((await request('/me/accounts/access-client/role', f.body, f.owner)).status).toBe(200);
+    expect(db.sqlite.prepare("SELECT role FROM users WHERE id='access-client'").get()!.role).toBe('staff');
+    expect((await request('/me', undefined, f.client)).status).toBe(401); expect((await request('/me', undefined, other)).status).toBe(401);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='account_role_changed'").get()!.n).toBe(1);
+    expect((await request('/me/accounts/access-client/role', f.body, f.owner)).status).toBe(409);
+  });
+  it('rejects clients, barbers, locked managers, self-edits, unverified targets, and manager elevation', async () => {
+    const f = await management();
+    expect((await request('/me/accounts', undefined, f.client)).status).toBe(403);
+    const manager = await seed('access-manager', 'manager');
+    expect((await request('/me/accounts', undefined, manager)).status).toBe(403); await enrollMfa(manager);
+    expect((await request('/me/accounts/access-client/role', { ...f.body, role: 'owner' }, manager)).status).toBe(409);
+    expect((await request('/me/accounts/access-owner/role', { ...f.body, previousRole: 'owner', role: 'manager' }, f.owner)).status).toBe(400);
+    await seed('unverified', 'customer', false); const row = db.sqlite.prepare("SELECT updated_at FROM users WHERE id='unverified'").get()!;
+    expect((await request('/me/accounts/unverified/role', { ...f.body, updatedAt: row.updated_at }, f.owner)).status).toBe(409);
+    const barber = await seed('access-barber', 'staff'); await enrollMfa(barber);
+    expect((await request('/me/accounts', undefined, barber)).status).toBe(403);
+    env.STAFF_OPERATIONS_ENABLED = 'false'; expect((await request('/me/accounts', undefined, f.owner)).status).toBe(503);
+  });
+  it('preserves the last owner and rolls back all role effects if a write fails', async () => {
+    const f = await management(); const admin = await seed('access-admin', 'admin'); await enrollMfa(admin);
+    const target = db.sqlite.prepare("SELECT updated_at FROM users WHERE id='access-owner'").get()!;
+    expect((await request('/me/accounts/access-owner/role', { ...f.body, previousRole: 'owner', role: 'manager', updatedAt: target.updated_at }, admin)).status).toBe(409);
+    db.sqlite.exec("CREATE TRIGGER fail_role BEFORE UPDATE OF role ON users BEGIN SELECT RAISE(ABORT,'test'); END");
+    expect((await request('/me/accounts/access-client/role', f.body, f.owner)).status).toBe(500);
+    expect(db.sqlite.prepare("SELECT role FROM users WHERE id='access-client'").get()!.role).toBe('customer');
+    expect((await request('/me', undefined, f.client)).status).toBe(200);
+    expect(db.sqlite.prepare("SELECT count(*) AS n FROM audit_events WHERE action='account_role_changed'").get()!.n).toBe(0);
+  });
+  it('preserves password spaces and prevents removing a barber with unresolved visits', async () => {
+    const f = await staffFixture(); const owner = await seed('policy-owner', 'owner'); await enrollMfa(owner);
+    const spaced = ` ${password} `;
+    db.sqlite.prepare("UPDATE account_credentials SET password_hash=? WHERE user_id='policy-owner'").run(await hashPassword(spaced));
+    const client = db.sqlite.prepare("SELECT updated_at FROM users WHERE id='alice'").get()!;
+    expect((await request('/me/accounts/alice/role', { role: 'barber', previousRole: 'customer', updatedAt: client.updated_at, currentPassword: spaced }, owner)).status).toBe(200);
+    const professional = db.sqlite.prepare("SELECT updated_at FROM users WHERE id='professional'").get()!;
+    expect((await request('/me/accounts/professional/role', { role: 'customer', previousRole: 'barber', updatedAt: professional.updated_at, currentPassword: spaced }, owner)).status).toBe(409);
+    expect((await request(f.path, undefined, f.staff)).status).toBe(200);
+  });
+  it('lists only owned sessions without token hashes and revokes another session individually', async () => {
+    const alice = await seed('sessions-alice'); const other = await createSession(env, 'sessions-alice'); const bob = await seed('sessions-bob');
+    const data = await (await request('/me/sessions', undefined, alice)).json();
+    expect(data.items).toHaveLength(2); expect(data.items.filter((row: { current: boolean }) => row.current)).toHaveLength(1);
+    expect(JSON.stringify(data)).not.toMatch(/token_hash|scrypt|sessions-bob/);
+    const id = data.items.find((row: { current: boolean }) => !row.current).id;
+    expect((await request(`/me/sessions/${id}/revoke`, {}, bob)).status).toBe(404);
+    expect((await request(`/me/sessions/${data.items[0].id}/revoke`, {}, alice)).status).toBe(404);
+    expect((await request(`/me/sessions/${id}/revoke`, {}, alice)).status).toBe(200);
+    expect((await request('/me', undefined, other)).status).toBe(401); expect((await request('/me', undefined, alice)).status).toBe(200);
+  });
+  it('scopes chair summaries to assigned visits and requires staff MFA for operational summaries', async () => {
+    const f = await staffFixture();
+    expect((await request('/me/workspace', undefined, f.alice)).status).toBe(403);
+    let data = await (await request('/me/workspace', undefined, f.staff)).json();
+    expect(data.scope).toBe('chair'); expect(data.counts.pending).toBe(1); expect(data.counts.orders).toBeNull();
+    await request(f.path, f.decision, f.staff);
+    data = await (await request('/me/workspace', undefined, f.staff)).json(); expect(data.counts.upcoming).toBe(1); expect(data.visits[0].id).toBe(f.id);
+    const stranger = await seed('other-barber', 'staff'); await enrollMfa(stranger);
+    const own = await (await request('/me/workspace', undefined, stranger)).json(); expect(own.counts.upcoming).toBe(0); expect(own.visits).toEqual([]);
+    const owner = await seed('dashboard-owner', 'owner'); await enrollMfa(owner);
+    const shop = await (await request('/me/workspace', undefined, owner)).json(); expect(shop.scope).toBe('shop'); expect(shop.counts.upcoming).toBe(1);
+    await request('/me/mfa/lock', {}, owner); expect((await request('/me/workspace', undefined, owner)).status).toBe(403);
+  });
+});
 async function register(email = 'new@example.test') {
   const response = await request('/auth/register', { name: 'New Customer', email, password, turnstileToken: 'test-token', website: '' });
   expect(response.status).toBe(202);

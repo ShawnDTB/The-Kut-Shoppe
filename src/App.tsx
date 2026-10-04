@@ -39,15 +39,15 @@ import './visual-system.css';
 import './mobile-navigation.css';
 import { findRoute } from './data/site';
 import { localPlatformPreview } from './data/runtime';
-import { CustomerAccount } from './components/CustomerAccount';
 import { ProductionBooking } from './components/ProductionAccess';
-import { LiveCommerce } from './components/LiveCommerce';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
 
 const LocalPlatformPreview = import.meta.env.DEV ? lazy(() => import('./components/LocalPlatformPreview')) : null;
+const CustomerAccount = lazy(() => import('./components/CustomerAccount').then(module => ({ default: module.CustomerAccount })));
+const LiveCommerce = lazy(() => import('./components/LiveCommerce').then(module => ({ default: module.LiveCommerce })));
 
 interface AppProps { url: string }
 
@@ -57,7 +57,6 @@ const legacyRedirects: Record<string, string> = {
   '/login': '/account',
   '/booking': '/book',
   '/staff/login': '/account',
-  '/admin/access': '/account',
 };
 
 const subscribeToHydration = () => () => undefined;
@@ -65,7 +64,7 @@ const getHydratedSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 function ClientPlatform({ children }: { children: ReactNode }) {
-  return useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot) ? children : null;
+  return useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot) ? <Suspense fallback={<p className="container" role="status">Opening your workspace…</p>}>{children}</Suspense> : null;
 }
 
 function ClientRedirect({ to }: { to: string }) {
@@ -78,7 +77,7 @@ function useHomepageHashNavigation(url: string) {
     if (url !== '/') return;
     const scrollToHash = () => {
       const id = window.location.hash.slice(1);
-      if (id) window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      if (id) window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }));
     };
     scrollToHash();
     window.addEventListener('hashchange', scrollToHash);
@@ -106,7 +105,7 @@ export function App({ url }: AppProps) {
   const operational = ['/account', '/dashboard', '/book', '/book/walk-in', '/shop', '/cart', '/checkout'].includes(normalizedUrl) || isStaffRoute || isAdminRoute || Boolean(productMatch);
   const layoutPath = normalizedUrl === '/dashboard' || normalizedUrl === '/account'
     ? '/account'
-    : isStaffRoute
+    : isStaffRoute || isAdminRoute
       ? '/account'
       : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
         ? '/shop'

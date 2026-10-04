@@ -43,6 +43,52 @@
 .customer-nav a { display: flex; align-items: center; min-height: 48px; padding: .75rem .15rem; border-bottom: 3px solid transparent; text-decoration: none; }
 .customer-nav a[aria-current] { border-bottom-color: #c6a76b; color: var(--account-ink); }
 .customer-content { min-width: 0; }
+.customer-account > .container.route-wide { width: calc(100% - 40px); max-width: 1280px; margin-inline: auto; }
+.customer-account .customer-home-header { flex-wrap: nowrap; margin-bottom: 2rem; }
+.customer-account .customer-home-header > div { flex: 1 1 auto; min-width: 0; }
+.customer-account .customer-home-header h1 { margin-block: .5rem 0; }
+.customer-account .customer-content h2 { margin-top: 0; }
+.workspace-site-header { background: #0c0c0c; color: #f6f3eb; border-bottom: 1px solid #514e47; padding-block: .75rem; }
+.workspace-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.workspace-brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; color: inherit; }
+.workspace-brand img { flex-shrink: 0; }
+.workspace-header-inner nav { display: flex; align-items: center; gap: 1.5rem; }
+.workspace-header-inner nav a { display: flex; align-items: center; min-height: 44px; color: #ecd6a6; font-size: .9rem; }
+@media (max-width: 480px) { .workspace-header-inner { flex-wrap: wrap; } .workspace-header-inner nav { width: 100%; justify-content: space-between; } }
+.account-workspace { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: clamp(1.5rem, 3vw, 3rem); align-items: start; }
+.account-sidebar { border-right: 1px solid var(--account-line); padding-right: 1.25rem; }
+.account-nav-group + .account-nav-group { margin-top: 1.5rem; }
+.account-nav-group p { margin: 0 0 .4rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .07em; }
+.account-nav-group a { display: flex; align-items: center; min-height: 44px; padding: .5rem .7rem; border-left: 3px solid transparent; text-decoration: none; line-height: 1.4; }
+.customer-account .account-nav-group a[aria-current] { border-color: #edcb84; color: #fff5de; background: #302b22; font-weight: 700; }
+.account-nav-group a:hover { background: #242424; }
+.account-mobile-nav { display: none; }
+.account-role-review { padding: 1.25rem; border: 1px solid var(--account-line); margin-block: 1.5rem; }
+.account-directory .customer-records li > div { min-width: 0; overflow-wrap: anywhere; }
+.account-password-toggle { justify-self: start; min-height: 44px; }
+.workspace-overview { display: grid; gap: 1.5rem; }
+.workspace-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 1rem; }
+.workspace-metrics > * { padding: 1.25rem; border: 1px solid var(--account-line); background: #1b1b1b; display: grid; gap: .5rem; text-decoration: none; }
+.workspace-metrics strong { font-size: 2rem; line-height: 1; color: var(--account-ink); }
+.workspace-metrics small { color: var(--account-muted); line-height: 1.5; }
+.workspace-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1rem; }
+.workspace-actions a { display: grid; gap: .4rem; padding: 1rem; min-height: 80px; border: 1px solid var(--account-line); text-decoration: none; }
+.workspace-actions span { color: var(--account-muted); font-size: .9rem; line-height: 1.5; }
+.customer-content > .customer-form { width: 100%; }
+@media (max-width: 900px) {
+  .account-workspace { display: block; }
+  .account-sidebar { display: none; }
+  .account-mobile-nav { display: grid; margin-bottom: 1.5rem; max-width: none; }
+  .customer-content .customer-section-heading { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  .customer-home-header { align-items: start; }
+  .customer-home-header h1 { font-size: 1.7rem; }
+  .customer-home-header .button { padding: .65rem; flex-shrink: 0; }
+  .account-directory .customer-records li { align-items: start; flex-direction: column; }
+  .workspace-metrics { grid-template-columns: 1fr 1fr; gap: .7rem; }
+  .workspace-metrics > * { padding: .85rem; }
+}
 .customer-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
 .customer-records { list-style: none; padding: 0; margin: 0 0 1.5rem; }
 .customer-records li { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; padding-block: 1.5rem; border-bottom: 1px solid var(--account-line); }
