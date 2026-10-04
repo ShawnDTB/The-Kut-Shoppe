@@ -5,6 +5,7 @@ const assets = await readdir('dist/assets');
 const defaults = await readFile('wrangler.toml', 'utf8');
 assert.match(defaults, /^ACCOUNTS_ENABLED = "false"$/m, 'Accounts must remain disabled until staging acceptance');
 assert.match(defaults, /^COMMERCE_ENABLED = "false"$/m, 'Enable hosted commerce only against a configured, reviewed database');
+assert.match(defaults, /^CASH_SALES_ENABLED = "false"$/m, 'Cash recording must stay disabled until shop acceptance');
 assert.match(defaults, /^CUSTOMER_BOOKING_ENABLED = "false"$/m, 'Native booking must remain disabled until the operational workflow is approved');
 assert.match(defaults, /^STAFF_OPERATIONS_ENABLED = "false"$/m, 'Staff operations must remain disabled until operational acceptance');
 assert.match(defaults, /^STAFF_SETUP_ENABLED = "false"$/m, 'Professional onboarding must remain disabled until staging acceptance');

@@ -6,6 +6,7 @@ CUSTOMER_BOOKING_ENABLED="false"
 STAFF_OPERATIONS_ENABLED="false"
 STAFF_SETUP_ENABLED="false"
 COMMERCE_ENABLED="false"
+CASH_SALES_ENABLED="false"
 AUTH_SECRET=""
 # Separate 32-byte key, encoded as 64 hex characters. Server only; preserve backups.
 MFA_ENCRYPTION_KEY=""

@@ -44,3 +44,20 @@ export function estimateDocument(estimate: SaleEstimate) {
     ${estimate.discountReason ? `<p>Discount: ${escape(estimate.discountReason)}</p>` : ''}${estimate.chargeNote ? `<p>Tax/shipping explanation: ${escape(estimate.chargeNote)}</p>` : ''}
     <footer><p>This is a saved copy of the amounts and details at issue. Later appointment, product and account changes do not update this copy. Confirm current arrangements with the shop. Use your browser’s Print command to print or save as PDF.</p></footer></body></html>`;
 }
+
+export function cashReceiptDocument(receipt: import('../src/shared/counter').CashReceipt) {
+  const title = receipt.kind === 'payment' ? 'Cash payment receipt' : receipt.kind === 'refund' ? 'Cash refund receipt' : 'Sale void record';
+  const sale = receipt.sale;
+  const rows = [['Item subtotal', sale.subtotalCents], ['Discount', sale.discountCents], ['Tax', sale.taxCents ?? 0], ['Shipping', sale.shippingCents ?? 0], ['Sale total', sale.totalCents ?? 0], ['Tip', receipt.tipCents], [receipt.kind === 'refund' ? 'Cash refunded' : 'Amount paid', receipt.amountCents],
+    ...(receipt.kind === 'payment' ? [['Cash received', receipt.cashReceivedCents], ['Change given', receipt.changeCents]] : [])] as Array<[string,number]>;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta http-equiv="Content-Security-Policy" content="${escape(documentPolicy)}"><title>${title} | ${escape(receipt.sellerName)}</title><style>${styles}</style></head><body>
+    <header><p>${escape(receipt.sellerName)} · ${escape(receipt.sellerAddress)}</p><h1>${title}</h1><p>For ${escape(sale.customerName)}</p></header>
+    <p>Receipt: ${escape(receipt.id)}<br>Sale: ${escape(receipt.saleId)}<br>Recorded: ${escape(time(receipt.createdAt,sale.timeZone))} (${escape(sale.timeZone)})</p>
+    <p class="notice">${receipt.kind === 'payment' ? 'The shop recorded receipt of the cash shown below. Fulfillment and appointment status remain separate.' : receipt.kind === 'refund' ? 'The shop recorded a full cash refund, including the original tip. This does not automatically return merchandise to inventory.' : 'This unpaid sale was voided. No payment or refund was recorded.'}</p>
+    ${receipt.originalReceiptId ? `<p>Original payment receipt: ${escape(receipt.originalReceiptId)}</p>` : ''}
+    ${sale.appointmentId ? `<p>Appointment: ${escape(sale.appointmentId)}</p>` : ''}${sale.orderId ? `<p>Order: ${escape(sale.orderId)}</p>` : ''}
+    <table><caption>Items at sale</caption><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Discount</th><th>Net</th></tr></thead><tbody>${sale.lines.map(line=>`<tr><td>${escape(line.description)}${line.professionalName?`<br>${escape(line.professionalName)}`:''}</td><td>${line.quantity}</td><td>${money(line.unitPriceCents)}</td><td>${money(line.discountCents)}</td><td>${money(line.netCents)}</td></tr>`).join('')}</tbody></table>
+    <table><caption>USD amounts</caption><tbody>${rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${money(value)}</td></tr>`).join('')}</tbody></table>
+    ${sale.discountReason?`<p>Discount: ${escape(sale.discountReason)}</p>`:''}${sale.chargeNote?`<p>Tax/shipping explanation: ${escape(sale.chargeNote)}</p>`:''}${receipt.reason?`<p>Reason: ${escape(receipt.reason)}</p>`:''}
+    <footer><p>This is the saved record at issue. Subsequent refunds have separate receipts. Use Print to print or save as PDF; check your account or contact the shop for later activity.</p></footer></body></html>`;
+}

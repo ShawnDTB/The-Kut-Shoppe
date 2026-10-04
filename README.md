@@ -3,14 +3,17 @@
 October 4: [account and dashboard review](docs/platform/accounts-review-2026-10-04.md) adds real staff-access management, individual session revocation, session race fixes, grouped account navigation, and separate client/barber/shop dashboards. The three review passes include functional browser journeys, accessibility and responsive checks, and reduced initial JavaScript. Run `npm run review` for the local account platform; this update is not a live-site deployment.
 
 Start with [release readiness and deployment](docs/platform/release-readiness.md).
-The current schema includes migrations through **0015**. See the
+The current schema includes migrations through **0017**. See the
 [feature completion review](docs/platform/feature-completion-review.md) for the
 shared appointment lifecycle, professional visit history and customer order
 withdrawal milestone. Run `npm run check` for
 code verification and `npm run releasecheck` for the separate, offline hosting
 environment preflight. The committed hosting templates are not live production
-configuration. Booking/shop workflows are preserved; electronic payments, paid
-receipts and employee payroll are not yet implemented. The milestone notes below
+configuration. [Finalized sales, cash collection, refunds and paid receipts](docs/platform/cash-sales-milestone.md)
+are implemented for completed services and accepted pickup orders. Booking/shop
+workflows are preserved. [Cash register reconciliation](docs/platform/cash-register-milestone.md)
+adds opening balances, cash adjustments/deposit removals and counted closing with
+visible variances. Card processing and employee payroll remain unfinished. The milestone notes below
 are historical and must not be used as the current deployment checklist.
 
 <div align="center">

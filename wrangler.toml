@@ -12,6 +12,7 @@ CUSTOMER_BOOKING_ENABLED = "false"
 STAFF_OPERATIONS_ENABLED = "false"
 STAFF_SETUP_ENABLED = "false"
 COMMERCE_ENABLED = "false"
+CASH_SALES_ENABLED = "false"
 
 [[d1_databases]]
 binding = "DB"
