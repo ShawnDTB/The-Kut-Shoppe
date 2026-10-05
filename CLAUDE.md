@@ -1,3 +1,7 @@
+# Pages hosting update
+
+`wrangler.toml` now configures the Git-connected Pages frontend. `wrangler.production.toml` configures its existing service-bound account Worker. `wrangler.local.toml` is the old disabled local template. Use `npm run build:pages` for Pages, keep all production operational flags false, and read the latest notes in `docs/platform/public-launch.md`.
+
 # Public release update (October 4, 2026)
 
 Read `docs/platform/public-launch.md` before deployment. The default production build is a public holding-page release; the full platform uses `npm run review` or `npm run build:platform`. Production hosting is now Workers with static assets and a separate D1 database, configured in `wrangler.production.toml`. The older Pages config remains a disabled template. Account email and custom-domain activation are pending; all production operational feature flags remain false. Existing historical hosting claims below are superseded by this note.

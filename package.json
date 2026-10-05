@@ -19,12 +19,14 @@
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run bundlecheck && npm run productioncheck && npm run workercheck",
     "productioncheck": "node scripts/check-production.mjs",
     "workercheck": "node scripts/check-worker.mjs && node scripts/check-notifications.mjs",
-    "dev:api": "wrangler pages dev dist --port 8788",
-    "db:local": "wrangler d1 migrations apply DB --local",
+    "dev:api": "wrangler pages dev dist --port 8788 --config wrangler.local.toml",
+    "db:local": "wrangler d1 migrations apply DB --local --config wrangler.local.toml",
     "preview": "vite preview",
     "build:release": "node scripts/build.mjs --release",
     "deploy:release": "npm run build:release && node scripts/check-public-release.mjs && wrangler deploy --config wrangler.production.toml",
-    "build:platform": "node scripts/build.mjs --platform"
+    "build:platform": "node scripts/build.mjs --platform",
+    "build:pages": "npm run build:release && node scripts/check-public-release.mjs && node scripts/build-pages.mjs",
+    "deploy:pages": "npm run build:pages && wrangler pages deploy --config wrangler.toml --branch main"
   },
   "dependencies": {
     "react": "^19.2.8",

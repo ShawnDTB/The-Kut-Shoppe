@@ -1,21 +1,21 @@
 name = "the-kut-shoppe"
-pages_build_output_dir = "dist"
+account_id = "ef97f4e6cee13846035d6e5982999bd8"
+pages_build_output_dir = "dist-pages"
 compatibility_date = "2026-09-09"
 compatibility_flags = ["nodejs_compat"]
 
-# Safe defaults. Set a real staging origin and bind an isolated staging database
-# before enabling accounts. Never use production customer data for local review.
 [vars]
-APP_ORIGIN = "http://localhost:8788"
 ACCOUNTS_ENABLED = "false"
 CUSTOMER_BOOKING_ENABLED = "false"
 STAFF_OPERATIONS_ENABLED = "false"
 STAFF_SETUP_ENABLED = "false"
 COMMERCE_ENABLED = "false"
 CASH_SALES_ENABLED = "false"
+APPOINTMENT_EMAIL_ENABLED = "false"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "kut-shoppe-staging"
-database_id = "00000000-0000-0000-0000-000000000000"
-migrations_dir = "migrations"
+[[services]]
+binding = "API"
+service = "the-kut-shoppe"
+
+[env.preview]
+services = []

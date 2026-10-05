@@ -17,7 +17,8 @@ html_handling = "drop-trailing-slash"
 run_worker_first = true
 
 [vars]
-APP_ORIGIN = "https://the-kut-shoppe.shawndtb.workers.dev"
+TURNSTILE_SITE_KEY = "0x4AAAAAAFN4mBjXV9_1VQWS"
+APP_ORIGIN = "https://www.thekutshoppe.com"
 MAIL_FROM = "The Kut Shoppe <admin@thekutshoppe.com>"
 ACCOUNTS_ENABLED = "false"
 CUSTOMER_BOOKING_ENABLED = "false"

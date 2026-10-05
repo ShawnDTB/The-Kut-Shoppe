@@ -1,3 +1,13 @@
+# Pages and Worker connection update
+
+Cloudflare DNS is active ahead of the registrar transfer. The `the-kut-shoppe` Pages project is connected to GitHub `main`, with `npm run build:pages` and `dist-pages` as its build/output. `wrangler.toml` is now the Pages configuration; `wrangler.local.toml` preserves the disabled local D1 template. Pages forwards production-domain API requests to the existing `the-kut-shoppe` Worker through the `API` service binding. Preview deployments have no service binding and cannot access production accounts. `wrangler.production.toml` remains the separate Worker configuration.
+
+A real Turnstile widget is provisioned for apex/www. Separate random AUTH_SECRET and MFA_ENCRYPTION_KEY plus TURNSTILE_SECRET_KEY are stored as Worker secrets. No secret values are committed. All account/booking/shop flags remain disabled pending verified transactional email and owner acceptance. Production origin is `https://www.thekutshoppe.com`.
+
+Pages automatically builds main; deploy the separate Worker with `npx wrangler deploy --config wrangler.production.toml`. The commands are deliberately separate: Pages does not overwrite Worker credentials or its database binding.
+
+The earlier initial-launch record below is historical; domain and credential claims are superseded by this update.
+
 # Public launch — October 4, 2026
 
 The public release is the marketing website plus booking, shopping and account holding pages. Existing Booksy and Crowned by Steph booking links remain usable. No native appointment request, signup, checkout, payment or cash workflow is enabled publicly.
