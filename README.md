@@ -1,3 +1,5 @@
+**Live domain:** https://www.thekutshoppe.com now runs on Cloudflare Pages, automatically built from `main`, with the production account Worker connected through a service binding. See [current hosting status](docs/platform/public-launch.md). Booking, shop and account holding pages remain in place; email activation is pending.
+
 ## Current release entry point
 
 **October 4 public launch:** [Cloudflare release and domain handoff](docs/platform/public-launch.md). The default build is the marketing website with booking, shop and account holding pages. Existing booking-provider links stay available. `npm run deploy:release` targets the isolated production Worker; `npm run review` retains the full development platform. Domain cutover and verified email activation remain separate.

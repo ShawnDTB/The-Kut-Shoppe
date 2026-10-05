@@ -1,3 +1,11 @@
+# Live domain status
+
+Both `www.thekutshoppe.com` and `thekutshoppe.com` are active Pages custom domains with validated certificates. Their CNAME records point to `the-kut-shoppe.pages.dev`; apex redirects to www. Existing MX, SPF, DMARC and other legacy DNS entries were preserved. The prior website A records were both `69.163.182.247`; a full dashboard transcription is saved with the handoff outputs. The registrar transfer can finish independently.
+
+The automatic GitHub main Pages build passed, including the Pages-specific flat HTML output needed to avoid trailing-slash redirect loops. The separate Worker is deployed and service-bound. Automatic Worker Builds are not configured: the default UI offered an account-wide token covering unrelated storage and services. A deliberately scoped deployment credential remains a separate setup step.
+
+Latest validation: full `npm run check` passed with 283 application tests, 12 environment tests, production gates and both runtime suites.
+
 # Pages and Worker connection update
 
 Cloudflare DNS is active ahead of the registrar transfer. The `the-kut-shoppe` Pages project is connected to GitHub `main`, with `npm run build:pages` and `dist-pages` as its build/output. `wrangler.toml` is now the Pages configuration; `wrangler.local.toml` preserves the disabled local D1 template. Pages forwards production-domain API requests to the existing `the-kut-shoppe` Worker through the `API` service binding. Preview deployments have no service binding and cannot access production accounts. `wrangler.production.toml` remains the separate Worker configuration.
