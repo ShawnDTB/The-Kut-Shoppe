@@ -38,16 +38,18 @@ import './customer-account.css';
 import './visual-system.css';
 import './mobile-navigation.css';
 import { findRoute } from './data/site';
-import { localPlatformPreview } from './data/runtime';
-import { ProductionBooking } from './components/ProductionAccess';
+import { localPlatformPreview, publicLaunch } from './data/runtime';
+import { LaunchPlaceholder } from './components/LaunchPlaceholder';
 import { HomePage } from './components/HomePage';
 import { SiteLayout } from './components/Layout';
 import { RoutePage } from './components/Pages';
 import { ReviewsPageV4 } from './components/ReviewsPageV4';
 
 const LocalPlatformPreview = import.meta.env.DEV ? lazy(() => import('./components/LocalPlatformPreview')) : null;
-const CustomerAccount = lazy(() => import('./components/CustomerAccount').then(module => ({ default: module.CustomerAccount })));
-const LiveCommerce = lazy(() => import('./components/LiveCommerce').then(module => ({ default: module.LiveCommerce })));
+const CustomerAccount = import.meta.env.PROD && import.meta.env.VITE_PUBLIC_LAUNCH !== 'false' ? null : lazy(() => import('./components/CustomerAccount').then(module => ({ default: module.CustomerAccount })));
+const LiveCommerce = import.meta.env.PROD && import.meta.env.VITE_PUBLIC_LAUNCH !== 'false' ? null : lazy(() => import('./components/LiveCommerce').then(module => ({ default: module.LiveCommerce })));
+
+const ProductionBooking = import.meta.env.PROD && import.meta.env.VITE_PUBLIC_LAUNCH !== 'false' ? null : lazy(() => import('./components/ProductionAccess').then(module => ({ default: module.ProductionBooking })));
 
 interface AppProps { url: string }
 
@@ -102,7 +104,7 @@ export function App({ url }: AppProps) {
   const isStaffRoute = normalizedUrl === '/staff' || normalizedUrl.startsWith('/staff/');
   const isAdminRoute = normalizedUrl.startsWith('/admin/');
   const productMatch = normalizedUrl.match(/^\/shop\/([^/]+)$/);
-  const operational = ['/account', '/dashboard', '/book', '/book/walk-in', '/shop', '/cart', '/checkout'].includes(normalizedUrl) || isStaffRoute || isAdminRoute || Boolean(productMatch);
+  const operational = ['/account', '/dashboard', '/book', '/book/walk-in', '/shop', '/cart', '/checkout'].includes(normalizedUrl) || isStaffRoute || isAdminRoute || normalizedUrl.startsWith('/book/') || normalizedUrl.startsWith('/shop/');
   const layoutPath = normalizedUrl === '/dashboard' || normalizedUrl === '/account'
     ? '/account'
     : isStaffRoute || isAdminRoute
@@ -112,12 +114,13 @@ export function App({ url }: AppProps) {
         : route.path;
 
   return <SiteLayout currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
+    : publicLaunch && operational ? <LaunchPlaceholder kind={normalizedUrl.startsWith('/book') ? 'booking' : normalizedUrl.startsWith('/shop') || normalizedUrl === '/cart' || normalizedUrl === '/checkout' ? 'shop' : 'account'} />
     : normalizedUrl === '/' ? <HomePage />
     : import.meta.env.DEV && localPlatformPreview && LocalPlatformPreview && operational ? <ClientPlatform><Suspense fallback={<p role="status">Opening local preview…</p>}><LocalPlatformPreview path={normalizedUrl} /></Suspense></ClientPlatform>
-    : normalizedUrl === '/admin/products' || normalizedUrl === '/admin/orders' ? <ClientPlatform><LiveCommerce path={normalizedUrl} /></ClientPlatform>
-    : normalizedUrl === '/account' || normalizedUrl === '/dashboard' || isStaffRoute || isAdminRoute ? <ClientPlatform><CustomerAccount /></ClientPlatform>
-    : normalizedUrl === '/book' || normalizedUrl.startsWith('/book/') ? <ProductionBooking />
-    : normalizedUrl === '/shop' || productMatch || normalizedUrl === '/cart' || normalizedUrl === '/checkout' ? <ClientPlatform><LiveCommerce path={normalizedUrl} /></ClientPlatform>
+    : LiveCommerce && (normalizedUrl === '/admin/products' || normalizedUrl === '/admin/orders') ? <ClientPlatform><LiveCommerce path={normalizedUrl} /></ClientPlatform>
+    : CustomerAccount && (normalizedUrl === '/account' || normalizedUrl === '/dashboard' || isStaffRoute || isAdminRoute) ? <ClientPlatform><CustomerAccount /></ClientPlatform>
+    : ProductionBooking && (normalizedUrl === '/book' || normalizedUrl.startsWith('/book/')) ? <Suspense fallback={<p role="status">Opening booking…</p>}><ProductionBooking /></Suspense>
+    : LiveCommerce && (normalizedUrl === '/shop' || productMatch || normalizedUrl === '/cart' || normalizedUrl === '/checkout') ? <ClientPlatform><LiveCommerce path={normalizedUrl} /></ClientPlatform>
     : normalizedUrl === '/reviews' ? <ReviewsPageV4 />
     : <RoutePage url={url} />}</SiteLayout>;
 }

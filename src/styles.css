@@ -21,12 +21,12 @@
   --accent: 'Mulish', 'Segoe UI', sans-serif;
   --container: 74rem;
   --narrow: 62rem;
-  --ornament-2: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-2.png');
-  --ornament-3: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-3.png');
-  --ornament-4: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-4.png');
-  --ornament-5: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-5.png');
-  --ornament-8: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-8.png');
-  --ornament-9: url('https://www.thekutshoppe.com/wp-content/uploads/2023/11/BG-9.png');
+  --ornament-2: url('/media/BG-2.webp');
+  --ornament-3: url('/media/BG-3.webp');
+  --ornament-4: url('/media/BG-4.webp');
+  --ornament-5: url('/media/BG-5.webp');
+  --ornament-8: url('/media/BG-8.webp');
+  --ornament-9: url('/media/BG-9.webp');
 }
 
 * {

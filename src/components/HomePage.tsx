@@ -109,7 +109,7 @@ function AboutAndCrew() {
 function ShopTeaser() {
   return (
     <section className="shop-teaser shop-teaser-solid" aria-labelledby="shop-teaser-heading">
-      <div className="container shop-teaser-grid"><img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="520" height="420" loading="lazy" decoding="async" /><div><p className="eyebrow">Products from the shop</p><h2 id="shop-teaser-heading">Keep the fresh look going.</h2><p>Shop published books, grooming products, hair care, accessories, and approved Kut Shoppe merchandise.</p></div><a className="button button-secondary" href="/shop">Visit the shop <Arrow /></a></div>
+      <div className="container shop-teaser-grid"><img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="520" height="420" loading="lazy" decoding="async" /><div><p className="eyebrow">Products from the shop</p><h2 id="shop-teaser-heading">Keep the fresh look going.</h2><p>Our online shop is getting ready. Visit the shop or call to ask about products for your routine.</p></div><a className="button button-secondary" href="/shop">Visit the shop <Arrow /></a></div>
     </section>
   );
 }

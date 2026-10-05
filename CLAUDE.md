@@ -1,3 +1,7 @@
+# Public release update (October 4, 2026)
+
+Read `docs/platform/public-launch.md` before deployment. The default production build is a public holding-page release; the full platform uses `npm run review` or `npm run build:platform`. Production hosting is now Workers with static assets and a separate D1 database, configured in `wrangler.production.toml`. The older Pages config remains a disabled template. Account email and custom-domain activation are pending; all production operational feature flags remain false. Existing historical hosting claims below are superseded by this note.
+
 # CLAUDE.md — The Kut Shoppe
 
 Guidance for Claude Code sessions working in this repository. Read this before making changes.

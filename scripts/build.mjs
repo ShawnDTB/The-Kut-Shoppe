@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 
+process.env.VITE_PUBLIC_LAUNCH = process.argv.includes('--platform') ? 'false' : 'true';
+
 // Run each step through the shell as a single command string (rather than
 // passing an argv array with shell:true) so Windows can resolve npx's .cmd
 // shim without Node's EINVAL on direct .cmd execution, and without

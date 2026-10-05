@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "review": "npm run build && node scripts/review.mjs",
+    "review": "npm run build:platform && node scripts/review.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build": "node scripts/build.mjs",
@@ -21,7 +21,10 @@
     "workercheck": "node scripts/check-worker.mjs && node scripts/check-notifications.mjs",
     "dev:api": "wrangler pages dev dist --port 8788",
     "db:local": "wrangler d1 migrations apply DB --local",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:release": "node scripts/build.mjs --release",
+    "deploy:release": "npm run build:release && node scripts/check-public-release.mjs && wrangler deploy --config wrangler.production.toml",
+    "build:platform": "node scripts/build.mjs --platform"
   },
   "dependencies": {
     "react": "^19.2.8",

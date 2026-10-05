@@ -1,0 +1,34 @@
+name = "the-kut-shoppe"
+account_id = "ef97f4e6cee13846035d6e5982999bd8"
+main = "server/worker.ts"
+compatibility_date = "2026-09-09"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
+
+[build]
+command = "npm run build:release && node scripts/check-public-release.mjs"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "404-page"
+html_handling = "drop-trailing-slash"
+run_worker_first = true
+
+[vars]
+APP_ORIGIN = "https://the-kut-shoppe.shawndtb.workers.dev"
+MAIL_FROM = "The Kut Shoppe <admin@thekutshoppe.com>"
+ACCOUNTS_ENABLED = "false"
+CUSTOMER_BOOKING_ENABLED = "false"
+STAFF_OPERATIONS_ENABLED = "false"
+STAFF_SETUP_ENABLED = "false"
+COMMERCE_ENABLED = "false"
+CASH_SALES_ENABLED = "false"
+APPOINTMENT_EMAIL_ENABLED = "false"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kut-shoppe-production"
+database_id = "5ff3c286-4d23-4810-a80a-6336d85a7328"
+migrations_dir = "migrations"

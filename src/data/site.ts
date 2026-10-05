@@ -173,7 +173,7 @@ export const team = [
     bookingType: 'barber' as BookingType,
     bookingHref: booksyUrl,
     photo:
-      'https://d2zdpiztbgorvt.cloudfront.net/region1/us/71309/resource_photos/8a19ffc9a20a4a7390f4d16f85b78c-the-kut-shoppe-the-fadeologist-51cc957c99aa484f8c00410c90d9cb-booksy.png',
+      '/media/8a19ffc9a20a4a7390f4d16f85b78c-the-kut-shoppe-the-fadeologist-51cc957c99aa484f8c00410c90d9cb-booksy.webp',
   },
   {
     name: 'Mr. Glen The Kut Doctor.',
@@ -182,7 +182,7 @@ export const team = [
     bookingType: 'barber' as BookingType,
     bookingHref: booksyUrl,
     photo:
-      'https://d2zdpiztbgorvt.cloudfront.net/region1/us/71309/resource_photos/3a9c106623504120b8a088c29d0e3f-the-kut-shoppe-llc-mr-glen-the-kut-doctor-98bb73c5c67f496a841ccd98e5ba58-booksy.png',
+      '/media/3a9c106623504120b8a088c29d0e3f-the-kut-shoppe-llc-mr-glen-the-kut-doctor-98bb73c5c67f496a841ccd98e5ba58-booksy.webp',
   },
   {
     name: 'Kris-P Fades',
@@ -191,7 +191,7 @@ export const team = [
     bookingType: 'barber' as BookingType,
     bookingHref: booksyUrl,
     photo:
-      'https://d2zdpiztbgorvt.cloudfront.net/region1/us/71309/resource_photos/2641be68d2ff43ebadc05f03735b7f-the-kut-shoppe-kris-p-blendz-6f421a7edcab4aedb668d3ebcbd56b-booksy.jpeg',
+      '/media/2641be68d2ff43ebadc05f03735b7f-the-kut-shoppe-kris-p-blendz-6f421a7edcab4aedb668d3ebcbd56b-booksy.webp',
   },
   {
     name: 'Crowned by Steph',

@@ -9,7 +9,7 @@ import {
   type PlatformAccount,
 } from '../data/auth-v2';
 import { readCart, subscribeToStorefrontChanges } from '../data/storefront';
-import { localPlatformPreview } from '../data/runtime';
+import { localPlatformPreview, publicLaunch } from '../data/runtime';
 import { getCustomerSession, loadCustomerSession, subscribeToCustomerSession } from '../data/customer-api';
 import { readCart as readLiveCart, subscribeToStorefrontChanges as subscribeLiveCart } from '../data/live-storefront';
 
@@ -33,7 +33,7 @@ function isCurrentRoute(currentPath: string, href: string) {
 }
 
 function accountLabel(account: HeaderAccount | null) {
-  if (!account) return 'Sign in';
+  if (!account) return publicLaunch ? 'Accounts soon' : 'Sign in';
   if (!localPlatformPreview || account.role === 'customer') return 'Dashboard';
   return `${account.role.charAt(0).toUpperCase()}${account.role.slice(1)} dashboard`;
 }
@@ -56,7 +56,7 @@ function CustomerActions({
   const accountHref = account && account.role !== 'customer' ? '/dashboard' : '/account';
   return (
     <div className={mobile ? 'customer-header-actions customer-header-actions-mobile' : 'customer-header-actions'}>
-      <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a>
+      {!publicLaunch ? <a className="customer-action customer-action-cart" href="/cart" onClick={onNavigate}>Cart <span>{cartCount}</span></a> : null}
       <a className="customer-action customer-action-account" href={accountHref} onClick={onNavigate}>{accountLabel(account)}</a>
       <a className="customer-action customer-action-book" href="/book" onClick={onNavigate}>Book now</a>
     </div>
@@ -181,6 +181,7 @@ function Header({ currentPath }: { currentPath: string }) {
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
+    if (publicLaunch) return;
     if (import.meta.env.DEV && localPlatformPreview) {
       setAccount(getPlatformSessionAccount());
       setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));

@@ -1,6 +1,7 @@
 import { renderToString } from 'react-dom/server';
 import { App } from './App';
 import { business, findRoute, routes, type RouteDefinition } from './data/site';
+import { publicLaunch } from './data/runtime';
 import { originalAssets } from './data/visuals';
 
 const platformRoutes: RouteDefinition[] = [
@@ -232,7 +233,7 @@ const localBusinessSchema = {
   legalName: business.legalName,
   telephone: business.phoneHref.replace('tel:', ''),
   url: 'https://www.thekutshoppe.com',
-  image: originalAssets.logo,
+  image: new URL(originalAssets.logo, 'https://www.thekutshoppe.com').href,
   address: {
     '@type': 'PostalAddress',
     streetAddress: '518 Main Street',
@@ -248,7 +249,8 @@ const localBusinessSchema = {
 const localBusinessJsonLd = JSON.stringify(localBusinessSchema).replaceAll('</', '<\\/');
 
 export function render(url: string) {
-  const route = resolveRoute(url);
+  const resolved = resolveRoute(url);
+  const route = publicLaunch && ['/book', '/shop', '/account', '/dashboard', '/cart', '/checkout'].includes(resolved.path) ? { ...resolved, status: 'placeholder', title: 'A fresh look is on the way | The Kut Shoppe', description: 'Our new online experience is getting its finishing touches. Visit The Kut Shoppe or book through our current providers.' } : resolved;
   const canonical = `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`;
   const robots = route.path === '/404' || route.status === 'placeholder' || route.status === 'private'
     ? '<meta name="robots" content="noindex, nofollow" />'
@@ -271,4 +273,4 @@ export function render(url: string) {
   };
 }
 
-export const staticRoutes = [...routes, ...platformRoutes];
+export const staticRoutes = [...routes, ...platformRoutes].map(route => publicLaunch && ['/book', '/shop'].includes(route.path) ? { ...route, status: 'placeholder' } : route);
