@@ -2,7 +2,7 @@
 
 Both `www.thekutshoppe.com` and `thekutshoppe.com` are active Pages custom domains with validated certificates. Their CNAME records point to `the-kut-shoppe.pages.dev`; apex redirects to www. Existing MX, SPF, DMARC and other legacy DNS entries were preserved. The prior website A records were both `69.163.182.247`; a full dashboard transcription is saved with the handoff outputs. The registrar transfer can finish independently.
 
-The automatic GitHub main Pages build passed, including the Pages-specific flat HTML output needed to avoid trailing-slash redirect loops. The separate Worker is deployed and service-bound. Automatic Worker Builds are not configured: the default UI offered an account-wide token covering unrelated storage and services. A deliberately scoped deployment credential remains a separate setup step.
+The automatic GitHub main Pages build passed, including the Pages-specific flat HTML output needed to avoid trailing-slash redirect loops. The separate Worker is deployed and service-bound. Automatic Worker Builds are connected to GitHub main as of October 5, 2026. Each run uses Node 22, executes `npm run check`, then publishes with `npx wrangler deploy --config wrangler.production.toml`. Only main triggers production builds; development branches have no production trigger. The dedicated `Kut Shoppe main deployments` credential is restricted to Workers Scripts: Edit within the hosting account. Temporary Workers Builds Configuration: Edit access is used only for initial setup and is removed after verification.
 
 Latest validation: full `npm run check` passed with 283 application tests, 12 environment tests, production gates and both runtime suites.
 
@@ -12,7 +12,7 @@ Cloudflare DNS is active ahead of the registrar transfer. The `the-kut-shoppe` P
 
 A real Turnstile widget is provisioned for apex/www. Separate random AUTH_SECRET and MFA_ENCRYPTION_KEY plus TURNSTILE_SECRET_KEY are stored as Worker secrets. No secret values are committed. All account/booking/shop flags remain disabled pending verified transactional email and owner acceptance. Production origin is `https://www.thekutshoppe.com`.
 
-Pages automatically builds main; deploy the separate Worker with `npx wrangler deploy --config wrangler.production.toml`. The commands are deliberately separate: Pages does not overwrite Worker credentials or its database binding.
+Pages and the separate Worker automatically build main. For a manual Worker release, use `npx wrangler deploy --config wrangler.production.toml`. The commands are deliberately separate: Pages does not overwrite Worker credentials or its database binding.
 
 The earlier initial-launch record below is historical; domain and credential claims are superseded by this update.
 
