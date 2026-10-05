@@ -16,13 +16,12 @@ import { Arrow } from './Layout';
 import { LocationMap } from './LocationMap';
 
 const instagramUrl = 'https://www.instagram.com/thekutshoppe/';
-const googleReviewsUrl = 'https://www.google.com/maps/search/?api=1&query=The+Kut+Shoppe+518+Main+Street+Stroudsburg+PA';
 const effectiveDate = 'August 3, 2026';
 
 const routePresentation: Partial<Record<string, { heading: string; intro: string }>> = {
   '/services': {
-    heading: '',
-    intro: '',
+    heading: 'Services and pricing.',
+    intro: 'Explore the menu, then confirm final pricing and availability with your professional.',
   },
   '/team': {
     heading: 'Meet the Crew.',
@@ -31,10 +30,6 @@ const routePresentation: Partial<Record<string, { heading: string; intro: string
   '/gallery': {
     heading: 'Discover the talent behind every finish.',
     intro: '',
-  },
-  '/reviews': {
-    heading: 'The work speaks. Clients confirm it.',
-    intro: 'Google feedback and real shop work together tell the story of The Kut Shoppe.',
   },
   '/contact': {
     heading: 'Call the shop when you need guidance.',
@@ -143,7 +138,7 @@ function TeamRoute() {
       {team.map((member) => {
         const presentation = memberPresentation(member.shortName);
         return (
-          <article className="verified-team-card" data-member={memberKey(member.shortName)} key={member.name}>
+          <article className="verified-team-card" id={memberKey(member.shortName)} data-member={memberKey(member.shortName)} key={member.name}>
             <div className="verified-team-media">
               {member.photo ? <img src={member.photo} alt={`${member.name} at The Kut Shoppe`} width="640" height="800" loading="lazy" decoding="async" /> : <div className="verified-team-placeholder" aria-hidden="true">CS</div>}
             </div>
@@ -167,61 +162,6 @@ function VisitRoute() {
         <div className="content-panel"><p className="eyebrow">Walk-in reference hours</p><h2>Shop hours</h2><dl className="visit-hours-list">{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl><small>{shopHoursNote}</small></div>
         <div className="content-panel"><p className="eyebrow">Before you visit</p><h2>Check current availability.</h2><p>{business.walkIns}</p><p className="visit-hours-summary">{shopHoursSummary} · {shopClosedSummary}</p><div className="proof-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href={business.phoneHref}>Call {business.phone}</a></div></div>
       </div>
-    </div>
-  );
-}
-
-const googleReviewSummaries = [
-  {
-    name: 'Christopher McCabe',
-    theme: 'Community and family',
-    text: 'Describes a community-focused shop where his son looks forward to appointments and leaves happy with the result.',
-  },
-  {
-    name: 'Chadd Satterfield',
-    theme: 'Consistency and timing',
-    text: 'Highlights consistent work, on-time seating, easy booking, a clean shop, and the relaxed conversation that makes each visit enjoyable.',
-  },
-  {
-    name: 'Isaiah Marseille',
-    theme: 'Professional service',
-    text: 'Calls every haircut a pleasant experience and recommends the friendly, professional team.',
-  },
-  {
-    name: 'Carl David Walters, Jr.',
-    theme: 'Clean and precise',
-    text: 'Recommends Kash and the crew for precise cuts that keep him and his boys looking fresh.',
-  },
-  {
-    name: 'Team-Goya-Gang Arango',
-    theme: 'Long-term trust',
-    text: 'Shares that years of appointments with Glen have stayed careful, consistent, and fully focused on the finished cut.',
-  },
-  {
-    name: 'Reyna Geronimo Gomez',
-    theme: 'A shop worth returning to',
-    text: 'Praises the professionalism and dedication to the craft after finding the shop following a move to the area.',
-  },
-] as const;
-
-function ReviewsRoute() {
-  const work = galleryItems.slice(0, 4);
-  return (
-    <div className="route-content reviews-showcase">
-      <section className="reviews-rating-band">
-        <div><span className="reviews-stars" aria-label="4.9 out of 5 stars">★★★★★</span><strong>4.9</strong><small>59 Google reviews</small></div>
-        <p>Clients repeatedly mention the same things visible throughout the gallery: careful work, consistent timing, a clean shop, and a welcoming atmosphere.</p>
-        <a className="button" href={googleReviewsUrl} target="_blank" rel="noopener noreferrer">Read all Google reviews <span aria-hidden="true">↗</span></a>
-      </section>
-
-      <div className="reviews-testimonial-grid">
-        {googleReviewSummaries.map((review) => <article key={review.name}><p className="eyebrow">Google review · {review.theme}</p><blockquote>{review.text}</blockquote><strong>{review.name}</strong></article>)}
-      </div>
-
-      <section className="reviews-work-link">
-        <div><p className="eyebrow">See what clients are talking about</p><h2>Feedback backed by the work.</h2><p>Move from the testimonials directly into recent cuts, fades, beard details, locs, braids, and designs from the shop.</p><a className="button button-secondary" href="/gallery">View the full gallery <Arrow /></a></div>
-        <div className="reviews-gallery-strip">{work.map((item) => <a href="/gallery" key={item.src}><img src={item.src} alt={item.alt} width="420" height="420" loading="lazy" decoding="async" /><span>{item.title}</span></a>)}</div>
-      </section>
     </div>
   );
 }
@@ -283,7 +223,6 @@ export function RoutePage({ url }: { url: string }) {
   const presentation = routePresentation[route.path];
   const hasServiceRoute = services.some((item) => item.route === route.path);
   const isWideRoute = ['/team', '/gallery', '/services', '/reviews'].includes(route.path);
-  const showIntro = route.path !== '/services';
   const pageClass = route.path === '/services'
     ? 'route-services-page route-pattern-tools'
     : route.path === '/gallery'
@@ -303,12 +242,11 @@ export function RoutePage({ url }: { url: string }) {
   return (
     <section className={`section page-hero ${pageClass}`}>
       <div className={`container ${isWideRoute ? 'route-wide' : 'narrow-container'}`}>
-        {showIntro ? <header className="route-page-intro"><p className="eyebrow">{route.eyebrow}</p><h1>{presentation?.heading ?? route.heading}</h1>{presentation?.intro || route.intro ? <p className="lede">{presentation?.intro ?? route.intro}</p> : null}</header> : null}
+        {<header className="route-page-intro"><p className="eyebrow">{route.eyebrow}</p><h1>{presentation?.heading ?? route.heading}</h1>{presentation?.intro || route.intro ? <p className="lede">{presentation?.intro ?? route.intro}</p> : null}</header>}
         {route.path === '/services' ? <ServicesRoute /> : null}
         {hasServiceRoute ? <ServiceRoute path={route.path} /> : null}
         {route.path === '/team' ? <TeamRoute /> : null}
         {route.path === '/visit' ? <VisitRoute /> : null}
-        {route.path === '/reviews' ? <ReviewsRoute /> : null}
         {route.path === '/gallery' ? <GalleryRoute /> : null}
         {route.path === '/privacy' ? <PrivacyRoute /> : null}
         {route.path === '/terms' ? <TermsRoute /> : null}

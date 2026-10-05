@@ -46,3 +46,27 @@ it('retains a guest selection through sign-in and ignores a late availability re
   api.mockResolvedValueOnce({options:[option]});await act(async()=>setCustomerSession(account));expect(element.querySelector('[data-testid="account-access"]')).toBeNull();expect(element.querySelector('.booking-v2-review')?.textContent).toContain('Haircut');
   api.mockResolvedValueOnce({appointmentId:'guest-continued'});await button('Request appointment');expect(element.textContent).toContain('Your appointment request was sent.');
 });
+
+it('clears loaded times when the customer returns to choose a different professional', async () => {
+  api.mockResolvedValueOnce({ options: [option, second] });
+  await act(async () => root.render(createElement(RestoredBooking, { onBack: vi.fn(), onOpen: vi.fn() })));
+  await click('.booking-v2-service-list button');
+  await click('.booking-v2-barber-grid button:nth-child(2)');
+  api.mockResolvedValueOnce(available(option)); await click('.booking-v4-week button');
+  expect(api.mock.calls.at(-1)![0]).toContain('staffId=one');
+  expect(element.querySelector('.booking-v4-times')).not.toBeNull();
+  await click('.booking-v5-panel-toolbar button');
+  await click('.booking-v2-barber-grid button:nth-child(3)');
+  expect(element.querySelector('.booking-v4-times')).toBeNull();
+  api.mockResolvedValueOnce(available(second)); await click('.booking-v4-week button');
+  expect(api.mock.calls.at(-1)![0]).toContain('staffId=two');
+});
+it('identifies a requested public professional without guessing a server account ID', async () => {
+  window.history.replaceState({}, '', '/book?barber=kash');
+  api.mockResolvedValueOnce({ options: [option] });
+  await act(async () => root.render(createElement(RestoredBooking, { onBack: vi.fn(), onOpen: vi.fn() })));
+  expect(element.textContent).toContain('Looking for KasH?');
+  await click('.booking-v2-service-list button');
+  expect(element.querySelector('.booking-v2-barber-grid')).not.toBeNull();
+  expect(element.querySelector('.booking-v4-week')).toBeNull();
+});

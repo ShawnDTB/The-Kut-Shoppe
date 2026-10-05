@@ -34,7 +34,7 @@ await writeFile(
 // rule identical to the per-route robots meta logic above (placeholder and
 // private routes are noindex and are left out of the sitemap too).
 const sitemapUrls = serverEntry.staticRoutes
-  .filter((route) => route.status !== 'placeholder' && route.status !== 'private')
+  .filter((route) => route.status !== 'placeholder' && route.status !== 'private' && !['/about', '/products'].includes(route.path))
   .map((route) => `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`);
 
 const sitemap = [

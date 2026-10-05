@@ -5,7 +5,7 @@ import type { CustomerDashboard, DashboardAppointment } from '../shared/dashboar
 
 const appointmentHref = (id: string) => `/account?view=appointments&record=${encodeURIComponent(id)}`;
 const orderHref = (id: string) => `/account?view=orders&record=${encodeURIComponent(id)}`;
-const status = (value: string) => value.replaceAll('_', ' ');
+const status = (value: string) => value.replace(/[_-]/g, ' ');
 const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 function when(visit: DashboardAppointment) {
   if (!visit.startsAt || !Number.isFinite(Date.parse(visit.startsAt))) return 'Time to be arranged';

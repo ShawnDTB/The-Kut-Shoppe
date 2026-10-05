@@ -1,3 +1,4 @@
+import { readBookingIntent } from '../data/booking-intent';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { accountApi, AccountApiError, getCustomerSession, subscribeToCustomerSession } from '../data/customer-api';
 import { getBookingPath } from '../data/site';
@@ -13,6 +14,7 @@ const message = (error:unknown)=>error instanceof Error?error.message:'Please tr
 
 export function RestoredBooking({onBack,onOpen}:{onBack:()=>void;onOpen:(id:string)=>void}) {
   const account=useSyncExternalStore(subscribeToCustomerSession,getCustomerSession,()=>null);
+  const preferredProfessional = readBookingIntent(typeof window === 'undefined' ? '' : window.location.search).professional;
   const apiRoot=account?'/me/booking':'/booking';
   const [step,setStep]=useState<Step>('service');
   const [options,setOptions]=useState<BookingOption[]>([]);
@@ -82,6 +84,7 @@ export function RestoredBooking({onBack,onOpen}:{onBack:()=>void;onOpen:(id:stri
     {step!=='complete'?<section className={`booking-v2-panel booking-v4-panel${step==='schedule'?' booking-v4-schedule':''}`} aria-busy={loading||checking||saving}>
       <div className="booking-v5-panel-toolbar"><button className="text-button" disabled={saving||uncertain} onClick={back}>← Back</button><a className="text-link" href={getBookingPath('styling').href} target="_blank" rel="noopener noreferrer">Book with the Loctician ↗</a></div>
       <div className="booking-v2-panel-heading"><h2 ref={heading} tabIndex={-1}>{step==='service'?'Choose a service':step==='barber'?'Choose your Barber':step==='schedule'?'Choose a date and time':'Review your appointment'}</h2>{service&&step!=='service'?<p>{service.serviceName}{step==='schedule'?` with ${staffId==='any'?'any available Barber':professionals.find(item=>item.staffId===staffId)?.professionalName??'your Barber'}`:''}.</p>:null}</div>
+      {preferredProfessional && (step === 'service' || step === 'barber') ? <p>Looking for {preferredProfessional}? Choose a service, then select their chair if it is available. You can also choose another Barber.</p> : null}
       {error?<p role="alert" className="form-error">{error}</p>:null}
       {loading?<p role="status">Loading services…</p>:!options.length?<><p>No website appointment options are available right now.</p><a className="button" href={getBookingPath('barber').href}>Continue to Booksy</a><button className="text-button" onClick={()=>{setLoading(true);setError('');setAttempt(value=>value+1);}}>Try again</button></>:null}
       {step==='service'?<div className="booking-v2-service-list">{services.map(item=>{const choices=options.filter(other=>other.serviceId===item.serviceId);return <button key={item.serviceId} onClick={()=>selectService(item)}><span><small>Barber services</small><strong>{item.serviceName}</strong></span><span><strong>From {money(Math.min(...choices.map(other=>other.priceCents)))}</strong><small>{Math.min(...choices.map(other=>other.durationMinutes))} min{new Set(choices.map(other=>other.durationMinutes)).size>1?' and up':''}</small></span></button>;})}</div>:null}

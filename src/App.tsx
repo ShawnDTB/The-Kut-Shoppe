@@ -109,7 +109,7 @@ export function App({ url }: AppProps) {
     ? '/account'
     : isStaffRoute || isAdminRoute
       ? '/account'
-      : isAdminRoute || normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
+      : normalizedUrl === '/cart' || normalizedUrl === '/checkout' || productMatch
         ? '/shop'
         : route.path;
 

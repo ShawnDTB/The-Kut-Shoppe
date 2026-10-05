@@ -8,11 +8,11 @@ const platformRoutes: RouteDefinition[] = [
   {
     path: '/book/walk-in',
     label: 'Walk-in List',
-    title: 'Join the Walk-In List | The Kut Shoppe',
-    description: 'Request a last-minute barber opening or let The Kut Shoppe propose another appointment time.',
+    title: 'Walk-In Availability | The Kut Shoppe',
+    description: 'Call The Kut Shoppe to check same-day walk-in availability.',
     eyebrow: 'Walk-ins',
     heading: 'Let the next open chair find you.',
-    intro: 'Join the waiting list for barber service in downtown Stroudsburg.',
+    intro: 'Call before visiting to check current barber availability.',
     status: 'placeholder',
   },
   {
@@ -59,7 +59,7 @@ const platformRoutes: RouteDefinition[] = [
     path: '/admin/access',
     label: 'Owner Access',
     title: 'Owner Access | The Kut Shoppe',
-    description: 'Development-only owner access for local platform review.',
+    description: 'Private staff access management for authorized shop accounts.',
     eyebrow: 'Administration',
     heading: 'Local owner access.',
     intro: 'Unavailable in production builds.',
@@ -148,8 +148,8 @@ const platformRoutes: RouteDefinition[] = [
   {
     path: '/staff/waitlist',
     label: 'Waitlist',
-    title: 'Walk-In Waitlist | The Kut Shoppe',
-    description: 'Private staff queue for walk-ins and last-minute appointment requests.',
+    title: 'Staff Workspace | The Kut Shoppe',
+    description: 'Private access to the current Kut Shoppe staff workspace.',
     eyebrow: 'Staff platform',
     heading: 'Manage the waiting list.',
     intro: 'Private staff access.',
@@ -158,8 +158,8 @@ const platformRoutes: RouteDefinition[] = [
   {
     path: '/staff/earnings',
     label: 'Staff Earnings',
-    title: 'Staff Earnings | The Kut Shoppe',
-    description: 'Private earnings ledger for approved Kut Shoppe staff.',
+    title: 'Staff Workspace | The Kut Shoppe',
+    description: 'Private access to the current Kut Shoppe staff workspace.',
     eyebrow: 'Staff platform',
     heading: 'Earnings and completed services.',
     intro: 'Private staff access.',
@@ -168,8 +168,8 @@ const platformRoutes: RouteDefinition[] = [
   {
     path: '/staff/payouts',
     label: 'Staff Payouts',
-    title: 'Staff Payouts | The Kut Shoppe',
-    description: 'Private payout tracking for approved Kut Shoppe staff.',
+    title: 'Staff Workspace | The Kut Shoppe',
+    description: 'Private access to the current Kut Shoppe staff workspace.',
     eyebrow: 'Staff platform',
     heading: 'Payout status and history.',
     intro: 'Private staff access.',
@@ -178,8 +178,8 @@ const platformRoutes: RouteDefinition[] = [
   {
     path: '/staff/notifications',
     label: 'Notifications',
-    title: 'Message Outbox | The Kut Shoppe',
-    description: 'Private transactional email and SMS activity for The Kut Shoppe staff.',
+    title: 'Staff Workspace | The Kut Shoppe',
+    description: 'Private access to the current Kut Shoppe staff workspace.',
     eyebrow: 'Staff platform',
     heading: 'Review customer message activity.',
     intro: 'Private staff access.',
@@ -250,7 +250,15 @@ const localBusinessJsonLd = JSON.stringify(localBusinessSchema).replaceAll('</',
 
 export function render(url: string) {
   const resolved = resolveRoute(url);
-  const route = publicLaunch && ['/book', '/shop', '/account', '/dashboard', '/cart', '/checkout'].includes(resolved.path) ? { ...resolved, status: 'placeholder', title: 'A fresh look is on the way | The Kut Shoppe', description: 'Our new online experience is getting its finishing touches. Visit The Kut Shoppe or book through our current providers.' } : resolved;
+  const path = normalizeUrl(url);
+  const booking = path === '/book' || path.startsWith('/book/');
+  const shopping = path === '/shop' || path.startsWith('/shop/') || ['/cart', '/checkout'].includes(path);
+  const accounts = ['/account', '/dashboard', '/staff'].includes(path) || path.startsWith('/staff/') || path.startsWith('/admin/');
+  const route = publicLaunch && (booking || shopping || accounts) ? {
+    ...resolved, path, status: 'placeholder',
+    title: booking ? 'Book with Our Current Providers | The Kut Shoppe' : shopping ? 'Online Shop Coming Soon | The Kut Shoppe' : 'Accounts Coming Soon | The Kut Shoppe',
+    description: booking ? 'Our new booking experience is under construction. Book barber services through Booksy or loc care with Crowned by Steph.' : shopping ? 'Our online shop is under construction. Call or visit The Kut Shoppe for product availability.' : 'Online accounts are coming soon. Book with our current providers or contact the shop for help.',
+  } : resolved;
   const canonical = `https://www.thekutshoppe.com${route.path === '/' ? '' : route.path}`;
   const robots = route.path === '/404' || route.status === 'placeholder' || route.status === 'private'
     ? '<meta name="robots" content="noindex, nofollow" />'
@@ -273,4 +281,4 @@ export function render(url: string) {
   };
 }
 
-export const staticRoutes = [...routes, ...platformRoutes].map(route => publicLaunch && ['/book', '/shop'].includes(route.path) ? { ...route, status: 'placeholder' } : route);
+export const staticRoutes = [...new Map([...routes, ...platformRoutes].map(route => [route.path, route])).values()].map(route => publicLaunch && ['/book', '/shop'].includes(route.path) ? { ...route, status: 'placeholder' } : route);

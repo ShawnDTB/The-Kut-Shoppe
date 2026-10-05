@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { business } from '../data/site';
+import { business, navigation as primaryNavigation } from '../data/site';
 import { shopClosedSummary, shopHours, shopHoursNote, shopHoursSummary } from '../data/hours';
 import { originalAssets } from '../data/visuals';
 import {
@@ -14,14 +14,6 @@ import { getCustomerSession, loadCustomerSession, subscribeToCustomerSession } f
 import { readCart as readLiveCart, subscribeToStorefrontChanges as subscribeLiveCart } from '../data/live-storefront';
 
 type HeaderAccount = Pick<PlatformAccount, 'name' | 'role'>;
-
-const primaryNavigation = [
-  ['Services', '/services'],
-  ['Gallery', '/gallery'],
-  ['Crew', '/team'],
-  ['Shop', '/shop'],
-  ['Reviews', '/reviews'],
-] as const;
 
 const socialLinks = [
   ['Instagram', 'https://www.instagram.com/thekutshoppe/'],
@@ -198,7 +190,7 @@ function Header({ currentPath }: { currentPath: string }) {
     return () => { unsubscribe(); unsubscribeCart(); };
   }, []);
 
-  if (currentPath === '/account') return <header className="workspace-site-header"><div className="container workspace-header-inner"><a className="workspace-brand" href="/" aria-label="The Kut Shoppe home"><img src={originalAssets.logo} alt="" width="42" height="42" /><strong>The Kut Shoppe</strong></a><nav aria-label="Workspace navigation"><a href="/">Back to website</a>{account ? <a href="/account?view=profile">My account</a> : <a href="/book">Book a visit</a>}</nav></div></header>;
+  if (!publicLaunch && currentPath === '/account') return <header className="workspace-site-header"><div className="container workspace-header-inner"><a className="workspace-brand" href="/" aria-label="The Kut Shoppe home"><img src={originalAssets.logo} alt="" width="42" height="42" /><strong>The Kut Shoppe</strong></a><nav aria-label="Workspace navigation"><a href="/">Back to website</a>{account ? <><a href="/dashboard">Dashboard</a><a href="/account?view=profile">My account</a></> : <a href="/book">Book a visit</a>}</nav></div></header>;
 
   return (
     <>
@@ -218,10 +210,10 @@ function Footer() {
       <div className="container footer-v6-primary">
         <section className="footer-v6-brand">
           <img src={originalAssets.logo} alt="The Kut Shoppe" width="88" height="88" loading="lazy" decoding="async" />
-          <div><p className="eyebrow">The Kut Shoppe</p><h2>A familiar chair on Main Street.</h2><p>Classic barbering, modern styling, and personal service in downtown Stroudsburg.</p><div className="footer-v6-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href="/account">Account</a></div></div>
+          <div><p className="eyebrow">The Kut Shoppe</p><h2>A familiar chair on Main Street.</h2><p>Classic barbering, modern styling, and personal service in downtown Stroudsburg.</p><div className="footer-v6-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href="/account">{publicLaunch ? 'Accounts soon' : 'My account'}</a></div></div>
         </section>
         <section className="footer-v6-column"><h3>Visit</h3><strong>518 Main Street</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and hours <Arrow /></a></section>
-        <nav className="footer-v6-column" aria-label="Explore The Kut Shoppe"><h3>Explore</h3><a href="/services">Services</a><a href="/gallery">Gallery</a><a href="/team">Crew</a><a href="/shop">Shop</a><a href="/reviews">Reviews</a></nav>
+        <nav className="footer-v6-column" aria-label="Explore The Kut Shoppe"><h3>Explore</h3>{primaryNavigation.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav>
         <section className="footer-v6-column"><h3>Connect</h3>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}<span>{shopHoursSummary}</span><span>{shopClosedSummary}</span></section>
       </div>
       <div className="container footer-v6-bottom"><span>© {new Date().getFullYear()} The Kut Shoppe LLC</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Platform by Designed to Breakthrough LLC</span></div></div>
@@ -240,6 +232,6 @@ function isOperationalPath(path: string) {
 }
 
 export function SiteLayout({ children, currentPath }: { children: ReactNode; currentPath: string }) {
-  const operational = isOperationalPath(currentPath);
+  const operational = !publicLaunch && isOperationalPath(currentPath);
   return <div className={`route-shell-v6 ${operational ? 'is-operational' : 'is-public'}`}><div className="site-shell"><Header currentPath={currentPath} /><main id="main-content">{children}</main><Footer /></div></div>;
 }

@@ -208,6 +208,7 @@ export const navigation = [
   ['Gallery', '/gallery'],
   ['Crew', '/team'],
   ['Shop', '/shop'],
+  ['Reviews', '/reviews'],
 ] as const;
 
 export const routes: RouteDefinition[] = [
@@ -324,11 +325,11 @@ export const routes: RouteDefinition[] = [
     label: 'Shop',
     title: 'Shop Grooming & Hair-Care Products | The Kut Shoppe',
     description:
-      'Explore the future online home for approved grooming, hair-care, accessory, and Kut Shoppe merchandise.',
+      'Explore product availability and pickup or shipping requests from The Kut Shoppe.',
     eyebrow: 'The Kut Shoppe store',
     heading: 'Products for the look between appointments.',
     intro:
-      'The store is being structured for verified inventory, clear categories, secure checkout, and future customer accounts.',
+      'Browse available products and review your order request before sending it to the shop.',
     status: 'requires-verification',
   },
   {
@@ -366,13 +367,13 @@ export const routes: RouteDefinition[] = [
   {
     path: '/reviews',
     label: 'Reviews',
-    title: 'Verified Client Reviews | The Kut Shoppe',
+    title: 'Client Reviews | The Kut Shoppe',
     description:
-      'Read verified client feedback and visit The Kut Shoppe’s current barber booking profile.',
+      'Read excerpts from Google reviews and find the latest client feedback for The Kut Shoppe.',
     eyebrow: 'Client trust',
     heading: 'A reputation built one appointment at a time.',
     intro:
-      'The public barber booking profile currently shows a 5.0 rating from hundreds of verified client reviews.',
+      'Read client feedback, then visit Google for complete reviews and current ratings.',
     status: 'verified-booking-platform',
   },
   {
@@ -419,7 +420,7 @@ export const routes: RouteDefinition[] = [
     eyebrow: 'Legal',
     heading: 'Privacy information.',
     intro:
-      'Final privacy language will reflect the analytics, commerce, account, and contact services enabled for production.',
+      'How The Kut Shoppe handles information when you use the website and its available services.',
     status: 'placeholder',
   },
   {
@@ -430,7 +431,7 @@ export const routes: RouteDefinition[] = [
     eyebrow: 'Legal',
     heading: 'Website terms.',
     intro:
-      'Final terms will distinguish this website from the policies maintained by external booking and future commerce providers.',
+      'Website terms and the separate policies of external booking providers.',
     status: 'placeholder',
   },
 ];

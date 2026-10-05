@@ -1,3 +1,4 @@
+import { publicLaunch } from '../data/runtime';
 import { business, team } from '../data/site';
 import {
   shopClosedSummary,
@@ -98,7 +99,7 @@ function AboutAndCrew() {
         <figure className="compact-about-image"><img src={originalAssets.trustPhoto} alt="The Kut Shoppe prepared for a client visit" width="1000" height="760" loading="lazy" decoding="async" /></figure>
         <div className="compact-about-copy">
           <p className="eyebrow">A modern twist on classic cuts</p><h2>A Main Street shop built around the person in the chair.</h2><p className="lede">The Kut Shoppe brings barbers and a loctician together in downtown Stroudsburg, a few steps away from the Sherman Theater.</p>
-          <div className="compact-crew-grid" aria-label="The Kut Shoppe crew">{team.map((member) => <a className="compact-crew-card" href="/book" key={member.name}>{member.photo ? <img src={member.photo} alt="" width="112" height="112" loading="lazy" decoding="async" /> : <span className="compact-crew-monogram" aria-hidden="true">CS</span>}<span><strong>{member.shortName}</strong><small>{member.bookingType === 'styling' ? 'Loctician' : member.specialty}</small></span></a>)}</div>
+          <div className="compact-crew-grid" aria-label="The Kut Shoppe crew">{team.map((member) => <a className="compact-crew-card" href={`/team#${member.shortName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`} aria-label={`Meet ${member.shortName}`} key={member.name}>{member.photo ? <img src={member.photo} alt="" width="112" height="112" loading="lazy" decoding="async" /> : <span className="compact-crew-monogram" aria-hidden="true">CS</span>}<span><strong>{member.shortName}</strong><small>{member.bookingType === 'styling' ? 'Loctician' : member.specialty}</small></span></a>)}</div>
           <a className="text-link" href="/team">Meet the crew <Arrow /></a>
         </div>
       </div>
@@ -109,7 +110,7 @@ function AboutAndCrew() {
 function ShopTeaser() {
   return (
     <section className="shop-teaser shop-teaser-solid" aria-labelledby="shop-teaser-heading">
-      <div className="container shop-teaser-grid"><img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="520" height="420" loading="lazy" decoding="async" /><div><p className="eyebrow">Products from the shop</p><h2 id="shop-teaser-heading">Keep the fresh look going.</h2><p>Our online shop is getting ready. Visit the shop or call to ask about products for your routine.</p></div><a className="button button-secondary" href="/shop">Visit the shop <Arrow /></a></div>
+      <div className="container shop-teaser-grid"><img src={originalAssets.productsPhoto} alt="Product display inside The Kut Shoppe" width="520" height="420" loading="lazy" decoding="async" /><div><p className="eyebrow">Products from the shop</p><h2 id="shop-teaser-heading">Keep the fresh look going.</h2><p>{publicLaunch ? 'Our online shop is getting ready. Visit the shop or call to ask about products for your routine.' : 'Browse available products and send a pickup or shipping request. The shop will confirm your request and any additional charges.'}</p></div><a className="button button-secondary" href="/shop">{publicLaunch ? 'Online shop updates' : 'Browse products'} <Arrow /></a></div>
     </section>
   );
 }

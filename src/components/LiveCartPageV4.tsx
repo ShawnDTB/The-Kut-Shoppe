@@ -55,21 +55,21 @@ export function CartPageV4() {
       <div className="container route-wide">
         <a className="text-link commerce-back-link v4-cart-back" href="/shop">← Back to Shop</a>
         <header className="commerce-page-heading commerce-page-heading-compact v4-cart-heading">
-          <div><h1>{lines.length ? 'Your cart.' : 'Your cart is empty.'}</h1><p>{lines.length ? 'Review quantities before checkout.' : 'Return to the Shop to add a product.'}</p></div>
+          <div><h1>{lines.length ? 'Your cart.' : 'Your cart is empty.'}</h1><p>{lines.length ? 'Review quantities before submitting your order request.' : 'Return to the Shop to add a product.'}</p></div>
         </header>
 
         {lines.length ? (
           <div className="commerce-cart-layout">
-            <main className="commerce-cart-lines commerce-cart-lines-v3">
+            <div className="commerce-cart-lines commerce-cart-lines-v3">
               {lines.map((line) => (
                 <article key={`${line.product.id}-${line.variant.id}`}>
-                  <a className="commerce-cart-image" href={`/shop/${line.product.slug}`}><ProductImage product={line.product} variant={line.variant} /></a>
+                  <a className="commerce-cart-image" aria-label={`View ${line.product.name}`} href={`/shop/${line.product.slug}`}><ProductImage product={line.product} variant={line.variant} /></a>
                   <div className="commerce-cart-line-copy"><p className="eyebrow">{line.product.category}</p><h2>{line.product.name}</h2><p>{line.variant.name} · {formatMoney(line.variant.priceCents)} each</p><QuantityControl line={line} onChange={(quantity) => setCart(updateCartQuantity(line.product.id, line.variant.id, quantity))} /><button className="text-button" type="button" onClick={() => setCart(updateCartQuantity(line.product.id, line.variant.id, 0))}>Remove from cart</button></div>
                   <strong>{formatMoney(line.variant.priceCents * line.item.quantity)}</strong>
                 </article>
               ))}
-            </main>
-            <aside className="commerce-order-summary commerce-order-summary-v3"><p className="eyebrow">Summary</p><dl><div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Shipping and tax</dt><dd>Calculated next</dd></div></dl><a className="button" href="/checkout">Checkout</a></aside>
+            </div>
+            <aside className="commerce-order-summary commerce-order-summary-v3"><p className="eyebrow">Summary</p><dl><div><dt>Subtotal</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Shipping and tax</dt><dd>Confirmed by the shop</dd></div></dl><p>No payment is collected here. The shop confirms your request and any additional charges.</p><a className="button" href="/checkout">Review order request</a></aside>
           </div>
         ) : <div className="commerce-empty-catalog"><a className="button" href="/shop">Browse products</a></div>}
       </div>

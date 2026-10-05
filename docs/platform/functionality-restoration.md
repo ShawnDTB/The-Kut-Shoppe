@@ -1,5 +1,7 @@
 # Functionality restoration: booking and dashboards
 
+> Historical implementation notes. For the current feature status and customer-flow review, see the [October 5 cohesion audit](../audits/2026-10-05/Website-Cohesion-Audit.md).
+
 ## Finding
 
 The user's observation is correct: the account/backend migration improved data handling while reducing what the interface offered at the main entry points. Visual cleanup and security work did not preserve the original product experience completely.
@@ -30,7 +32,7 @@ The earlier UI was interactive: it had a service → barber → schedule → det
 
 `ProductionBooking` now checks the server configuration and opens the actual account booking route when enabled. Signing in or verifying registration at `/book` retains the booking intent. Customers can also open Book a visit from account navigation. Guest provider links go directly to the providers instead of sending users back into the sign-in screen.
 
-`CustomerBooking` preserves the backend request contract while separating service, professional, location, date and time. Selecting a different upstream option invalidates previously loaded availability. Selection is locked during review, submission, and uncertain outcomes. Retrying an uncertain response uses the original request key. Quick dates are calendar dates in the selected location's timezone; the API still enforces actual working hours, booking windows, notice periods and conflicts.
+`RestoredBooking` (the shared website and account booking screen) preserves the backend request contract while separating service, professional, location, date and time. Selecting a different upstream option invalidates previously loaded availability. Selection is locked during review, submission, and uncertain outcomes. Retrying an uncertain response uses the original request key. Quick dates are calendar dates in the selected location's timezone; the API still enforces actual working hours, booking windows, notice periods and conflicts.
 
 `CustomerOverview` is the default account landing surface. `/api/v1/me/dashboard` reads a consistent D1 batch with server-scoped counts, nearest upcoming/active visit, four recently created appointments and three recent orders. Counts are not derived from truncated history. The owner and staff roles do not widen this customer view to other customers. No notes, password material or unrelated customer data are included. External provider appointments are not imported automatically, and empty orders are not filled with made-up purchases.
 

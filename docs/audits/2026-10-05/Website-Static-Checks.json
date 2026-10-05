@@ -1,0 +1,260 @@
+{
+  "checkedAt": "2026-10-05T20:49:26.669Z",
+  "method": "Static prerendered HTML parsed with jsdom; no browser execution or visual/contrast measurements",
+  "routes": 36,
+  "issues": [],
+  "summary": [
+    {
+      "route": "/",
+      "title": "The Kut Shoppe | Barbershop & Loc Care in Stroudsburg, PA",
+      "h1": "The Kut Shoppe barbershop and loc care in downtown Stroudsburg",
+      "links": 50,
+      "issues": 0
+    },
+    {
+      "route": "/visit",
+      "title": "Visit The Kut Shoppe | 518 Main Street, Stroudsburg",
+      "h1": "Find us in downtown Stroudsburg.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/terms",
+      "title": "Website Terms | The Kut Shoppe",
+      "h1": "Website terms.",
+      "links": 27,
+      "issues": 0
+    },
+    {
+      "route": "/team",
+      "title": "Meet The Kut Shoppe Crew | Stroudsburg",
+      "h1": "Meet the Crew.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/waitlist",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/setup",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/settings",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/requests",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/payouts",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/notifications",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/login",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": null,
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/staff/earnings",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/staff/calendar",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/shop",
+      "title": "Online Shop Coming Soon | The Kut Shoppe",
+      "h1": "Good things are on the shelf.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/services",
+      "title": "Current Barbering & Loc Services | The Kut Shoppe",
+      "h1": "Services and pricing.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/services/locs-braids",
+      "title": "Locs, Braids & Retwists | Crowned by Steph",
+      "h1": "Locs, braids, twists, and retwists.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/services/kids-cuts",
+      "title": "Kids Haircuts in Stroudsburg | The Kut Shoppe",
+      "h1": "Current kids services for ages 3 through 12.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/services/haircuts",
+      "title": "Adult & Teen Haircuts in Stroudsburg | The Kut Shoppe",
+      "h1": "Adult and teen cuts, exactly as currently listed.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/services/color-scalp-care",
+      "title": "Color, Washing & Hair Care | The Kut Shoppe",
+      "h1": "Care beyond the cut.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/services/beards-shaves",
+      "title": "Beard & Line-Up Combinations | The Kut Shoppe",
+      "h1": "Haircut and facial-hair combinations.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/reviews",
+      "title": "Client Reviews | The Kut Shoppe",
+      "h1": "The work speaks. Clients confirm it.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/products",
+      "title": "Shop | The Kut Shoppe",
+      "h1": null,
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/privacy",
+      "title": "Privacy Policy | The Kut Shoppe",
+      "h1": "Privacy policy.",
+      "links": 27,
+      "issues": 0
+    },
+    {
+      "route": "/gallery",
+      "title": "Haircut, Loc & Braid Gallery | The Kut Shoppe",
+      "h1": "Discover the talent behind every finish.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/dashboard",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/contact",
+      "title": "Contact The Kut Shoppe | Stroudsburg, PA",
+      "h1": "Call the shop when you need guidance.",
+      "links": 26,
+      "issues": 0
+    },
+    {
+      "route": "/checkout",
+      "title": "Online Shop Coming Soon | The Kut Shoppe",
+      "h1": "Good things are on the shelf.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/cart",
+      "title": "Online Shop Coming Soon | The Kut Shoppe",
+      "h1": "Good things are on the shelf.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/book",
+      "title": "Book with Our Current Providers | The Kut Shoppe",
+      "h1": "A little trim. A fresh start.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/book/walk-in",
+      "title": "Book with Our Current Providers | The Kut Shoppe",
+      "h1": "A little trim. A fresh start.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/admin/products",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/admin/orders",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/admin/access",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/account",
+      "title": "Accounts Coming Soon | The Kut Shoppe",
+      "h1": "Your own little corner of the shop.",
+      "links": 29,
+      "issues": 0
+    },
+    {
+      "route": "/about",
+      "title": "Meet The Kut Shoppe Crew | Stroudsburg",
+      "h1": null,
+      "links": 26,
+      "issues": 0
+    }
+  ]
+}

@@ -1,0 +1,3326 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/",
+    "bytes": 18965,
+    "headings": [
+      {
+        "level": "title",
+        "text": "The Kut Shoppe | Barbershop &amp; Loc Care in Stroudsburg, PA"
+      },
+      {
+        "level": "h1",
+        "text": "The Kut Shoppe barbershop and loc care in downtown Stroudsburg"
+      },
+      {
+        "level": "h2",
+        "text": "You know the look. We will take care of the rest."
+      },
+      {
+        "level": "h2",
+        "text": "Check the work out. Then choose your chair."
+      },
+      {
+        "level": "h2",
+        "text": "A Main Street shop built around the person in the chair."
+      },
+      {
+        "level": "h2",
+        "text": "Keep the fresh look going."
+      },
+      {
+        "level": "h2",
+        "text": "Your chair is ready."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book",
+        "text": "Book now →"
+      },
+      {
+        "href": "#services",
+        "text": ""
+      },
+      {
+        "href": "/visit",
+        "text": "Visit 518 Main Street A few steps away from the Sherman Theater"
+      },
+      {
+        "href": "/visit",
+        "text": "Hours Mon-Sat · Hours vary by day Sunday · Closed"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Questions 570-421-5887 Call the shop directly"
+      },
+      {
+        "href": "/services/haircuts",
+        "text": "Haircuts"
+      },
+      {
+        "href": "/services/beards-shaves",
+        "text": "Shaving"
+      },
+      {
+        "href": "/services/beards-shaves",
+        "text": "Beard trims"
+      },
+      {
+        "href": "/services/color-scalp-care",
+        "text": "Hair coloring"
+      },
+      {
+        "href": "/services/color-scalp-care",
+        "text": "Scalp treatments"
+      },
+      {
+        "href": "/services/locs-braids",
+        "text": "Locs and styling"
+      },
+      {
+        "href": "/book",
+        "text": "Book now →"
+      },
+      {
+        "href": "/services",
+        "text": "Services and pricing"
+      },
+      {
+        "href": "/gallery",
+        "text": "View the full gallery →"
+      },
+      {
+        "href": "/reviews",
+        "text": "Read client reviews →"
+      },
+      {
+        "href": "/book",
+        "text": "KasH Barber"
+      },
+      {
+        "href": "/book",
+        "text": "Mr. Glen Barber"
+      },
+      {
+        "href": "/book",
+        "text": "Kris-P Barber"
+      },
+      {
+        "href": "/book",
+        "text": "CS Steph Loctician"
+      },
+      {
+        "href": "/team",
+        "text": "Meet the crew →"
+      },
+      {
+        "href": "/shop",
+        "text": "Visit the shop →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now →"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "https://www.google.com/maps/search/?api=1&query=The%20Kut%20Shoppe%2C%20518%20Main%20Street%2C%20Stroudsburg%2C%20PA%2018360",
+        "text": "Open directions →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/services",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/services",
+    "bytes": 10171,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Current Barbering &amp; Loc Services | The Kut Shoppe"
+      },
+      {
+        "level": "h2",
+        "text": "Barber services"
+      },
+      {
+        "level": "h3",
+        "text": "Adult and teen barber services"
+      },
+      {
+        "level": "h3",
+        "text": "Senior barber services"
+      },
+      {
+        "level": "h3",
+        "text": "Kids barber services"
+      },
+      {
+        "level": "h2",
+        "text": "Loc care with Crowned by Steph"
+      },
+      {
+        "level": "h3",
+        "text": "Locs, braids and styling"
+      },
+      {
+        "level": "h3",
+        "text": "Color, washing and scalp care"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?barber=any",
+        "text": "Book now →"
+      },
+      {
+        "href": "/book?type=loctician",
+        "text": "Book Steph →"
+      },
+      {
+        "href": "/services/locs-braids",
+        "text": "Service details →"
+      },
+      {
+        "href": "/services/color-scalp-care",
+        "text": "Service details →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/services/haircuts",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/services/haircuts",
+    "bytes": 7623,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Adult &amp; Teen Haircuts in Stroudsburg | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Adult and teen cuts, exactly as currently listed."
+      },
+      {
+        "level": "h2",
+        "text": "Services and pricing"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?barber=any",
+        "text": "Book now →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/services/kids-cuts",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/services/kids-cuts",
+    "bytes": 7152,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Kids Haircuts in Stroudsburg | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Current kids services for ages 3 through 12."
+      },
+      {
+        "level": "h2",
+        "text": "Services and pricing"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?barber=any",
+        "text": "Book now →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/services/beards-shaves",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/services/beards-shaves",
+    "bytes": 7307,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Beard &amp; Line-Up Combinations | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Haircut and facial-hair combinations."
+      },
+      {
+        "level": "h2",
+        "text": "Services and pricing"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?barber=any",
+        "text": "Book now →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/services/locs-braids",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/services/locs-braids",
+    "bytes": 7015,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Locs, Braids &amp; Retwists | Crowned by Steph"
+      },
+      {
+        "level": "h1",
+        "text": "Locs, braids, twists, and retwists."
+      },
+      {
+        "level": "h2",
+        "text": "Services and availability"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?type=loctician",
+        "text": "Book now →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/services/color-scalp-care",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/services/color-scalp-care",
+    "bytes": 7042,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Color, Washing &amp; Hair Care | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Care beyond the cut."
+      },
+      {
+        "level": "h2",
+        "text": "Services and availability"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?type=loctician",
+        "text": "Book now →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/team",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/team",
+    "bytes": 8467,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Meet The Kut Shoppe Crew | Stroudsburg"
+      },
+      {
+        "level": "h1",
+        "text": "Meet the Crew."
+      },
+      {
+        "level": "h2",
+        "text": "KasH The Fadeologist"
+      },
+      {
+        "level": "h2",
+        "text": "Mr. Glen The Kut Doctor"
+      },
+      {
+        "level": "h2",
+        "text": "Kris-P Fades"
+      },
+      {
+        "level": "h2",
+        "text": "Crowned by Steph"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/book?barber=kash",
+        "text": "Book KasH →"
+      },
+      {
+        "href": "/book?barber=mr-glen",
+        "text": "Book Mr. Glen →"
+      },
+      {
+        "href": "/book?barber=kris-p",
+        "text": "Book Kris-P →"
+      },
+      {
+        "href": "/book?type=loctician",
+        "text": "Book Steph →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/gallery",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/gallery",
+    "bytes": 9977,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Haircut, Loc &amp; Braid Gallery | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Discover the talent behind every finish."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "View Instagram ↗"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/reviews",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/reviews",
+    "bytes": 8345,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Verified Client Reviews | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "The work speaks. Clients confirm it."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "https://www.google.com/maps/search/?api=1&query=The+Kut+Shoppe+518+Main+Street+Stroudsburg+PA",
+        "text": "Read all Google reviews ↗"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/visit",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/visit",
+    "bytes": 8776,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Visit The Kut Shoppe | 518 Main Street, Stroudsburg"
+      },
+      {
+        "level": "h1",
+        "text": "Find us in downtown Stroudsburg."
+      },
+      {
+        "level": "h2",
+        "text": "Shop hours"
+      },
+      {
+        "level": "h2",
+        "text": "Check current availability."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "https://www.google.com/maps/search/?api=1&query=The%20Kut%20Shoppe%2C%20518%20Main%20Street%2C%20Stroudsburg%2C%20PA%2018360",
+        "text": "Open directions →"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/contact",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/contact",
+    "bytes": 6759,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Contact The Kut Shoppe | Stroudsburg, PA"
+      },
+      {
+        "level": "h1",
+        "text": "Call the shop when you need guidance."
+      },
+      {
+        "level": "h2",
+        "text": "Call for the fastest answer."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/book",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/book",
+    "bytes": 7754,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "A little trim. A fresh start."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "https://booksy.com/en-us/71309_the-kut-shoppe_braids-locs_34196_stroudsburg",
+        "text": "Book with a barber ↗ Haircuts, fades &amp; beard care Continue to Booksy · opens a new tab"
+      },
+      {
+        "href": "https://crownedbysteph.glossgenius.com",
+        "text": "Book with the loctician ↗ Locs, braids &amp; styling with Steph Continue to GlossGenius · opens a new tab"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/shop",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/shop",
+    "bytes": 7233,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Good things are on the shelf."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call about products"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/account",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/account",
+    "bytes": 5774,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Your own little corner of the shop."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe"
+      },
+      {
+        "href": "/",
+        "text": "Back to website"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/privacy",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/privacy",
+    "bytes": 11004,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Privacy Policy | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Privacy policy."
+      },
+      {
+        "level": "h2",
+        "text": "Information we collect"
+      },
+      {
+        "level": "h2",
+        "text": "How information is used"
+      },
+      {
+        "level": "h2",
+        "text": "Payments and payouts"
+      },
+      {
+        "level": "h2",
+        "text": "Account information"
+      },
+      {
+        "level": "h2",
+        "text": "Cookies and local storage"
+      },
+      {
+        "level": "h2",
+        "text": "Account service providers"
+      },
+      {
+        "level": "h2",
+        "text": "Sharing information"
+      },
+      {
+        "level": "h2",
+        "text": "Retention and security"
+      },
+      {
+        "level": "h2",
+        "text": "Your choices"
+      },
+      {
+        "level": "h2",
+        "text": "Children"
+      },
+      {
+        "level": "h2",
+        "text": "Changes and contact"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/contact",
+        "text": "contact page"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/terms",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/terms",
+    "bytes": 10549,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Website Terms | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Website terms."
+      },
+      {
+        "level": "h2",
+        "text": "Using the website"
+      },
+      {
+        "level": "h2",
+        "text": "Appointments and waitlist"
+      },
+      {
+        "level": "h2",
+        "text": "Accounts"
+      },
+      {
+        "level": "h2",
+        "text": "Products, pricing, and inventory"
+      },
+      {
+        "level": "h2",
+        "text": "Orders, pickup, and shipping"
+      },
+      {
+        "level": "h2",
+        "text": "Payments, returns, and refunds"
+      },
+      {
+        "level": "h2",
+        "text": "Third-party services"
+      },
+      {
+        "level": "h2",
+        "text": "Website content"
+      },
+      {
+        "level": "h2",
+        "text": "Availability and limitations"
+      },
+      {
+        "level": "h2",
+        "text": "Governing law and changes"
+      },
+      {
+        "level": "h2",
+        "text": "Contact"
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/contact",
+        "text": "contact page"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/cart",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/cart",
+    "bytes": 7233,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Good things are on the shelf."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call about products"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/checkout",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/checkout",
+    "bytes": 7241,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Good things are on the shelf."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/visit",
+        "text": "518 Main Street · Downtown Stroudsburg"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe Classic barbering · Modern styling"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call the shop 570-421-5887"
+      },
+      {
+        "href": "/account",
+        "text": "Accounts soon"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call about products"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/dashboard",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/dashboard",
+    "bytes": 5778,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Your own little corner of the shop."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe"
+      },
+      {
+        "href": "/",
+        "text": "Back to website"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/staff",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/staff",
+    "bytes": 5648,
+    "headings": [
+      {
+        "level": "title",
+        "text": "Staff Dashboard | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Your own little corner of the shop."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe"
+      },
+      {
+        "href": "/",
+        "text": "Back to website"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  },
+  {
+    "path": "/admin/access",
+    "status": 200,
+    "resolved": "https://www.thekutshoppe.com/admin/access",
+    "bytes": 5774,
+    "headings": [
+      {
+        "level": "title",
+        "text": "A fresh look is on the way | The Kut Shoppe"
+      },
+      {
+        "level": "h1",
+        "text": "Your own little corner of the shop."
+      },
+      {
+        "level": "h2",
+        "text": "A familiar chair on Main Street."
+      },
+      {
+        "level": "h3",
+        "text": "Visit"
+      },
+      {
+        "level": "h3",
+        "text": "Explore"
+      },
+      {
+        "level": "h3",
+        "text": "Connect"
+      }
+    ],
+    "links": [
+      {
+        "href": "#main-content",
+        "text": "Skip to main content"
+      },
+      {
+        "href": "/",
+        "text": "The Kut Shoppe"
+      },
+      {
+        "href": "/",
+        "text": "Back to website"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/book",
+        "text": "Book a visit"
+      },
+      {
+        "href": "/visit",
+        "text": "Visit the shop"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "Call 570-421-5887"
+      },
+      {
+        "href": "/",
+        "text": "← Back to the shop’s homepage"
+      },
+      {
+        "href": "/book",
+        "text": "Book now"
+      },
+      {
+        "href": "/account",
+        "text": "Account"
+      },
+      {
+        "href": "tel:+15704215887",
+        "text": "570-421-5887"
+      },
+      {
+        "href": "/visit",
+        "text": "Directions and hours →"
+      },
+      {
+        "href": "/services",
+        "text": "Services"
+      },
+      {
+        "href": "/gallery",
+        "text": "Gallery"
+      },
+      {
+        "href": "/team",
+        "text": "Crew"
+      },
+      {
+        "href": "/shop",
+        "text": "Shop"
+      },
+      {
+        "href": "/reviews",
+        "text": "Reviews"
+      },
+      {
+        "href": "https://www.instagram.com/thekutshoppe/",
+        "text": "Instagram ↗"
+      },
+      {
+        "href": "https://www.facebook.com/TheKutShoppe/",
+        "text": "Facebook ↗"
+      },
+      {
+        "href": "/privacy",
+        "text": "Privacy"
+      },
+      {
+        "href": "/terms",
+        "text": "Terms"
+      }
+    ]
+  }
+]

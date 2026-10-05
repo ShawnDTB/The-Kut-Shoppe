@@ -39,7 +39,7 @@ export function ReviewsPageV4() {
 
         <div className="reviews-showcase v4-reviews-showcase">
           <section className="reviews-rating-band v4-reviews-rating-band">
-            <div><span className="reviews-stars" aria-label="4.9 out of 5 stars">★★★★★</span><strong>4.9</strong><small>59 Google reviews</small></div>
+            <div><strong>Client feedback</strong><small>From Google reviews</small></div>
             <p>Every testimonial below preserves the customer’s original wording. Open Google to read the complete reviews and the latest feedback.</p>
             <a className="button" href={googleReviewsUrl} target="_blank" rel="noopener noreferrer">Read all Google reviews <span aria-hidden="true">↗</span></a>
           </section>

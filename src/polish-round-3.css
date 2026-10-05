@@ -528,8 +528,8 @@
 
 .reviews-rating-band strong {
   font-family: var(--heading-serif);
-  font-size: clamp(3.5rem, 7vw, 6.5rem);
-  line-height: 0.85;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.1;
 }
 
 .reviews-stars {
