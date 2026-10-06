@@ -327,12 +327,13 @@
   }
 
   .booking-v2-progress {
-    grid-template-columns: repeat(4, minmax(4.5rem, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     overflow-x: auto;
   }
 
   .booking-v2-progress li {
-    min-width: 5.5rem;
+    min-width: 0;
+    padding-inline: 0.25rem;
     justify-content: center;
     flex-direction: column;
     gap: 0.3rem;

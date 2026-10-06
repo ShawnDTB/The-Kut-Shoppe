@@ -15,6 +15,21 @@ Use Node 22.13 or newer. Open **http://localhost:8788/account** in Chrome or Edg
 
 The terminal prints the local inbox URL and the generated credentials file: `.wrangler/review/accounts.json`. Open that file locally for the random passwords for `customer@example.test`, `staff@example.test`, and `owner@example.test`. These identities exist only in the review database. No shared password is committed.
 
+## Reproducible review accounts and MFA
+
+To preserve an older review database and start an isolated fixture, use a named workspace in PowerShell:
+
+```powershell
+$env:REVIEW_WORKSPACE = 'cohesion-2026-10-06'
+npm run review
+```
+
+The name accepts 1–48 lowercase letters, digits, or hyphens. The runner stores its database, encryption keys, passwords, and authenticator setup keys under `.wrangler/review-cohesion-2026-10-06/`. The original `.wrangler/review/` is preserved. Reusing the name reuses the fixture; choose another name for a fresh dataset. Clear the environment variable to return to the default workspace.
+
+New workspaces include customer, staff (barber), manager, and owner accounts. Open `accounts.json` locally for passwords. Named workspaces enroll staff MFA through the real API and save `authenticators.json` locally. Use its setup key in an authenticator, or one unused recovery code with the account password at the unlock form. Recovery codes work once; mark consumed codes in your review notes. Enrollment and unlock still use the normal production checks. Previously enrolled accounts without saved review keys are preserved; choose a new workspace instead of disabling their MFA.
+
+These files contain **local test credentials only** and are ignored by Git. Keep the folder private to your Windows account, never upload it, and preserve its database and keys together. The runner does not print passwords or MFA secrets, expose them through the site, or change hosted accounts. A fresh browser session may be needed when switching workspaces at the same localhost origin.
+
 ## Review the implemented flows
 
 | Area | Steps |
@@ -48,4 +63,4 @@ The already ignored `.wrangler/review/` folder holds the database, keys, and gen
 - Online payments, automated order email, tax/shipping quotes and refunds. Unpaid order requests and inventory reservations are implemented; these do not prove payment.
 - Browser/mobile acceptance and the deployment runbook's release checks. Local API checks do not establish production readiness.
 
-`main` and the live WordPress site remain unchanged. This is a working local environment for implemented features, not a claim that every planned feature is finished.
+Running this review does not change `main` or the live Cloudflare site. This is a working local environment for implemented features, not a claim that every planned feature is finished.

@@ -48,3 +48,23 @@ it('lets the professional review a cancellation and retains the same decision ke
   expect(element.textContent).toContain('Cancellation approved.');
   expect(element.querySelector('form')).toBeNull();
 });
+
+it.each(['requested', 'waitlisted', 'declined', 'cancelled', 'completed'])('does not describe a %s appointment as reserved for rescheduling', async (status) => {
+  api.mockResolvedValueOnce({ appointment: { ...appointment, status, reschedulingEnabled: true, canRequestCancellation: false, canDownloadCalendar: false } });
+  await act(async () => root.render(createElement(CustomerAppointmentDetails, { id: 'visit', onBack: vi.fn() })));
+  expect(element.textContent).not.toContain('Reschedule this visit');
+  expect(element.textContent).not.toContain('Confirmed time:');
+  expect(api).toHaveBeenCalledTimes(1);
+  if (status === 'requested') expect(element.textContent).toContain('This visit is not confirmed yet');
+});
+
+it('offers rescheduling after the appointment is confirmed', async () => {
+  api.mockResolvedValueOnce({ appointment: { ...appointment, reschedulingEnabled: true } }).mockResolvedValueOnce({
+    updatedAt: 'original', version: 0, startsAt: appointment.startsAt, endsAt: appointment.endsAt,
+    priceCents: 3000, timeZone: 'America/New_York', canRequest: true, canResolve: false, change: null,
+  });
+  await act(async () => root.render(createElement(CustomerAppointmentDetails, { id: 'visit', onBack: vi.fn() })));
+  expect(element.textContent).toContain('Reschedule this visit');
+  expect(element.textContent).toContain('Confirmed time:');
+  expect(element.querySelector('input[type="date"]')).not.toBeNull();
+});

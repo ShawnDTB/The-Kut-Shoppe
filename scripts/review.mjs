@@ -1,6 +1,6 @@
 // Loopback-only review of the real API. This file is never a deployed entrypoint.
 import { createServer } from 'node:http';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { URL } from 'node:url';
 import { resolve, sep, extname } from 'node:path';
@@ -10,7 +10,9 @@ import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { migrationStatements } from './migration-statements.mjs';
 
 const origin = 'http://localhost:8788';
-const root = '.wrangler/review';
+const workspace = process.env.REVIEW_WORKSPACE;
+if (workspace !== undefined && !/^[a-z0-9][a-z0-9-]{0,47}$/.test(workspace)) throw new Error('REVIEW_WORKSPACE must be 1–48 lowercase letters, digits, or hyphens.');
+const root = workspace ? `.wrangler/review-${workspace}` : '.wrangler/review';
 const inboxToken = randomBytes(32).toString('hex');
 const deliveries = [];
 await mkdir(root, { recursive: true, mode: 0o700 });
@@ -50,12 +52,12 @@ try {
     await db.batch([...statements.map((sql) => db.prepare(sql)), db.prepare('INSERT INTO local_review_migrations(name) VALUES (?)').bind(name)]);
   }
   // Bootstrap only this dedicated local database. No application role-grant route.
-  const call = (path, body) => worker.dispatchFetch(`${origin}/api/v1${path}`, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Kut-Request': '1', 'CF-Connecting-IP': '127.0.0.1' }, body: JSON.stringify(body) });
+  const call = (path, body, cookie = '') => worker.dispatchFetch(`${origin}/api/v1${path}`, { method: 'POST', headers: { Origin: origin, Cookie: cookie, 'Content-Type': 'application/json', 'X-Kut-Request': '1', 'CF-Connecting-IP': '127.0.0.1' }, body: JSON.stringify(body) });
   let accounts;
   try { accounts = JSON.parse(await readFile(`${root}/accounts.json`, 'utf8')); }
   catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    accounts = ['customer', 'staff', 'owner'].map((role) => ({ role, email: `${role}@example.test`, password: randomBytes(24).toString('base64url') }));
+    accounts = ['customer', 'staff', 'manager', 'owner'].map((role) => ({ role, email: `${role}@example.test`, password: randomBytes(24).toString('base64url') }));
     await writeFile(`${root}/accounts.json`, JSON.stringify(accounts, null, 2), { mode: 0o600, flag: 'wx' });
   }
   for (const account of accounts) {
@@ -67,6 +69,40 @@ try {
     const verified = await call('/auth/verify', { challengeId, code });
     if (verified.status !== 200) throw new Error(`Review verification failed: ${verified.status}`);
     await db.prepare('UPDATE users SET role=? WHERE email=?').bind(account.role, account.email).run();
+  }
+  // Named workspaces are opt-in disposable test fixtures. Enroll through the
+  // normal API, retaining keys only in ignored local files, never a bypass.
+  if (workspace) {
+    let authenticators;
+    try { authenticators = JSON.parse(await readFile(`${root}/authenticators.json`, 'utf8')); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; authenticators = {}; }
+    for (const account of accounts.filter(({ role }) => role !== 'customer')) {
+      const enrolled = await db.prepare('SELECT 1 FROM staff_authenticators m JOIN users u ON u.id=m.user_id WHERE u.email=?').bind(account.email).first();
+      if (enrolled) {
+        if (!authenticators[account.email]?.setupKey) throw new Error('This workspace has an authenticator without a saved review key. Choose a new REVIEW_WORKSPACE; existing data is preserved.');
+        continue;
+      }
+      const login = await call('/auth/login', { email: account.email, password: account.password, turnstileToken: 'local-review' });
+      if (login.status !== 200) throw new Error(`Review MFA login failed: ${login.status}`);
+      const cookie = login.headers.get('Set-Cookie')?.split(';')[0];
+      if (!cookie) throw new Error('Review session cookie missing');
+      const start = await call('/me/mfa/enroll/start', { currentPassword: account.password }, cookie);
+      if (start.status !== 200) throw new Error(`Review MFA setup failed: ${start.status}`);
+      const setup = await start.json();
+      // Save before confirmation so a restart cannot lose the enrolled key.
+      authenticators[account.email] = { setupKey: setup.setupKey, recoveryCodes: [] };
+      await writeFile(`${root}/authenticators.json`, JSON.stringify(authenticators, null, 2), { mode: 0o600 });
+      const bits = [...setup.setupKey].map(char => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(char).toString(2).padStart(5, '0')).join('');
+      const key = Buffer.from(bits.match(/.{8}/g).map(part => parseInt(part, 2)));
+      const counter = Buffer.alloc(8); counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+      const digest = createHmac('sha1', key).update(counter).digest();
+      const code = String((digest.readUInt32BE(digest.at(-1) & 15) & 0x7fffffff) % 1000000).padStart(6, '0');
+      const confirmed = await call('/me/mfa/enroll/confirm', { enrollmentId: setup.enrollmentId, code }, cookie);
+      if (confirmed.status !== 200) throw new Error(`Review MFA confirmation failed: ${confirmed.status}`);
+      authenticators[account.email].recoveryCodes = (await confirmed.json()).recoveryCodes;
+      await writeFile(`${root}/authenticators.json`, JSON.stringify(authenticators, null, 2), { mode: 0o600 });
+    }
+    console.log(`Local test authenticator keys and single-use recovery codes: ${root}/authenticators.json`);
   }
   if (!(await db.prepare("SELECT id FROM services WHERE id='local-review-cut'").first())) {
     const now = new Date().toISOString();
@@ -128,7 +164,7 @@ try {
     } catch { res.writeHead(500); res.end('Local review request failed.'); }
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(8788, '127.0.0.1', resolve); });
-  console.log(`\nLocal review: ${origin}/account\nEmail inbox: ${origin}/__review/inbox?token=${inboxToken}\nSign-in credentials: ${root}/accounts.json\n\nPersistent local data; use test information only. Customer, staff, and owner sign-ins are available. Staff MFA enrollment is required. External email and anti-bot verification are simulated only in this local runner. Shop requests: /shop. Owner products/orders: /admin/products and /admin/orders. A sample pomade is available for local review. Rescheduling: open a confirmed appointment in the account. Guest walk-ins: /account?view=front-desk (owner/manager). Printable booking/order documents are available in record details. Sales preparation: /account?view=sales (owner/manager). Customer estimate history: /account?view=estimates. Cash register: /account?view=register (owner/manager); count and open the drawer before new cash payments/refunds. Cash sales: /account?view=counter (owner/manager). Finalize a saved estimate for a completed visit or accepted pickup order, then record test cash. Customer paid/refund receipts: /account?view=receipts. No real cash, card processing, bank transfers or employee payroll are connected in this local runner.\n`);
+  console.log(`\nLocal review: ${origin}/account\nEmail inbox: ${origin}/__review/inbox?token=${inboxToken}\nSign-in credentials: ${root}/accounts.json\n\nPersistent local data; use test information only. New workspaces include customer, staff, manager, and owner sign-ins. Named workspaces save test MFA credentials in authenticators.json; the default workspace keeps its existing enrollment. External email and anti-bot verification are simulated only in this local runner. Shop requests: /shop. Owner products/orders: /admin/products and /admin/orders. A sample pomade is available for local review. Rescheduling: open a confirmed appointment in the account. Guest walk-ins: /account?view=front-desk (owner/manager). Printable booking/order documents are available in record details. Sales preparation: /account?view=sales (owner/manager). Customer estimate history: /account?view=estimates. Cash register: /account?view=register (owner/manager); count and open the drawer before new cash payments/refunds. Cash sales: /account?view=counter (owner/manager). Finalize a saved estimate for a completed visit or accepted pickup order, then record test cash. Customer paid/refund receipts: /account?view=receipts. No real cash, card processing, bank transfers or employee payroll are connected in this local runner.\n`);
   const stop = async () => { server.close(); await worker.dispose(); process.exit(0); };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
 } catch (error) {

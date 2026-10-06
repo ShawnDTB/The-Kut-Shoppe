@@ -23,6 +23,7 @@ it('keeps the checkout destination and cart when a guest signs in', async () => 
   expect(element.querySelector('a[href="/cart"]')).not.toBeNull();
   await act(async () => setCustomerSession(account));
   expect(element.querySelector('h1')?.textContent).toBe('Review your order request.');
+  expect(document.activeElement).toBe(element.querySelector('h1'));
   expect(readCart()).toEqual([{ productId: 'pomade', variantId: 'matte', quantity: 2 }]);
   expect(element.textContent).toContain('$30.00');
 });

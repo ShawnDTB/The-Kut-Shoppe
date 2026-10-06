@@ -1,6 +1,6 @@
 # Kut Shoppe website cohesion review
 
-Date: October 5, 2026. Baseline: dev-branch / ead9806, matching the deployed main release.
+Initial inventory: October 5, 2026. Browser follow-up: October 6, 2026. Baseline: dev-branch / ead9806, matching the deployed main release.
 
 ## Pass 1 — Current state
 
@@ -38,7 +38,7 @@ No broken internal destination was identified in that HTTP inventory. The more s
 
 ## Verification limits
 
-Automatic approval review blocked the browser walkthrough because its usage allowance was exhausted. Source review, HTTP inventory, component tests, and static HTML checks can continue. Native browser focus containment, mobile layout, contrast, and a complete signed-in visual walkthrough remain unverified until browser access is restored. Automated checks do not substitute for those checks.
+The initial October 5 browser review was blocked by an exhausted approval-service allowance. Browser access returned October 6; the completed browser checks and remaining device-specific limits are recorded below.
 
 ## Pass 3 — Implemented corrections
 
@@ -67,7 +67,7 @@ All corrections in the findings table were implemented on the development branch
 | Owner/manager dashboard → store management → dashboard | Role-scoped shortcuts expose sales and register tools; store management includes a dashboard return; customers see access denial |
 | Invalid product link | Component test shows a recoverable product-not-found page rather than a URL decoding exception |
 
-The automated journey review passed. A complete visual customer walkthrough is still pending because of the browser approval-service limit described above.
+The automated journey review passed. The October 6 follow-up below adds browser evidence for customer and staff journeys.
 
 ## Verification results
 
@@ -79,11 +79,38 @@ The automated journey review passed. A complete visual customer walkthrough is s
 
 These are source, component, runtime, and static-output checks. They do not measure real-device rendering speed, contrast, layout at zoom, screen-reader usability, or browser-native focus containment.
 
-## Remaining acceptance work
+## October 6 browser follow-up
 
-1. Desktop and mobile walkthrough with keyboard, zoom, and a screen reader; check the newly restored service heading, public account header, review band, and shared cart drawer visually.
-2. Verify native dialog focus containment/Escape behavior in a real browser, including mobile scrolling and quantity updates.
-3. Complete signed-in customer, barber, manager, and owner walkthroughs against the local review database. Account/email setup and activation remain separate from this cohesion cleanup.
-4. Consolidate accumulated styling layers only after visual comparisons are available. The current stylesheet is within budget; removing layers blindly risks regressions.
+The real Cloudflare API ran against isolated local D1 data. Public construction pages and the enabled development platform were reviewed separately. Production feature gates remain closed.
 
-Changes are prepared in development. This audit does not activate unfinished public features or deploy the revised interface to production.
+### Additional findings and fixes
+
+| Finding | Correction and verification |
+| --- | --- |
+| A legacy stylesheet still hid the restored Services heading | Removed the hiding rule; verified the visible H1 at mobile width |
+| Selected checkout delivery text had poor contrast and lacked an explicit group focus indicator | Changed secondary text to #444 on #ededed and added a visible keyboard outline; verified shipping/pickup keyboard selection |
+| Guest sign-in could leave checkout scrolled beyond its heading | Focus the checkout heading after the transition; integration assertion and browser review passed |
+| Booking progress minimum widths overflowed at 320 px | Allow four equal shrinking columns and shorten the third label to “Date & time”; progress client/scroll widths both 289 px |
+| Repeated schedule removal buttons did not identify their target independently | Accessible names now include day, time range, and location, or time-off dates; verified in the browser |
+| An unconfirmed request displayed “Confirmed time” and reserved-time rescheduling copy | Show rescheduling only for confirmed appointments; regression cases cover requested, waitlisted, declined, cancelled, completed, and confirmed records |
+| Old local review MFA secrets were unavailable | Added opt-in named review databases with four roles and saved local test MFA setup/recovery records, enrolled through the normal API; preserved the old database and verified persistence across restart |
+
+### Browser evidence
+
+- Home, Services, Crew, Reviews, and enabled Shop reviewed at 1280, 390, and 320 px, with no page-wide horizontal overflow. See Responsive-Review-2026-10-06.json.
+- Public Account, Booking, and Shop construction pages reviewed visually at 320 px. Provider choices, call/visit actions, and public navigation remain available.
+- Mobile navigation opens as a native modal, starts on Close, keeps page controls out of keyboard navigation, and returns to Menu on Escape. Tab can pass through browser chrome before returning to the modal. Cart opening, Escape, and focus restoration were also verified.
+- Product/cart → guest sign-in → checkout preserved two items and produced a $30 unpaid local pickup request. The saved customer order showed the correct items, amount, and submitted status; another role could not open it as a personal order.
+- Customer dashboard → barber booking → service → professional → October 7 at 9 AM → request submission → saved pending record succeeded. Assigned barber MFA → request queue → explicit confirmation succeeded. Customer dashboard then showed one confirmed upcoming visit and zero pending decisions. Confirmed details expose rescheduling, calendar download, and cancellation-request controls; pending details no longer contain confirmed-time claims.
+- Owner MFA → shop overview → front desk → sales preparation → cash register → inventory succeeded. Inventory exposes a dashboard return. Empty states identify the required next steps.
+- Barber MFA → chair overview → availability succeeded. Manager MFA → shop overview succeeded. Both mobile dashboards fit at 320 px; barber navigation omits shop management and manager navigation omits owner-only setup reviews. Customer navigation has no staff sections, and a staff-only URL provides a recoverable access-denied state.
+
+Screenshots: Services-Mobile-2026-10-06.png, Public-Account-Mobile-2026-10-06.png, and Customer-Dashboard-Confirmed-2026-10-06.png. The records shown are fictional local fixtures.
+
+### Final checks and release boundary
+
+Final `npm run check` passed after all fixes: **301 application tests across 26 files**, **12 environment tests**, type checks, lint, public build, bundle budgets, production gates, Cloudflare API checks, and notification Worker checks. Public gzip budgets remained 74.54 KiB JavaScript / 120 KiB and 36.10 KiB CSS / 40 KiB. The generated-page audit covers 36 routes with zero findings. The development build continues to split account and commerce code from the public entry.
+
+The browser tests cover selected desktop/mobile layouts, keyboard flows, labels, and the corrected contrast states. They are not an actual screen-reader certification, a 200% browser-zoom test, or a real-device performance measurement. Those device-specific checks remain before hosted platform activation. Email sender verification, hosted owner provisioning, and real notification delivery also remain separate launch requirements; no production accounts were enabled by this audit.
+
+Broad consolidation of historical CSS layers is deferred: the targeted conflicting rule was removed, and the stylesheet remains within its budget. All four audit passes now have source, automated, and browser evidence, with the above limits explicit. Changes remain on the development branch; this follow-up does not deploy or activate unfinished public features.
