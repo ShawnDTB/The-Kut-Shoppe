@@ -1,5 +1,7 @@
 # Shop payments and barber earnings
 
+October 9 follow-up: see [current payment launch plan](payment-launch-plan-2026-10-09.md) for refreshed fees, the confirmed single-shop collection model, and the Stripe sandbox recommendation. The older Square-first evaluation below remains historical context.
+
 Decision proposal, September 13, 2026; employee clarification and first implementation added September 14. Baseline code inspected at `4d5f8e8` on `dev-branch`. This document defines the financial implementation; it does not activate payments or establish an approved compensation agreement. See [sale estimate milestone](sales-estimates-milestone.md) for the implemented first increment and its limits.
 
 ## Direction supplied by the user
