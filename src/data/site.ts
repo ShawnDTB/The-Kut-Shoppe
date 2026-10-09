@@ -200,7 +200,7 @@ export const team = [
     specialty: 'Loctician',
     bookingType: 'styling' as BookingType,
     bookingHref: glossGeniusUrl,
-    photo: '/media/steph-crew-reel.webp',
+    photo: '/media/steph-portrait.webp',
   },
 ] as const;
 

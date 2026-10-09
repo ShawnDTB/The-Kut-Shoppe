@@ -39,3 +39,7 @@ Prepared and committed on dev-branch. This update has not been pushed or deploye
 ## Main promotion verification
 
 The user approved promotion to main after a second check of every owner request. The complete project check passed: 301 application tests, 12 environment tests, TypeScript, ESLint, public build, size budgets, production gates, Cloudflare runtime checks and notification Worker checks. All 17 database migrations apply to a fresh in-memory database. The public-release check confirms construction pages and closed platform feature gates. The refreshed 36-route static audit reports zero findings. No stale senior-service menu, Google 4.9/59-review claim, or Sunday-closed copy remains in the public source.
+
+## Supplied portrait replacement — October 9, 2026
+
+The user supplied a preferred portrait to replace the reel frame. The shared team photo now uses `/media/steph-portrait.webp` on the homepage and crew page, and the old reel asset was removed. The supplied 538 × 525 image was encoded as a 30,652-byte WebP without retouching or generated changes. A mobile-only image-position adjustment keeps her face within the narrow crew card. Desktop crew, 390 px mobile crew, and homepage thumbnail were visually checked. The public build, image asset checks, construction-page gates and bundle budgets passed (74.64 KiB JavaScript, 36.11 KiB CSS).

@@ -321,3 +321,10 @@ button {
     transform: none;
   }
 }
+
+/* Keep the supplied portrait's face inside the narrow mobile crew card. */
+@media (max-width: 760px) {
+  .verified-team-card[data-member='steph'] .verified-team-media img {
+    object-position: 65% center;
+  }
+}
