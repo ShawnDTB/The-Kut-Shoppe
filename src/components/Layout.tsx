@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { business, navigation as primaryNavigation } from '../data/site';
-import { shopClosedSummary, shopHours, shopHoursNote, shopHoursSummary } from '../data/hours';
+import { shopSundaySummary, shopHours, shopHoursNote, shopHoursSummary } from '../data/hours';
 import { originalAssets } from '../data/visuals';
 import {
   getPlatformSessionAccount,
@@ -194,7 +194,7 @@ function Header({ currentPath }: { currentPath: string }) {
 
   return (
     <>
-      <div className="utility-bar"><div className="container utility-inner"><a className="utility-location" href="/visit"><span className="utility-marker" aria-hidden="true" />518 Main Street · Downtown Stroudsburg</a><span className="utility-hours">{shopHoursSummary} · {shopClosedSummary}</span><a className="utility-phone" href={business.phoneHref}>Call {business.phone}</a></div></div>
+      <div className="utility-bar"><div className="container utility-inner"><a className="utility-location" href="/visit"><span className="utility-marker" aria-hidden="true" />518 Main St. · Downtown Stroudsburg</a><span className="utility-hours">{shopHoursSummary} · {shopSundaySummary}</span><a className="utility-phone" href={business.phoneHref}>Call {business.phone}</a></div></div>
       <header className="site-header"><div className="container header-inner header-inner-branded">
         <a className="brand brand-lockup" href="/" aria-label="The Kut Shoppe home"><span className="brand-emblem"><img src={originalAssets.logo} alt="" width="76" height="76" /></span><span className="brand-copy"><strong>The Kut Shoppe</strong><small>Classic barbering · Modern styling</small></span></a>
         <div className="header-navigation-surface"><div className="menu-surface"><nav className="desktop-nav" aria-label="Primary navigation"><ul className="nav-list nav-list-branded">{primaryNavigation.map(([label, href]) => { const current = isCurrentRoute(currentPath, href); return <li key={href}><a href={href} aria-current={current ? 'page' : undefined}>{label}</a></li>; })}</ul></nav></div><div className="header-actions header-actions-direct"><a className="header-call" href={business.phoneHref} aria-label={`Call The Kut Shoppe at ${business.phone}`}><span className="header-call-label">Call the shop</span><strong>{business.phone}</strong></a><CustomerActions account={account} cartCount={cartCount} /></div></div>
@@ -212,9 +212,9 @@ function Footer() {
           <img src={originalAssets.logo} alt="The Kut Shoppe" width="88" height="88" loading="lazy" decoding="async" />
           <div><p className="eyebrow">The Kut Shoppe</p><h2>A familiar chair on Main Street.</h2><p>Classic barbering, modern styling, and personal service in downtown Stroudsburg.</p><div className="footer-v6-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href="/account">{publicLaunch ? 'Accounts soon' : 'My account'}</a></div></div>
         </section>
-        <section className="footer-v6-column"><h3>Visit</h3><strong>518 Main Street</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and hours <Arrow /></a></section>
+        <section className="footer-v6-column"><h3>Visit</h3><strong>518 Main St.</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and hours <Arrow /></a></section>
         <nav className="footer-v6-column" aria-label="Explore The Kut Shoppe"><h3>Explore</h3>{primaryNavigation.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav>
-        <section className="footer-v6-column"><h3>Connect</h3>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}<span>{shopHoursSummary}</span><span>{shopClosedSummary}</span></section>
+        <section className="footer-v6-column"><h3>Connect</h3>{socialLinks.map(([label, href]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}<span>{shopHoursSummary}</span><span>{shopSundaySummary}</span></section>
       </div>
       <div className="container footer-v6-bottom"><span>© {new Date().getFullYear()} The Kut Shoppe LLC</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>Platform by Designed to Breakthrough LLC</span></div></div>
     </footer>

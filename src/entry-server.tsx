@@ -236,7 +236,7 @@ const localBusinessSchema = {
   image: new URL(originalAssets.logo, 'https://www.thekutshoppe.com').href,
   address: {
     '@type': 'PostalAddress',
-    streetAddress: '518 Main Street',
+    streetAddress: '518 Main St.',
     addressLocality: 'Stroudsburg',
     addressRegion: 'PA',
     postalCode: '18360',

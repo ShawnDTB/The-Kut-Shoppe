@@ -1,10 +1,10 @@
 import {
-  shopClosedSummary,
+  shopSundaySummary,
   shopHours,
   shopHoursNote,
   shopHoursSummary,
 } from '../data/hours';
-import { seniorPricingNote, seniorServicePrices } from '../data/senior-services';
+import { seniorPricingNote } from '../data/senior-discount';
 import {
   business,
   findRoute,
@@ -67,11 +67,7 @@ function ServicesRoute() {
           <ul className="services-menu-list services-menu-list-explicit">{adultPrices.map((item) => <li key={item.name}><span>{item.name}</span><small>{item.duration}</small><strong>{item.price}</strong></li>)}</ul>
         </div>
 
-        <div className="service-price-section service-price-section-senior">
-          <div className="service-price-section-heading"><h3>Senior barber services</h3><span>Live shop menu reference</span></div>
-          <ul className="services-menu-list services-menu-list-explicit services-menu-list-three">{seniorServicePrices.map((item) => <li key={item.name}><span>{item.name}</span><small aria-hidden="true" /><strong>{item.price}</strong></li>)}</ul>
-          <p className="service-price-source-note">{seniorPricingNote}</p>
-        </div>
+        <p className="service-price-source-note">{seniorPricingNote}</p>
 
         <div className="service-price-section service-price-section-kids">
           <div className="service-price-section-heading"><h3>Kids barber services</h3><span>Ages 3 to 12</span></div>
@@ -106,6 +102,7 @@ function ServiceRoute({ path }: { path: string }) {
         <a className="button button-secondary" href={href}>Book now <Arrow /></a>
       </div>
       {service.prices.length ? <ul className="price-list price-list-current">{service.prices.map((item) => <li key={item.name}><span>{item.name}</span><small>{item.duration}</small><strong>{item.price}</strong></li>)}</ul> : <p>Continue to the current service menu, policies, and available appointment times for this category.</p>}
+      {service.bookingType === 'barber' && service.route !== '/services/kids-cuts' ? <p className="service-price-source-note">{seniorPricingNote}</p> : null}
       <p className="fine-print">Confirm final pricing and availability while booking.</p>
     </div>
   );
@@ -140,7 +137,7 @@ function TeamRoute() {
         return (
           <article className="verified-team-card" id={memberKey(member.shortName)} data-member={memberKey(member.shortName)} key={member.name}>
             <div className="verified-team-media">
-              {member.photo ? <img src={member.photo} alt={`${member.name} at The Kut Shoppe`} width="640" height="800" loading="lazy" decoding="async" /> : <div className="verified-team-placeholder" aria-hidden="true">CS</div>}
+              {member.photo ? <img src={member.photo} alt={`${member.name}, ${member.specialty}`} width="640" height="800" loading="lazy" decoding="async" /> : <div className="verified-team-placeholder" aria-hidden="true">CS</div>}
             </div>
             <div className="verified-team-copy">
               <p className="eyebrow">{presentation.role}</p>
@@ -160,7 +157,7 @@ function VisitRoute() {
       <LocationMap compact />
       <div className="split-grid visit-hours-grid">
         <div className="content-panel"><p className="eyebrow">Walk-in reference hours</p><h2>Shop hours</h2><dl className="visit-hours-list">{shopHours.map((entry) => <div key={entry.days}><dt>{entry.days}</dt><dd>{entry.hours}</dd></div>)}</dl><small>{shopHoursNote}</small></div>
-        <div className="content-panel"><p className="eyebrow">Before you visit</p><h2>Check current availability.</h2><p>{business.walkIns}</p><p className="visit-hours-summary">{shopHoursSummary} · {shopClosedSummary}</p><div className="proof-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href={business.phoneHref}>Call {business.phone}</a></div></div>
+        <div className="content-panel"><p className="eyebrow">Before you visit</p><h2>Check current availability.</h2><p>{business.walkIns}</p><p>Choose your barber or loctician when booking to see their personal appointment hours and available times.</p><p className="visit-hours-summary">{shopHoursSummary} · {shopSundaySummary}</p><div className="proof-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href={business.phoneHref}>Call {business.phone}</a></div></div>
       </div>
     </div>
   );
@@ -190,7 +187,7 @@ function PrivacyRoute() {
       <section><h2>Retention and security</h2><p>Information is retained only as long as reasonably needed for the service, business records, dispute handling, security, and legal obligations. Reasonable administrative, technical, and physical safeguards are used, but no online system can promise absolute security.</p></section>
       <section><h2>Your choices</h2><p>You may request access to, correction of, or deletion of eligible account information by contacting the shop. Some records may need to be retained for completed appointments, orders, taxes, fraud prevention, disputes, or other legal obligations.</p></section>
       <section><h2>Children</h2><p>Parents or legal guardians should make appointments and purchases for children. The account and storefront are not intended for children to independently submit personal information.</p></section>
-      <section><h2>Changes and contact</h2><p>This policy may be updated as the booking, account, messaging, payment, shipping, and payout features move into production. Material changes will be posted with a revised effective date.</p><p>Questions may be directed to The Kut Shoppe LLC at 518 Main Street, Stroudsburg, PA 18360, by calling <a href={business.phoneHref}>{business.phone}</a>, or through the <a href="/contact">contact page</a>.</p></section>
+      <section><h2>Changes and contact</h2><p>This policy may be updated as the booking, account, messaging, payment, shipping, and payout features move into production. Material changes will be posted with a revised effective date.</p><p>Questions may be directed to The Kut Shoppe LLC at 518 Main St., Stroudsburg, PA 18360, by calling <a href={business.phoneHref}>{business.phone}</a>, or through the <a href="/contact">contact page</a>.</p></section>
     </article>
   );
 }
@@ -208,7 +205,7 @@ function TermsRoute() {
       <section><h2>Website content</h2><p>The Kut Shoppe name, branding, photographs, text, designs, and website materials may not be copied, republished, sold, or used commercially without permission. Customer reviews remain the property and responsibility of their original authors and platforms.</p></section>
       <section><h2>Availability and limitations</h2><p>The website is provided on an as-available basis. Temporary outages, errors, maintenance, delayed messages, or inaccurate third-party information may occur. Nothing on the website replaces direct confirmation from the shop or professional when timing, service suitability, price, or availability is important.</p></section>
       <section><h2>Governing law and changes</h2><p>These terms are governed by applicable United States and Pennsylvania law, without limiting rights that cannot legally be waived. Terms may be updated as platform features change. Continued use after an update means the revised terms apply to later activity.</p></section>
-      <section><h2>Contact</h2><p>Questions may be directed to The Kut Shoppe LLC at 518 Main Street, Stroudsburg, PA 18360, by calling <a href={business.phoneHref}>{business.phone}</a>, or through the <a href="/contact">contact page</a>.</p></section>
+      <section><h2>Contact</h2><p>Questions may be directed to The Kut Shoppe LLC at 518 Main St., Stroudsburg, PA 18360, by calling <a href={business.phoneHref}>{business.phone}</a>, or through the <a href="/contact">contact page</a>.</p></section>
     </article>
   );
 }

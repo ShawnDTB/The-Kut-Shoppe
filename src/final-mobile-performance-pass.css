@@ -91,18 +91,12 @@
   box-shadow: none;
 }
 
-/* Customer-facing senior group. */
-.service-price-section-senior .service-price-section-heading span {
-  font-size: 0;
-}
-
-.service-price-section-senior .service-price-section-heading span::after {
-  content: 'Ages 65 and up';
-  font-size: 0.59rem;
-}
-
 .service-price-source-note {
-  display: none !important;
+  display: block;
+  max-width: none;
+  color: #ddd;
+  font-size: 0.95rem;
+  border: 1px solid var(--line);
 }
 
 /* Stateful mobile drawer. */

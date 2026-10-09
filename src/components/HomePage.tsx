@@ -1,7 +1,7 @@
 import { publicLaunch } from '../data/runtime';
 import { business, team } from '../data/site';
 import {
-  shopClosedSummary,
+  shopSundaySummary,
   shopHours,
   shopHoursNote,
   shopHoursSummary,
@@ -136,7 +136,7 @@ export function HomePage() {
         <a className="scroll-cue" href="#services" aria-label="Continue to services"><span /></a>
       </section>
 
-      <section className="shop-quickfacts compact-quickfacts" aria-label="Shop information"><div className="container quickfacts-grid"><a href="/visit"><span>Visit</span><strong>518 Main Street</strong><small>A few steps away from the Sherman Theater</small></a><a href="/visit"><span>Hours</span><strong>{shopHoursSummary}</strong><small>{shopClosedSummary}</small></a><a href={business.phoneHref}><span>Questions</span><strong>{business.phone}</strong><small>Call the shop directly</small></a></div></section>
+      <section className="shop-quickfacts compact-quickfacts" aria-label="Shop information"><div className="container quickfacts-grid"><a href="/visit"><span>Visit</span><strong>518 Main St.</strong><small>A few steps away from the Sherman Theater</small></a><a href="/visit"><span>Hours</span><strong>{shopHoursSummary}</strong><small>{shopSundaySummary}</small></a><a href={business.phoneHref}><span>Questions</span><strong>{business.phone}</strong><small>Call the shop directly</small></a></div></section>
 
       <ServicesOverview />
       <WorkAndTrust />

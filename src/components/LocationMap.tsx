@@ -1,5 +1,5 @@
 import { business } from '../data/site';
-import { shopClosedSummary, shopHoursNote, shopHoursSummary } from '../data/hours';
+import { shopSundaySummary, shopHoursNote, shopHoursSummary } from '../data/hours';
 import { Arrow } from './Layout';
 
 const mapEmbedUrl =
@@ -17,7 +17,7 @@ export function LocationMap({ compact = false }: { compact?: boolean }) {
     <div className={className}>
       <div className="location-map-frame">
         <iframe
-          title="Google map showing The Kut Shoppe at 518 Main Street in Stroudsburg"
+          title="Google map showing The Kut Shoppe at 518 Main St. in Stroudsburg"
           src={mapEmbedUrl}
           width="800"
           height="600"
@@ -29,13 +29,13 @@ export function LocationMap({ compact = false }: { compact?: boolean }) {
       <div className="location-map-details">
         <div>
           <span>Find the shop</span>
-          <strong>518 Main Street</strong>
+          <strong>518 Main St.</strong>
           <p>Downtown Stroudsburg · a few steps away from the Sherman Theater</p>
         </div>
         <div className="location-map-hours">
           <span>Shop hours</span>
           <strong>{shopHoursSummary}</strong>
-          <strong>{shopClosedSummary}</strong>
+          <strong>{shopSundaySummary}</strong>
           <small>{shopHoursNote}</small>
         </div>
         <div className="location-map-actions">

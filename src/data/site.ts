@@ -1,3 +1,5 @@
+import { shopHoursNote } from './hours';
+
 export type VerificationStatus =
   | 'verified-live-site'
   | 'verified-booking-platform'
@@ -37,10 +39,9 @@ export const business = {
   legalName: 'The Kut Shoppe LLC',
   phone: '570-421-5887',
   phoneHref: 'tel:+15704215887',
-  address: '518 Main Street, Stroudsburg, PA 18360',
+  address: '518 Main St., Stroudsburg, PA 18360',
   hoursStatus: 'requires-verification' as VerificationStatus,
-  hoursNote:
-    'Shop hours are a walk-in reference rather than a guaranteed staff schedule. Current professional availability is shown by the booking provider.',
+  hoursNote: shopHoursNote,
   walkIns:
     'Walk-ins are welcome when availability allows; appointments are recommended.',
 };
@@ -199,7 +200,7 @@ export const team = [
     specialty: 'Loctician',
     bookingType: 'styling' as BookingType,
     bookingHref: glossGeniusUrl,
-    photo: null,
+    photo: '/media/steph-crew-reel.webp',
   },
 ] as const;
 
@@ -369,19 +370,19 @@ export const routes: RouteDefinition[] = [
     label: 'Reviews',
     title: 'Client Reviews | The Kut Shoppe',
     description:
-      'Read excerpts from Google reviews and find the latest client feedback for The Kut Shoppe.',
+      'See The Kut Shoppe’s Booksy rating and client feedback, plus excerpts from Google reviews.',
     eyebrow: 'Client trust',
     heading: 'A reputation built one appointment at a time.',
     intro:
-      'Read client feedback, then visit Google for complete reviews and current ratings.',
+      'Explore client feedback on Booksy and Google, then visit each platform for complete reviews and current ratings.',
     status: 'verified-booking-platform',
   },
   {
     path: '/visit',
     label: 'Visit',
-    title: 'Visit The Kut Shoppe | 518 Main Street, Stroudsburg',
+    title: 'Visit The Kut Shoppe | 518 Main St., Stroudsburg',
     description:
-      'Find The Kut Shoppe at 518 Main Street in Stroudsburg and review appointment guidance.',
+      'Find The Kut Shoppe at 518 Main St. in Stroudsburg and review appointment guidance.',
     eyebrow: 'Visit',
     heading: 'Find us in downtown Stroudsburg.',
     intro:
