@@ -12,6 +12,7 @@ import { appointmentCalendar } from './calendar';
 import { appointmentDocument, orderDocument, estimateDocument, cashReceiptDocument, documentPolicy } from './customer-documents';
 import { finalizeSale, counterSale, recordCash, counterPage, receiptDetail, receiptPage } from './counter';
 import { registerPage, registerDetail, registerEntries, registerAction } from './register';
+import { createCheckout, paymentStatus, reconcilePayment, receiveStripeEvent } from './payments';
 import { previewEstimate, saveEstimate, estimates, estimateDetail, saleSources } from './sales';
 import { changeAppointment, changeAvailability, reschedulePage } from './rescheduling';
 import { requireFrontDesk, walkIns, createWalkIn, progressWalkIn } from './front-desk';
@@ -44,6 +45,12 @@ function json(data: unknown, status = 200, sessionCookie?: string) {
 }
 async function route(request: Request, env: Env): Promise<Response> {
   const path = new URL(request.url).pathname;
+  // Provider callbacks use raw-body signatures, never browser cookies or CSRF
+  // headers. Keep this exact route available when checkout creation is paused.
+  if (path === '/api/v1/payments/stripe/webhook' && request.method === 'POST') {
+    if (new URL(request.url).origin !== env.APP_ORIGIN || new URL(request.url).search) throw new ApiError(403, 'This endpoint is not available.');
+    return json(await receiveStripeEvent(request, env));
+  }
   if (path === '/api/v1/config' && request.method === 'GET') {
     return json({ enabled: configured(env), turnstileSiteKey: configured(env) ? env.TURNSTILE_SITE_KEY : '', bookingEnabled: configured(env) && env.CUSTOMER_BOOKING_ENABLED === 'true' });
   }
@@ -141,6 +148,20 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (!path.startsWith('/api/v1/me')) throw new ApiError(404, 'This action is not available.');
   const account = await authenticate(request, env);
   const sessionHash = secretHash(env, sessionToken(request)!);
+  if (path.startsWith('/api/v1/me/payments')) {
+    if (new URL(request.url).search) throw new ApiError(400, 'This payment request is not supported.');
+    if (path === '/api/v1/me/payments/checkout' && request.method === 'POST') {
+      await rateLimit(env, `payment-password:${account.id}`, 20);
+      return json(await createCheckout(env, account.id, sessionHash, body));
+    }
+    const payment = path.match(/^\/api\/v1\/me\/payments\/([A-Za-z0-9_-]{1,128})(\/reconcile)?$/);
+    if (payment && request.method === 'GET' && !payment[2]) return json(await paymentStatus(env, account.id, sessionHash, payment[1]!));
+    if (payment && request.method === 'POST' && payment[2]) {
+      await rateLimit(env, `payment-reconcile:${account.id}`, 30);
+      return json(await reconcilePayment(env, account.id, sessionHash, payment[1]!, body));
+    }
+    throw new ApiError(404, 'Payment action not found.');
+  }
   if (action === 'GET /api/v1/me/workspace') {
     if (new URL(request.url).search) throw new ApiError(400, 'This dashboard request is not supported.');
     return json(await workspaceDashboard(env, account.id, sessionHash));

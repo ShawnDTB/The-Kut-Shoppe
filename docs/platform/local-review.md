@@ -1,5 +1,7 @@
 # Working local review
 
+October 9: [Stripe sandbox checkout](stripe-sandbox-milestone.md) adds optional test-only card checkout for finalized bills in isolated named workspaces. It requires explicit opt-in and private test credentials; the default runner still makes no Stripe requests. Migrations now include 0018.
+
 October 4: [account and dashboard review](accounts-review-2026-10-04.md) adds separate client, barber and management dashboards, staff account search/role changes, and individual session revocation. After MFA, managers/owners can open **Staff access** and grant a verified existing account professional access; professional profile approval remains a separate step.
 
 Latest: the [original booking page](booking-page-restoration.md) restores the Barber/Loctician gateway, service rows, staged panels and weekly calendar on the current backend. Open `/book` with no query string. The [shop and booking recovery](restored-commerce-and-booking.md) also restores catalog, product, cart, unpaid checkout requests and protected product/order management. `/account` opens the dashboard overview.

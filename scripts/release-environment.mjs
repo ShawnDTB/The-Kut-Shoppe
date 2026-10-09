@@ -4,6 +4,7 @@ import { URL } from 'node:url';
 // that a provider credential, database binding, or domain is provisioned.
 export function checkReleaseEnvironment(env) {
   const errors = [];
+  if (env.PAYMENTS_SANDBOX_ENABLED === 'true') errors.push('Payment sandbox must remain disabled in a public release.');
   const flags = ['ACCOUNTS_ENABLED', 'CUSTOMER_BOOKING_ENABLED', 'STAFF_OPERATIONS_ENABLED', 'STAFF_SETUP_ENABLED', 'COMMERCE_ENABLED', 'APPOINTMENT_EMAIL_ENABLED', 'CASH_SALES_ENABLED'];
   for (const name of flags) {
     if (!['true', 'false'].includes(env[name])) errors.push(`${name} must explicitly be true or false.`);

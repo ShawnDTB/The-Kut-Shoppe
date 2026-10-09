@@ -18,6 +18,10 @@ export interface Env {
   APPOINTMENT_EMAIL_ENABLED?: string;
   COMMERCE_ENABLED?: string;
   CASH_SALES_ENABLED?: string;
+  PAYMENTS_SANDBOX_ENABLED?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_ACCOUNT_ID?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   AUTH_SECRET?: string;
   MFA_ENCRYPTION_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;

@@ -2,6 +2,8 @@
 
 ## Confirmed direction
 
+Implementation follow-up: the [Stripe sandbox milestone](stripe-sandbox-milestone.md) now implements the first durable checkout/verified-event foundation and protected counter controls. Real Stripe acceptance, booking payment holds, Terminal, card refunds, earnings and payroll remain outstanding. The research-only checkpoint below describes this plan's original state.
+
 The user confirmed that customers pay the shop and the shop pays barbers their share. No payment processor or card reader is established; Kash can purchase suitable hardware later. Earlier project instructions identify the barbers as employees. Monthly card volume, average ticket, actual compensation agreements and payroll provider remain unknown.
 
 Use one merchant account owned by The Kut Shoppe. Record each professional's service and merchandise attribution internally. Customer payments, processor deposits to the shop bank, employee gross earnings and completed net payroll are separate records. Stripe Connect accounts are not needed merely to calculate employee commissions.

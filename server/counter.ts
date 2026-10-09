@@ -8,6 +8,12 @@ import { estimateDetail, prepare, signed, pageCursor } from './sales';
 import { cents } from './sale-amounts';
 import type { CashReceipt, CounterPage, FinalizedSale, ReceiptPage } from '../src/shared/counter';
 import type { SaleEstimate } from '../src/shared/sales';
+import { sandboxConfiguration } from './stripe-sandbox';
+
+function sandboxEnabled(env: Env) {
+ try { sandboxConfiguration(env,true); return true; } catch { return false; }
+}
+const cardSummary = `(SELECT json_object('id',p.id,'state',p.state,'checkoutUrl',CASE WHEN p.state='pending' THEN p.checkout_url ELSE NULL END) FROM payment_attempts p WHERE p.sale_id=s.id)`;
 
 export async function finalizeSale(env:Env,actor:string,session:string,body:Record<string,unknown>) {
  allowFields(body,['estimateId','currentPassword']); const hash=await authorize(env,actor,session,body);
@@ -42,13 +48,14 @@ export async function finalizeSale(env:Env,actor:string,session:string,body:Reco
 export async function counterSale(env:Env,actor:string,session:string,id:string):Promise<FinalizedSale> {
  await requireFrontDesk(env,actor,session);
  const rows=await env.DB.batch<{results:Record<string,unknown>[]}>([
-  env.DB.prepare(`SELECT id,estimate_id AS estimateId,snapshot_json AS snapshot,total_cents AS totalCents,created_at AS createdAt FROM finalized_sales WHERE id=? AND ${gate}`).bind(id,actor,session),
+  env.DB.prepare(`SELECT s.id,estimate_id AS estimateId,snapshot_json AS snapshot,total_cents AS totalCents,created_at AS createdAt,${cardSummary} AS card FROM finalized_sales s WHERE s.id=? AND ${gate}`).bind(id,actor,session),
   env.DB.prepare(`SELECT snapshot_json AS snapshot FROM cash_sale_events WHERE sale_id=? AND ${gate} ORDER BY created_at,id`).bind(id,actor,session),
  ]);
  const sale=rows[0]!.results[0]; if(!sale)throw new ApiError(404,'Sale not found.');
  const receipts=rows[1]!.results.map(r=>JSON.parse(String(r.snapshot)) as CashReceipt);
  return {id:String(sale.id),estimateId:String(sale.estimateId),createdAt:String(sale.createdAt),estimate:JSON.parse(String(sale.snapshot)) as SaleEstimate,totalCents:Number(sale.totalCents),
-  state:receipts.some(r=>r.kind==='void')?'void':receipts.some(r=>r.kind==='refund')?'refunded':receipts.some(r=>r.kind==='payment')?'paid':'unpaid',receipts};
+  state:receipts.some(r=>r.kind==='void')?'void':receipts.some(r=>r.kind==='refund')?'refunded':receipts.some(r=>r.kind==='payment')?'paid':'unpaid',receipts,
+  sandboxCheckoutEnabled:sandboxEnabled(env),cardPayment:sale.card?JSON.parse(String(sale.card)) as FinalizedSale['cardPayment']:null};
 }
 export async function recordCash(env:Env,actor:string,session:string,id:string,body:Record<string,unknown>) {
  allowFields(body,['action','cashReceivedCents','tipCents','reason','requestKey','currentPassword','registerId']);
@@ -69,6 +76,7 @@ export async function recordCash(env:Env,actor:string,session:string,id:string,b
  const prior=await replay();if(prior)return prior;
  if(action!=='void'&&!registerId)throw new ApiError(400,'Open the cash register and review this cash action again.');
  const sale=await counterSale(env,actor,session,id);const paid=sale.receipts.find(r=>r.kind==='payment');
+ if(sale.cardPayment && sale.cardPayment.state!=='expired')throw new ApiError(409,'Reconcile the card payment before recording cash or voiding this sale.');
  const concurrent=await replay();if(concurrent)return concurrent;
  if(action==='refund'?sale.state!=='paid':sale.state!=='unpaid')throw new ApiError(409,'This sale has already changed. Refresh its records.');
  if(tip&&!sale.estimate.lines.some(line=>line.kind==='service'&&line.professionalId))throw new ApiError(400,'Tips require a recorded service professional.');
@@ -82,9 +90,10 @@ export async function recordCash(env:Env,actor:string,session:string,id:string,b
    SELECT ?,?,?,?,?,?,?,?,?,? WHERE ${gate} AND EXISTS(SELECT 1 FROM account_credentials WHERE user_id=? AND password_hash=?)
    AND (?='void' OR (${openRegisterSql('?')} AND (?!='refund' OR ${registerBalanceSql('?')}>=?)))
    AND NOT EXISTS(SELECT 1 FROM cash_sale_events WHERE sale_id=? AND kind IN ('refund','void'))
+   AND NOT EXISTS(SELECT 1 FROM payment_attempts p WHERE p.sale_id=? AND p.state!='expired')
    AND (?='refund' AND EXISTS(SELECT 1 FROM cash_sale_events WHERE sale_id=? AND id=? AND kind='payment')
         OR ?!='refund' AND NOT EXISTS(SELECT 1 FROM cash_sale_events WHERE sale_id=? AND kind='payment'))
-   ON CONFLICT DO NOTHING`).bind(receiptId,id,actor,key,fingerprint,action,amount,receipt.tipCents,JSON.stringify(receipt),now,actor,session,actor,hash,action,registerId,action,registerId,amount,id,action,id,paid?.id??null,action,id),
+   ON CONFLICT DO NOTHING`).bind(receiptId,id,actor,key,fingerprint,action,amount,receipt.tipCents,JSON.stringify(receipt),now,actor,session,actor,hash,action,registerId,action,registerId,amount,id,id,action,id,paid?.id??null,action,id),
   ...(action==='void'?[]:[env.DB.prepare(`INSERT INTO cash_register_entries(id,register_id,cash_event_id,kind,amount_cents,reason,created_at)
     SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM cash_sale_events WHERE id=?)`).bind(randomUUID(),registerId,receiptId,action,action==='refund'?-amount:amount,reason,now,receiptId)]),
   env.DB.prepare(`INSERT INTO audit_events(id,actor_user_id,action,entity_type,entity_id,created_at) SELECT ?,?,?,'sale',?,? WHERE EXISTS(SELECT 1 FROM cash_sale_events WHERE id=?)`).bind(randomUUID(),actor,`cash_${action}_recorded`,id,now,receiptId),
@@ -95,12 +104,12 @@ export async function counterPage(env:Env,actor:string,session:string,value:stri
  await requireFrontDesk(env,actor,session);const scope=`counter:${actor}`;const cursor=pageCursor(env,scope,value);
  // One snapshot query keeps the page consistent without a batch per sale.
  const {results}=await env.DB.prepare(`SELECT s.id,s.created_at AS at,s.estimate_id AS estimateId,s.snapshot_json AS snapshot,s.total_cents AS totalCents,
-  (SELECT json_group_array(json(e.snapshot_json)) FROM cash_sale_events e WHERE e.sale_id=s.id) AS receipts
-  FROM finalized_sales s WHERE ${gate} ${cursor?'AND (s.created_at,s.id)<(?,?)':''} ORDER BY s.created_at DESC,s.id DESC LIMIT 26`).bind(actor,session,...(cursor?[cursor.at,cursor.id]:[])).all<{id:string;at:string;estimateId:string;snapshot:string;totalCents:number;receipts:string}>();
+  (SELECT json_group_array(json(e.snapshot_json)) FROM cash_sale_events e WHERE e.sale_id=s.id) AS receipts,${cardSummary} AS card
+  FROM finalized_sales s WHERE ${gate} ${cursor?'AND (s.created_at,s.id)<(?,?)':''} ORDER BY s.created_at DESC,s.id DESC LIMIT 26`).bind(actor,session,...(cursor?[cursor.at,cursor.id]:[])).all<{id:string;at:string;estimateId:string;snapshot:string;totalCents:number;receipts:string;card:string|null}>();
  const rows=results.slice(0,25);const last=rows.at(-1);
  return {items:rows.map(r=>{
   const receipts=JSON.parse(r.receipts) as CashReceipt[];
-  return {id:r.id,estimateId:r.estimateId,createdAt:r.at,estimate:JSON.parse(r.snapshot) as SaleEstimate,totalCents:r.totalCents,receipts,
+  return {id:r.id,estimateId:r.estimateId,createdAt:r.at,estimate:JSON.parse(r.snapshot) as SaleEstimate,totalCents:r.totalCents,receipts,sandboxCheckoutEnabled:sandboxEnabled(env),cardPayment:r.card?JSON.parse(r.card) as FinalizedSale['cardPayment']:null,
    state:receipts.some(e=>e.kind==='void')?'void':receipts.some(e=>e.kind==='refund')?'refunded':receipts.some(e=>e.kind==='payment')?'paid':'unpaid'};
  }),nextCursor:results.length>25&&last?signed(env,scope,{id:last.id,at:last.at}):null};
 }

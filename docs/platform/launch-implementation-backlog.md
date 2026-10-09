@@ -1,5 +1,7 @@
 # Launch implementation backlog
 
+**October 9 payment update:** [Stripe sandbox foundation](stripe-sandbox-milestone.md), migration 0018, implements a test-only subset of F1/F2 on finalized bills, with persistent attempts, signed events, reconciliation and cash/card exclusion. Real Stripe acceptance, online booking/stock holds, Terminal, card refunds and H1–H5 remain outstanding. This milestone stays on `dev-branch` with hosted payment gates closed.
+
 **September 24 update:** [feature completion review](feature-completion-review.md)
 records the current gaps and priority order. Shared website/walk-in check-in,
 service/completion, cancellations/no-shows, professional history and customer

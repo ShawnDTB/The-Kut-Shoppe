@@ -14,15 +14,30 @@ await writeFile('.wrangler/customer-runtime-entry.ts', "import { onRequest } fro
 await build({ configFile: false, logLevel: 'warn', build: { ssr: '.wrangler/customer-runtime-entry.ts', target: 'es2022', outDir: '.wrangler/customer-worker', emptyOutDir: true, rollupOptions: { output: { entryFileNames: 'worker.js' } } } });
 const origin = 'https://account-runtime.example.test';
 const deliveries = [];
+const stripeSessions = new Map();
 const workerFile = (await readdir('.wrangler/customer-worker')).find((name) => name.endsWith('.js'));
 assert.ok(workerFile, 'No bundled Worker module was produced');
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false,
   modules: true, scriptPath: `.wrangler/customer-worker/${workerFile}`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { COMMERCE_ENABLED: 'true', CASH_SALES_ENABLED: 'true', APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
+  d1Databases: ['DB'], bindings: { PAYMENTS_SANDBOX_ENABLED:'true', STRIPE_SECRET_KEY:'sk_test_runtime', STRIPE_ACCOUNT_ID:'acct_runtime', STRIPE_WEBHOOK_SECRET:'whsec_runtime', COMMERCE_ENABLED: 'true', CASH_SALES_ENABLED: 'true', APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true',
     AUTH_SECRET: 'runtime-test-only-secret-with-at-least-32-characters', MFA_ENCRYPTION_KEY: '12'.repeat(32), TURNSTILE_SECRET_KEY: 'runtime-test',
     TURNSTILE_SITE_KEY: 'runtime-test', RESEND_API_KEY: 'runtime-test', MAIL_FROM: 'test@example.test' },
   // No real email is sent. Runtime crypto, routing, D1, and session handling are real.
   outboundService: async (request) => {
+    if(request.url==='https://api.stripe.com/v1/account')return globalThis.Response.json({id:'acct_runtime'});
+    if(request.url==='https://api.stripe.com/v1/checkout/sessions'&&request.method==='POST'){
+      const key=request.headers.get('Idempotency-Key'); const body=await request.text();
+      const old=stripeSessions.get(key);if(old){assert.equal(old.body,body);return globalThis.Response.json(old.session);}
+      const fields=new URLSearchParams(body);const id=`cs_test_${randomUUID().replaceAll('-','')}`;
+      const session={id,object:'checkout.session',mode:'payment',livemode:false,client_reference_id:fields.get('client_reference_id'),
+        metadata:{attempt_id:fields.get('metadata[attempt_id]')},amount_total:Number(fields.get('line_items[0][price_data][unit_amount]')),
+        currency:'usd',status:'open',payment_status:'unpaid',payment_intent:null,url:`https://checkout.stripe.com/c/pay/${id}`};
+      stripeSessions.set(key,{body,session});return globalThis.Response.json(session);
+    }
+    if(request.url.startsWith('https://api.stripe.com/v1/checkout/sessions/')&&request.method==='GET'){
+      const session=[...stripeSessions.values()].find(item=>request.url.endsWith(item.session.id))?.session;
+      assert.ok(session);return globalThis.Response.json(session);
+    }
     if (request.url.includes('/turnstile/v0/siteverify')) return globalThis.Response.json({ success: true, hostname: 'account-runtime.example.test', action: 'account' });
     if (request.url === 'https://api.resend.com/emails') { deliveries.push(await request.json()); return globalThis.Response.json({ id: 'test-only' }); }
     throw new Error('Unexpected outbound request in runtime test');
@@ -381,6 +396,34 @@ try {
   ]);
   assert.deepEqual(competingCash.map(response=>response.status).sort(),[200,409]);
   assert.equal((await db.prepare('SELECT count(*) AS n FROM cash_sale_events WHERE sale_id=?').bind(raceSale).first()).n,1,'Competing payment/void both committed');
+  // Concurrent Worker/D1 requests, with only the external Stripe network mocked.
+  const cloneSale=async(id)=>db.prepare(`INSERT INTO finalized_sales(id,estimate_id,actor_user_id,customer_user_id,snapshot_json,total_cents,created_at)
+    SELECT ?,?,actor_user_id,customer_user_id,snapshot_json,total_cents,created_at FROM finalized_sales WHERE id=?`).bind(id,`estimate-${id}`,saleId).run();
+  await cloneSale('stripe-runtime');
+  const checkoutBody={saleId:'stripe-runtime',currentPassword:cashBody.currentPassword};
+  const checkouts=await Promise.all([call('/me/payments/checkout',checkoutBody,staffCookie),call('/me/payments/checkout',checkoutBody,staffCookie)]);
+  for(const response of checkouts)assert.equal(response.status,200,await response.text());
+  const checkout=await checkouts[0].json();assert.equal((await checkouts[1].json()).id,checkout.id);
+  assert.equal(stripeSessions.size,1,'Concurrent checkout created two provider identities');
+  const providerSession=[...stripeSessions.values()][0].session;
+  const event=JSON.stringify({id:'evt_runtime',type:'checkout.session.completed',livemode:false,
+    data:{object:{...providerSession,status:'complete',payment_status:'paid',payment_intent:'pi_runtime'}}});
+  const t=Math.floor(Date.now()/1000);const sig=createHmac('sha256','whsec_runtime').update(`${t}.${event}`).digest('hex');
+  const deliver=()=>worker.dispatchFetch(`${origin}/api/v1/payments/stripe/webhook`,{method:'POST',headers:{'Content-Type':'application/json','Stripe-Signature':`t=${t},v1=${sig}`},body:event});
+  const events=await Promise.all([deliver(),deliver(),deliver()]);for(const response of events)assert.equal(response.status,200,await response.text());
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM payment_allocations WHERE sale_id=?').bind('stripe-runtime').first()).n,1);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM payment_provider_events WHERE id=?').bind('evt_runtime').first()).n,1);
+  assert.equal((await call('/me/counter/stripe-runtime',{...cashBody,requestKey:randomUUID()},staffCookie)).status,409);
+  await cloneSale('stripe-cash-race');
+  const tenders=await Promise.all([
+    call('/me/payments/checkout',{...checkoutBody,saleId:'stripe-cash-race'},staffCookie),
+    call('/me/counter/stripe-cash-race',{...cashBody,requestKey:randomUUID()},staffCookie),
+  ]);
+  assert.deepEqual(tenders.map(response=>response.status).sort(),[200,409],await Promise.all(tenders.map(response=>response.text())));
+  const cardCount=(await db.prepare("SELECT count(*) AS n FROM payment_attempts WHERE sale_id='stripe-cash-race'").first()).n;
+  const cashCount=(await db.prepare("SELECT count(*) AS n FROM cash_sale_events WHERE sale_id='stripe-cash-race'").first()).n;
+  assert.equal(cardCount+cashCount,1,'Cash and card both reserved the same sale');
+  console.log('Stripe sandbox runtime passed: duplicate checkout, concurrent signed callbacks, one allocation and cash/card competition.');
   const registerReview=(await (await call('/me/register',undefined,staffCookie)).json()).open;
   const closeBody={action:'close',registerId,amountCents:registerReview.totals.expectedCents,reason:'Counted test drawer',token:registerReview.closeToken,requestKey:randomUUID(),currentPassword:cashBody.currentPassword};
   const registerRace=await Promise.all([

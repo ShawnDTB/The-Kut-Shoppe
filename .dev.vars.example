@@ -7,6 +7,11 @@ STAFF_OPERATIONS_ENABLED="false"
 STAFF_SETUP_ENABLED="false"
 COMMERCE_ENABLED="false"
 CASH_SALES_ENABLED="false"
+PAYMENTS_SANDBOX_ENABLED="false"
+# Server-only test credentials. Production domain and live keys are rejected.
+STRIPE_SECRET_KEY=""
+STRIPE_ACCOUNT_ID=""
+STRIPE_WEBHOOK_SECRET=""
 AUTH_SECRET=""
 # Separate 32-byte key, encoded as 64 hex characters. Server only; preserve backups.
 MFA_ENCRYPTION_KEY=""

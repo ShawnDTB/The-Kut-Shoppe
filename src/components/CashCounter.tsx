@@ -5,10 +5,14 @@ import type { SaleEstimate } from '../shared/sales';
 import type { RegisterPage } from '../shared/register';
 import { EstimateSummary } from './SaleEstimates';
 import { StaffAuthenticator } from './StaffAuthenticator';
+import { SandboxCardPayment } from './SandboxCardPayment';
 
 const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'Please try again.';
 const date = (value: string) => new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+const saleLabel = (sale: FinalizedSale) => sale.cardPayment && sale.cardPayment.state !== 'expired'
+  ? sale.cardPayment.state === 'paid' ? 'test card payment confirmed' : sale.cardPayment.state === 'review' ? 'test card payment needs review' : 'test card payment pending'
+  : sale.state;
 function cashCents(value: string): number {
   if (!/^\d{1,7}(?:\.\d{1,2})?$/.test(value.trim())) throw new Error('Enter dollars with no more than two decimal places.');
   const [dollars, fraction = ''] = value.trim().split('.');
@@ -58,6 +62,7 @@ function CashActions({ sale, onChanged }: { sale: FinalizedSale; onChanged: () =
   const [received, setReceived] = useState(''); const [tip, setTip] = useState('0'); const [reason, setReason] = useState('');
   const [review, setReview] = useState<CashAction | null>(null); const [pending, setPending] = useState(false); const [done, setDone] = useState(false);
   const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const lock = useRef(false);
+  if (sale.cardPayment && sale.cardPayment.state !== 'expired') return <p>Cash collection and voiding are locked while this sale has a card payment. Review the test payment below.</p>;
   if (sale.state === 'void' || sale.state === 'refunded') return <p>This sale is closed. Its original records remain available below.</p>;
   const paid = sale.receipts.find(receipt => receipt.kind === 'payment');
   const amount = review?.action === 'refund' ? paid!.amountCents : review?.action === 'void' ? 0 : sale.totalCents + (review?.tipCents ?? 0);
@@ -97,6 +102,7 @@ function CashActions({ sale, onChanged }: { sale: FinalizedSale; onChanged: () =
     <button className="button" disabled={busy}>{busy?'Reviewing…':'Review cash action'}</button></form>}</div>;
 }
 function CounterDesk() {
+  const [uncertainCardSale, setUncertainCardSale] = useState<string | null>(null);
   const [page, setPage] = useState<CounterPage | null>(null); const [sale, setSale] = useState<FinalizedSale | null>(null); const [estimate, setEstimate] = useState<SaleEstimate | null>(null);
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [password, setPassword] = useState(''); const [attempt, setAttempt] = useState(0); const [version, setVersion] = useState(0);
   const lock = useRef(false);
@@ -107,14 +113,14 @@ function CounterDesk() {
       const data = await accountApi<CounterPage>('/me/counter');
       const selected = id ? (await accountApi<{ sale: FinalizedSale }>(`/me/counter/${encodeURIComponent(id)}`)).sale : null;
       const original = !id && estimateId ? (await accountApi<{ estimate: SaleEstimate }>(`/me/sales/${encodeURIComponent(estimateId)}`)).estimate : null;
-      if (active) { setPage(data); setSale(selected); setEstimate(original); setError(''); setVersion(value => value + 1); }
+      if (active) { setPage(data); setSale(selected); setEstimate(original); setError(''); setUncertainCardSale(null); setVersion(value => value + 1); }
     };
     void load().catch(failure => { if (active) setError(messageOf(failure)); });
     return () => { active = false; };
   }, [attempt]);
   const open = async (id: string) => {
     const result = await accountApi<{ sale: FinalizedSale }>(`/me/counter/${encodeURIComponent(id)}`);
-    setSale(result.sale); setEstimate(null); setVersion(value => value + 1); setError('');
+    setSale(result.sale); setEstimate(null); setVersion(value => value + 1); setError(''); setUncertainCardSale(null);
     window.history.replaceState({}, '', `/account?view=counter&sale=${encodeURIComponent(id)}`);
     const data = await accountApi<CounterPage>('/me/counter'); setPage(data);
   };
@@ -128,19 +134,20 @@ function CounterDesk() {
     try { const next = await accountApi<CounterPage>(`/me/counter?cursor=${encodeURIComponent(page.nextCursor)}`); setPage({ items: [...page.items, ...next.items.filter(item => !page.items.some(old => old.id === item.id))], nextCursor: next.nextCursor }); }
     catch (failure) { setError(messageOf(failure)); } finally { setBusy(false); }
   };
-  return <section><h2>Sales & cash</h2><p>Finalize completed services and accepted pickup orders, then record cash collected at the shop. Card payments are not connected.</p>
+  return <section><h2>Sales & cash</h2><p>Finalize completed services and accepted pickup orders, then record cash collected at the shop. Live card payments are not open yet.</p>
     <p><a href="/account?view=register">Open or reconcile the cash register</a> · <a href="/account?view=sales">Prepare a sale estimate</a> · <a href="/admin/orders">Manage order fulfillment</a></p>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
     {estimate ? <form className="customer-form" onSubmit={event => void finalize(event)}><h3>Finalize reviewed estimate</h3><EstimateSummary estimate={estimate} />
       <p>This fixes the item prices, discount and charges for the sale. It does not record payment. All charges must be determined, services completed and pickup orders accepted first.</p>
       <label>Your current password<input required type="password" maxLength={128} autoComplete="current-password" disabled={busy} value={password} onChange={event => setPassword(event.target.value)} /></label>
       <button className="button" disabled={busy || estimate.totalCents === null}>{busy ? 'Finalizing…' : 'Finalize sale'}</button></form> : null}
-    {sale ? <section className="customer-security-section"><h3>Sale {sale.id.slice(-8)} · {sale.state}</h3><EstimateSummary estimate={sale.estimate} finalized />
-      <CashActions key={`${sale.id}:${version}`} sale={sale} onChanged={() => open(sale.id)} />
+    {sale ? <section className="customer-security-section"><h3>Sale {sale.id.slice(-8)} · {saleLabel(sale)}</h3><EstimateSummary estimate={sale.estimate} finalized />
+      {uncertainCardSale === sale.id ? <p role="status">A card checkout was attempted. Refresh the sale before collecting cash; do not collect again while the result is uncertain.</p> : <CashActions key={`${sale.id}:${version}`} sale={sale} onChanged={() => open(sale.id)} />}
+      <SandboxCardPayment key={`card:${sale.id}:${version}`} sale={sale} onAttempt={() => setUncertainCardSale(sale.id)} onChanged={() => open(sale.id)} />
       <h3>Sale records</h3>{sale.receipts.length ? <ul className="sale-estimate-list">{sale.receipts.map(receipt => <Receipt key={receipt.id} receipt={receipt} admin />)}</ul> : <p>No cash has been recorded for this sale.</p>}
     </section> : null}
     <section className="customer-security-section"><h3>Recent sales</h3>{!page && !error ? <p role="status">Loading sales…</p> : null}
-      {page?.items.length ? <ul className="sale-estimate-list">{page.items.map(item => <li className="sale-estimate-record" key={item.id}><a href={`/account?view=counter&sale=${encodeURIComponent(item.id)}`}>{item.estimate.customerName} · {money(item.totalCents)} · {item.state}</a><p>{date(item.createdAt)} · Sale {item.id.slice(-8)}</p></li>)}</ul> : page ? <p>No finalized sales yet. Start with a saved estimate.</p> : null}
+      {page?.items.length ? <ul className="sale-estimate-list">{page.items.map(item => <li className="sale-estimate-record" key={item.id}><a href={`/account?view=counter&sale=${encodeURIComponent(item.id)}`}>{item.estimate.customerName} · {money(item.totalCents)} · {saleLabel(item)}</a><p>{date(item.createdAt)} · Sale {item.id.slice(-8)}</p></li>)}</ul> : page ? <p>No finalized sales yet. Start with a saved estimate.</p> : null}
       {page?.nextCursor ? <button className="button button-secondary" disabled={busy} onClick={() => void more()}>Load older sales</button> : null}
       <button className="text-button" disabled={busy} onClick={() => setAttempt(value => value + 1)}>Refresh sales and receipts</button>
     </section></section>;

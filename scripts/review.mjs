@@ -13,6 +13,17 @@ const origin = 'http://localhost:8788';
 const workspace = process.env.REVIEW_WORKSPACE;
 if (workspace !== undefined && !/^[a-z0-9][a-z0-9-]{0,47}$/.test(workspace)) throw new Error('REVIEW_WORKSPACE must be 1–48 lowercase letters, digits, or hyphens.');
 const root = workspace ? `.wrangler/review-${workspace}` : '.wrangler/review';
+const stripeEnabled = process.env.REVIEW_STRIPE_SANDBOX === 'true';
+let stripe = {};
+if (stripeEnabled) {
+  if (!workspace) throw new Error('Stripe testing requires an isolated named REVIEW_WORKSPACE.');
+  stripe = JSON.parse(await readFile(`${root}/stripe-sandbox.json`, 'utf8'));
+  if (!/^sk_test_[A-Za-z0-9]+$/.test(stripe.STRIPE_SECRET_KEY ?? '') || !/^acct_[A-Za-z0-9]+$/.test(stripe.STRIPE_ACCOUNT_ID ?? '') ||
+      !/^whsec_[A-Za-z0-9]+$/.test(stripe.STRIPE_WEBHOOK_SECRET ?? '') ||
+      Object.keys(stripe).some(key => !['STRIPE_SECRET_KEY','STRIPE_ACCOUNT_ID','STRIPE_WEBHOOK_SECRET'].includes(key))) {
+    throw new Error('Invalid Stripe sandbox configuration. Only test keys are allowed; values are not printed.');
+  }
+}
 const inboxToken = randomBytes(32).toString('hex');
 const deliveries = [];
 await mkdir(root, { recursive: true, mode: 0o700 });
@@ -29,9 +40,13 @@ await build({ configFile: false, logLevel: 'warn', build: { ssr: `${root}/entry.
 const worker = new Miniflare(convertV4MiniflareOptions({ cf: false, host: '127.0.0.1', port: 0,
   modules: true, scriptPath: `${root}/worker/worker.js`, compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'],
   d1Databases: ['DB'], resourcePersistencePath: `${root}/database`,
-  bindings: { APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true', COMMERCE_ENABLED: 'true', CASH_SALES_ENABLED: 'true',
+  bindings: { ...stripe, PAYMENTS_SANDBOX_ENABLED:stripeEnabled?'true':'false', APP_ORIGIN: origin, ACCOUNTS_ENABLED: 'true', CUSTOMER_BOOKING_ENABLED: 'true', STAFF_OPERATIONS_ENABLED: 'true', STAFF_SETUP_ENABLED: 'true', COMMERCE_ENABLED: 'true', CASH_SALES_ENABLED: 'true',
     AUTH_SECRET: secrets.auth, MFA_ENCRYPTION_KEY: secrets.mfa, TURNSTILE_SITE_KEY: '1x00000000000000000000AA', TURNSTILE_SECRET_KEY: 'local-review', RESEND_API_KEY: 'local-inbox', MAIL_FROM: 'review@example.test' },
   outboundService: async (request) => {
+    if (stripeEnabled && /^https:\/\/api\.stripe\.com\/v1\/(account|checkout\/sessions(?:\/cs_test_[A-Za-z0-9]+)?)$/.test(request.url) && ['GET','POST'].includes(request.method)) {
+      return globalThis.fetch(request.url, { method:request.method, headers:request.headers, body:request.method==='POST'?await request.text():undefined,
+        redirect:'manual', signal:globalThis.AbortSignal.timeout(10_000) });
+    }
     if (request.url === 'https://challenges.cloudflare.com/turnstile/v0/siteverify') return globalThis.Response.json({ success: true, hostname: 'localhost', action: 'account' });
     if (request.url === 'https://api.resend.com/emails') {
       deliveries.push({ ...(await request.json()), receivedAt: new Date().toISOString() });
@@ -143,7 +158,8 @@ try {
       }
       if (url.pathname.startsWith('/api/')) {
         const chunks = []; let size = 0;
-        for await (const chunk of req) { size += chunk.length; if (size > 8192) { res.writeHead(413); res.end(); return; } chunks.push(chunk); }
+        const limit = url.pathname === '/api/v1/payments/stripe/webhook' ? 65_536 : 8192;
+        for await (const chunk of req) { size += chunk.length; if (size > limit) { res.writeHead(413); res.end(); return; } chunks.push(chunk); }
         const headers = new globalThis.Headers();
         for (const [name, value] of Object.entries(req.headers)) if (value && !['host', 'content-length', 'connection', 'transfer-encoding', 'cf-connecting-ip'].includes(name)) headers.set(name, Array.isArray(value) ? value.join(', ') : value);
         headers.set('CF-Connecting-IP', '127.0.0.1');
@@ -164,7 +180,7 @@ try {
     } catch { res.writeHead(500); res.end('Local review request failed.'); }
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(8788, '127.0.0.1', resolve); });
-  console.log(`\nLocal review: ${origin}/account\nEmail inbox: ${origin}/__review/inbox?token=${inboxToken}\nSign-in credentials: ${root}/accounts.json\n\nPersistent local data; use test information only. New workspaces include customer, staff, manager, and owner sign-ins. Named workspaces save test MFA credentials in authenticators.json; the default workspace keeps its existing enrollment. External email and anti-bot verification are simulated only in this local runner. Shop requests: /shop. Owner products/orders: /admin/products and /admin/orders. A sample pomade is available for local review. Rescheduling: open a confirmed appointment in the account. Guest walk-ins: /account?view=front-desk (owner/manager). Printable booking/order documents are available in record details. Sales preparation: /account?view=sales (owner/manager). Customer estimate history: /account?view=estimates. Cash register: /account?view=register (owner/manager); count and open the drawer before new cash payments/refunds. Cash sales: /account?view=counter (owner/manager). Finalize a saved estimate for a completed visit or accepted pickup order, then record test cash. Customer paid/refund receipts: /account?view=receipts. No real cash, card processing, bank transfers or employee payroll are connected in this local runner.\n`);
+  console.log(`\nLocal review: ${origin}/account\nEmail inbox: ${origin}/__review/inbox?token=${inboxToken}\nSign-in credentials: ${root}/accounts.json\n\nPersistent local data; use test information only. New workspaces include customer, staff, manager, and owner sign-ins. Named workspaces save test MFA credentials in authenticators.json; the default workspace keeps its existing enrollment. External email and anti-bot verification are simulated only in this local runner. Shop requests: /shop. Owner products/orders: /admin/products and /admin/orders. A sample pomade is available for local review. Rescheduling: open a confirmed appointment in the account. Guest walk-ins: /account?view=front-desk (owner/manager). Printable booking/order documents are available in record details. Sales preparation: /account?view=sales (owner/manager). Customer estimate history: /account?view=estimates. Cash register: /account?view=register (owner/manager); count and open the drawer before new cash payments/refunds. Cash sales: /account?view=counter (owner/manager). Finalize a saved estimate for a completed visit or accepted pickup order, then record test cash. Customer paid/refund receipts: /account?view=receipts. No real cash, live card processing, bank transfers or employee payroll are connected in this local runner. Stripe test-mode access is opt-in through REVIEW_STRIPE_SANDBOX; it uses only the named workspace sandbox credentials.\n`);
   const stop = async () => { server.close(); await worker.dispose(); process.exit(0); };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
 } catch (error) {

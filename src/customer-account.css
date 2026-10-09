@@ -1,6 +1,9 @@
 /* Customer accounts are a quiet working surface within the shop's existing
    black, ivory, and gold identity. No decorative reveals or glass panels. */
 .local-platform-notice { padding: 1rem; margin: 0; background: #493b1a; color: #fff0ce; text-align: center; }
+.sandbox-card-payment { display: grid; gap: 1rem; }
+.sandbox-card-payment > p, .sandbox-card-payment > h3 { margin: 0; }
+.sandbox-card-payment .button { min-height: 46px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .customer-account {
   --account-ink: #f6f3eb;
   --account-muted: #c1bdb4;

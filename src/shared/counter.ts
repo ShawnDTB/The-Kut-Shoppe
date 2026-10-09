@@ -3,6 +3,8 @@ export interface FinalizedSale {
  id: string; estimateId: string; createdAt: string; estimate: SaleEstimate;
  totalCents: number; state: 'unpaid' | 'paid' | 'refunded' | 'void';
  receipts: CashReceipt[];
+ sandboxCheckoutEnabled?: boolean;
+ cardPayment?: { id: string; state: 'pending' | 'paid' | 'expired' | 'review'; checkoutUrl: string | null } | null;
 }
 export interface CashReceipt {
  id: string; saleId: string; createdAt: string; kind: 'payment' | 'refund' | 'void';

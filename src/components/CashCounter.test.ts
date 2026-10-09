@@ -18,6 +18,26 @@ beforeEach(() => {
 afterEach(async()=>{await act(async()=>root.unmount());element.remove();vi.unstubAllGlobals();});
 const click=async(text:string)=>{const button=[...element.querySelectorAll('button')].find(node=>node.textContent===text);expect(button).toBeDefined();await act(async()=>button!.click());};
 const fill=async(label:string,value:string)=>{const field=[...element.querySelectorAll('label')].find(node=>node.textContent?.startsWith(label))!.querySelector('input')!;await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(field,value);field.dispatchEvent(new Event('input',{bubbles:true}));});};
+it('keeps card tests explicit, hides cash during an uncertain payment, and recovers the same checkout',async()=>{
+  let sale:FinalizedSale={...original,sandboxCheckoutEnabled:true};let attempts=0;
+  api.mockImplementation(async(path,body)=>{
+    if(path==='/me/counter')return{items:[sale],nextCursor:null};
+    if(path==='/me/counter/sale-one')return{sale};
+    if(path==='/me/payments/checkout'&&body){attempts++;sale={...sale,cardPayment:{id:'payment-one',state:'pending',checkoutUrl:attempts>1?'https://checkout.stripe.com/c/pay/cs_test_fixture':null}};if(attempts===1)throw new Error('Provider reply lost. Retry this sale.');return{state:'pending'};}
+    if(path==='/me/payments/payment-one/reconcile'){sale={...sale,cardPayment:{id:'payment-one',state:'paid',checkoutUrl:null}};return{state:'paid'};}
+    throw new Error(path);
+  });
+  await act(async()=>root.render(createElement(CashCounter)));expect(element.textContent).toContain('Test mode only');
+  await fill('Your current password','test password');await click('Create test card checkout');
+  expect(element.textContent).toContain('Provider reply lost');expect(element.querySelector<HTMLInputElement>('input[type=password]')!.value).toBe('');
+  await click('Refresh sales and receipts');expect(element.textContent).toContain('Cash collection and voiding are locked');
+  expect(element.textContent).not.toContain('Review cash action');
+  await fill('Your current password','test password');await click('Recover the same test checkout');
+  expect(element.querySelector('a[href^="https://checkout.stripe.com"]')?.textContent).toContain('new tab');
+  await click('Check Stripe payment status');expect(element.textContent).toContain('Stripe confirmed the test payment');
+  expect(element.textContent).not.toContain('Full cash refund');
+  const writes=api.mock.calls.filter(([path])=>path==='/me/payments/checkout');expect(writes[0]![1]).toEqual(writes[1]![1]);
+});
 it('reviews change due and freezes the cash action across a lost response, then shows the saved receipt',async()=>{
   let sale=original;let attempts=0;
   api.mockImplementation(async(path,body)=>{

@@ -16,6 +16,7 @@ const valid = () => ({
 });
 
 test('accepts structurally complete settings without contacting providers', () => assert.deepEqual(checkReleaseEnvironment(valid()), []));
+test('rejects payment sandbox activation in public releases', () => assert.ok(checkReleaseEnvironment({ ...valid(), PAYMENTS_SANDBOX_ENABLED: 'true' }).some(message => message.includes('Payment sandbox'))));
 for (const origin of ['http://shop.kutshoppe.net', 'https://localhost', 'https://staging.example.invalid', 'https://shop.kutshoppe.net/', 'https://user:pass@shop.kutshoppe.net', 'https://127.0.0.1']) {
   test(`rejects unsafe origin ${origin}`, () => assert.ok(checkReleaseEnvironment({ ...valid(), APP_ORIGIN: origin }).some(x => x.startsWith('APP_ORIGIN'))));
 }

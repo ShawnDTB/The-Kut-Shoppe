@@ -3,7 +3,7 @@ import { readFile, readdir, access } from 'node:fs/promises';
 import './check-bundle-size.mjs';
 
 const config = await readFile('wrangler.production.toml', 'utf8');
-for (const flag of ['ACCOUNTS_ENABLED', 'CUSTOMER_BOOKING_ENABLED', 'STAFF_OPERATIONS_ENABLED', 'STAFF_SETUP_ENABLED', 'COMMERCE_ENABLED', 'CASH_SALES_ENABLED', 'APPOINTMENT_EMAIL_ENABLED']) {
+for (const flag of ['ACCOUNTS_ENABLED', 'CUSTOMER_BOOKING_ENABLED', 'STAFF_OPERATIONS_ENABLED', 'STAFF_SETUP_ENABLED', 'COMMERCE_ENABLED', 'CASH_SALES_ENABLED', 'PAYMENTS_SANDBOX_ENABLED', 'APPOINTMENT_EMAIL_ENABLED']) {
   assert.ok(config.includes(`${flag} = "false"`), `${flag} requires a separate activation review`);
 }
 for (const [route, copy] of [['book', 'New website booking under construction'], ['shop', 'Online shopping under construction'], ['account', 'Accounts coming soon'], ['checkout', 'Online shopping under construction'], ['cart', 'Online shopping under construction']]) {

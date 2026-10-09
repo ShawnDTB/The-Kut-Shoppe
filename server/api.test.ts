@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleApi } from './api';
@@ -1554,6 +1554,125 @@ describe('finalized sales and cash receipts', () => {
     const action = (kind = 'payment', overrides = {}) => ({ action: kind, cashReceivedCents: kind === 'payment' ? 3000 : 0, tipCents: kind === 'payment' ? 201 : 0, reason: kind === 'payment' ? '' : 'Test correction', requestKey: randomUUID(), currentPassword: password, registerId:kind==='void'?'':'cash-register-test', ...overrides });
     return { owner, alice, bob, input, estimate, finalize, action, now };
   }
+  async function stripeFixture() {
+    const f = await fixture(); const saleId = await f.finalize();
+    env.PAYMENTS_SANDBOX_ENABLED = 'true'; env.STRIPE_SECRET_KEY = 'sk_test_fixture';
+    env.STRIPE_WEBHOOK_SECRET = 'whsec_fixture'; env.STRIPE_ACCOUNT_ID = 'acct_fixture';
+    const calls: { body: string; key: string }[] = [];
+    let session: Record<string, unknown> = {};
+    let loseResponse = false;
+    const previous = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
+      if (url === 'https://api.stripe.com/v1/account') return Response.json({ id: 'acct_fixture' });
+      if (url.startsWith('https://api.stripe.com/v1/checkout/sessions')) {
+        if (init.method === 'POST') {
+          const body = String(init.body); const fields = new URLSearchParams(body);
+          calls.push({ body, key: (init.headers as Record<string, string>)['Idempotency-Key']! });
+          session = { id: 'cs_test_fixture', object: 'checkout.session', mode: 'payment', livemode: false,
+            client_reference_id: fields.get('client_reference_id'), metadata: { attempt_id: fields.get('metadata[attempt_id]') },
+            amount_total: Number(fields.get('line_items[0][price_data][unit_amount]')), currency: 'usd',
+            status: 'open', payment_status: 'unpaid', payment_intent: null, url: 'https://checkout.stripe.com/c/pay/cs_test_fixture' };
+          if (loseResponse) { loseResponse = false; throw new Error('Simulated timeout after provider creation'); }
+        }
+        return Response.json(session);
+      }
+      return previous(url, init);
+    }));
+    const checkout = (overrides = {}, cookie = f.owner) => request('/me/payments/checkout', { saleId, currentPassword: password, ...overrides }, cookie);
+    const event = async (changes = {}, type = 'checkout.session.completed', eventId = `evt_${randomUUID().replaceAll('-', '')}`, header?: string) => {
+      const body = JSON.stringify({ id: eventId, type, livemode: false, data: { object: { ...session, status: 'complete', payment_status: 'paid', payment_intent: 'pi_fixture', ...changes } } });
+      const t = Math.floor(Date.now() / 1000);
+      const signature = `t=${t},v1=${createHmac('sha256', env.STRIPE_WEBHOOK_SECRET!).update(`${t}.${body}`).digest('hex')}`;
+      return handleApi(new Request(`${origin}/api/v1/payments/stripe/webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Stripe-Signature': header ?? signature }, body }), env);
+    };
+    return { ...f, saleId, calls, checkout, event, lose: () => { loseResponse = true; }, change: (changes: Record<string, unknown>) => { session = { ...session, ...changes }; } };
+  }
+  it('keeps sandbox checkout closed by default, refuses live credentials and rejects client prices', async () => {
+    const f = await stripeFixture();
+    env.PAYMENTS_SANDBOX_ENABLED = 'false'; expect((await f.checkout()).status).toBe(503);
+    env.PAYMENTS_SANDBOX_ENABLED = 'true'; env.STRIPE_SECRET_KEY = 'sk_live_fixture'; expect((await f.checkout()).status).toBe(503);
+    env.STRIPE_SECRET_KEY = 'sk_test_fixture'; expect((await f.checkout({ amountCents: 1 })).status).toBe(400);
+    expect((await f.checkout({}, f.alice)).status).toBe(403);
+    expect((await f.checkout({ currentPassword: 'wrong' })).status).toBe(400);
+    expect(f.calls).toHaveLength(0); expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_attempts').get()!.n).toBe(0);
+    env.APP_ORIGIN = 'https://www.thekutshoppe.com';
+    const { sandboxConfiguration } = await import('./stripe-sandbox');
+    expect(() => sandboxConfiguration(env, true)).toThrow();
+  });
+  it('freezes the bill, recovers a lost response using exactly one provider identity, and keeps callbacks working when paused', async () => {
+    const f = await stripeFixture(); f.lose();
+    expect((await f.checkout()).status).toBe(503);
+    const recovered = await f.checkout(); expect(recovered.status, await recovered.clone().text()).toBe(200);
+    const payment = await recovered.json(); expect(payment).toMatchObject({ amountCents: 2399, state: 'pending', sandbox: true });
+    expect(f.calls).toHaveLength(2); expect(f.calls[0]).toEqual(f.calls[1]);
+    expect(new URLSearchParams(f.calls[0]!.body).get('line_items[0][price_data][unit_amount]')).toBe('2399');
+    expect((await f.checkout()).status).toBe(200); expect(f.calls).toHaveLength(2);
+    expect((await request(`/me/counter/${f.saleId}`, f.action(), f.owner)).status).toBe(409);
+    env.PAYMENTS_SANDBOX_ENABLED = 'false'; env.ACCOUNTS_ENABLED = 'false';
+    expect((await f.event()).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT state FROM payment_attempts').get()!.state).toBe('paid');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_allocations').get()!.n).toBe(1);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_sale_events').get()!.n).toBe(0);
+  });
+  it('deduplicates captures and never lets an expired event regress a paid attempt', async () => {
+    const f = await stripeFixture(); const payment = await (await f.checkout()).json();
+    expect((await f.event({}, 'checkout.session.completed', 'evt_replay')).status).toBe(200);
+    expect((await f.event({}, 'checkout.session.completed', 'evt_replay')).status).toBe(200);
+    expect((await f.event()).status).toBe(200);
+    expect((await f.event({ status: 'expired', payment_status: 'unpaid', payment_intent: null }, 'checkout.session.expired')).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT state FROM payment_attempts').get()!.state).toBe('paid');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_allocations').get()!.n).toBe(1);
+    const own = await request(`/me/payments/${payment.id}`, undefined, f.alice); expect(own.status).toBe(200);
+    expect(await own.json()).not.toHaveProperty('checkoutUrl');
+    expect((await request(`/me/payments/${payment.id}`, undefined, f.bob)).status).toBe(404);
+    expect((await request(`/me/payments/${payment.id}`, undefined, f.owner)).status).toBe(200);
+    expect((await request(`/me/payments/${payment.id}/reconcile`, {}, f.alice)).status).toBe(403);
+    expect((await f.event({ amount_total: 1 }, 'checkout.session.completed', 'evt_replay')).status).toBe(400);
+  });
+  it('rejects invalid signatures and quarantines live-mode objects and mismatched amounts', async () => {
+    const f = await stripeFixture(); await f.checkout();
+    expect((await f.event({}, 'checkout.session.completed', 'evt_unsigned', 't=1,v1=' + 'a'.repeat(64))).status).toBe(400);
+    expect((await f.event({ amount_total: 1 })).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT state FROM payment_attempts').get()!.state).toBe('review');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_allocations').get()!.n).toBe(0);
+    expect((await request(`/me/counter/${f.saleId}`, f.action('void'), f.owner)).status).toBe(409);
+    expect((await f.event({ livemode: true })).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_allocations').get()!.n).toBe(0);
+  });
+  it('requires verified expiry to release cash, and quarantines a contradictory late capture without losing its record', async () => {
+    const f = await stripeFixture(); await f.checkout();
+    expect((await f.event({ status: 'expired', payment_status: 'unpaid', payment_intent: null }, 'checkout.session.expired')).status).toBe(200);
+    expect((await request(`/me/counter/${f.saleId}`, f.action(), f.owner)).status).toBe(200);
+    expect((await f.event()).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT state FROM payment_attempts').get()!.state).toBe('review');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_allocations').get()!.n).toBe(1);
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM cash_sale_events').get()!.n).toBe(1);
+    expect((await request(`/me/counter/${f.saleId}`, f.action('refund'), f.owner)).status).toBe(409);
+  });
+  it('refuses checkout on cash-paid sales without contacting the provider', async () => {
+    const f = await stripeFixture();
+    expect((await request(`/me/counter/${f.saleId}`, f.action(), f.owner)).status).toBe(200);
+    expect((await f.checkout()).status).toBe(409); expect(f.calls).toHaveLength(0);
+  });
+  it('preserves unknown attempts for reconciliation after the provider retry window', async () => {
+    const f = await stripeFixture(); f.lose(); expect((await f.checkout()).status).toBe(503);
+    const actual = Date.now(); const clock = vi.spyOn(Date, 'now').mockReturnValue(actual + 26 * 60_000);
+    try { expect((await f.checkout()).status).toBe(409); expect(f.calls).toHaveLength(1); }
+    finally { clock.mockRestore(); }
+    expect(db.sqlite.prepare('SELECT state FROM payment_attempts').get()!.state).toBe('pending');
+    expect(() => db.sqlite.exec("UPDATE payment_attempts SET amount_cents=1")).toThrow(/immutable/);
+  });
+  it('reconciles a verified provider result without accepting success redirects as payment evidence', async () => {
+    const f = await stripeFixture(); const payment = await (await f.checkout()).json();
+    expect((await request(`/me/payments/${payment.id}?success=true`, undefined, f.alice)).status).toBe(400);
+    f.change({ status: 'complete', payment_status: 'paid', payment_intent: 'pi_fixture' });
+    const result = await request(`/me/payments/${payment.id}/reconcile`, {}, f.owner);
+    expect(result.status, await result.clone().text()).toBe(200); expect(await result.json()).toMatchObject({ state: 'paid', sandbox: true });
+    expect(() => db.sqlite.exec('DELETE FROM payment_allocations')).toThrow(/retention/);
+    expect((await f.event({ amount_total: 1 })).status).toBe(200);
+    expect(db.sqlite.prepare('SELECT state FROM payment_attempts').get()!.state).toBe('review');
+    expect(db.sqlite.prepare('SELECT count(*) AS n FROM payment_allocations').get()!.n).toBe(1);
+  });
   it('finalizes exact amounts, records cash/change/tips once, and preserves private immutable receipt snapshots', async () => {
     const f = await fixture(); db.sqlite.exec("UPDATE services SET name='<script>bad()</script>'");
     const estimateId = await f.estimate(); const saleId = await f.finalize(estimateId); expect(await f.finalize(estimateId)).toBe(saleId);

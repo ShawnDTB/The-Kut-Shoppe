@@ -1,5 +1,7 @@
 # Pages hosting update
 
+October 9 payment development: read `docs/platform/stripe-sandbox-milestone.md`. Migration 0018, `server/payments.ts`, and `server/stripe-sandbox.ts` add test-only hosted checkout, signed events and allocations on finalized sales. Preserve one attempt per sale, frozen provider identity/amounts, current staff MFA/password guards, cash/card exclusion and fail-closed unknown results. Live keys and public shop origins are rejected. `PAYMENTS_SANDBOX_ENABLED=false` stays in every hosted config; development stays on `dev-branch`. This milestone does not apply production migrations or activate live payments. Terminal/refunds/booking holds/earnings/payroll remain next slices.
+
 `wrangler.toml` now configures the Git-connected Pages frontend. `wrangler.production.toml` configures its existing service-bound account Worker. `wrangler.local.toml` is the old disabled local template. Use `npm run build:pages` for Pages, keep all production operational flags false, and read the latest notes in `docs/platform/public-launch.md`.
 
 # Public release update (October 4, 2026)
