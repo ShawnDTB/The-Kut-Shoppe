@@ -4,7 +4,7 @@
 
 - Removed the separate senior barber service menu and its obsolete data/style rules. Adult barber menus now state: Clients ages 65 and up receive $5 off the adult price.
 - Restored visibility of the discount note, which an older stylesheet hid. The note now has readable light text, a larger font, and a full-width border.
-- Sunday walk-in reference hours are 10 AM–3 PM, per Kash. Shared hours, footer/header summaries, visit content and structured data use the same schedule.
+- Sunday walk-in reference hours are 10 AM–3 PM, per Kash. Shared hours, footer/header summaries and visit content use the same schedule. Structured data intentionally omits opening hours because individual schedules vary.
 - Clarified that posted hours are walk-in reference hours, individual professionals keep separate schedules, and the shop may close on days without bookings.
 - Shortened the public address to 518 Main St., including the map panel.
 - Added a dated Booksy summary: 5.0 from 664 reviews, including 649 five-star reviews. Google excerpts remain separately labeled; no combined cross-platform rating or outdated Google aggregate is claimed.
@@ -32,6 +32,10 @@
 - Browser review at 390 px and desktop: discount is visible, no horizontal page overflow on the checked mobile services, crew, visit, reviews and homepage routes; Sunday hours and disclaimer are visible; map-panel street address fits one line; portrait is loaded with alt text and lazy loading; Steph’s booking path reaches the intended GlossGenius handoff.
 - This is a scoped owner-feedback content and image update. The full account/dashboard review was completed in the preceding audit; this pass did not repeat authenticated workflows or claim a screen-reader audit.
 
-## Release state
+## Initial review state
 
 Prepared and committed on dev-branch. This update has not been pushed or deployed to the live site.
+
+## Main promotion verification
+
+The user approved promotion to main after a second check of every owner request. The complete project check passed: 301 application tests, 12 environment tests, TypeScript, ESLint, public build, size budgets, production gates, Cloudflare runtime checks and notification Worker checks. All 17 database migrations apply to a fresh in-memory database. The public-release check confirms construction pages and closed platform feature gates. The refreshed 36-route static audit reports zero findings. No stale senior-service menu, Google 4.9/59-review claim, or Sunday-closed copy remains in the public source.
