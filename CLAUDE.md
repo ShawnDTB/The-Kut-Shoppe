@@ -1,3 +1,7 @@
+# Account-only rollout — October 9, 2026
+
+The user approved enabling accounts on main. Read `docs/platform/account-public-rollout.md`. Only `ACCOUNTS_ENABLED` is true in the hosted configs; every booking, staff operations/setup, commerce, cash, payment sandbox and appointment email gate stays false. Public `/account` and `/dashboard` use `LiveAccounts` with shared `AccountBasics`; the full development workspace remains `CustomerAccount`. Resend domain verification and a domain-restricted sending key are provisioned, with a delivered test to the user-approved inbox. D1 migration 0018 is applied after a private backup. Older instructions below to keep accounts false or avoid main are superseded for this authorized account release only.
+
 # Pages hosting update
 
 October 9 payment development: read `docs/platform/stripe-sandbox-milestone.md`. Migration 0018, `server/payments.ts`, and `server/stripe-sandbox.ts` add test-only hosted checkout, signed events and allocations on finalized sales. Preserve one attempt per sale, frozen provider identity/amounts, current staff MFA/password guards, cash/card exclusion and fail-closed unknown results. Live keys and public shop origins are rejected. `PAYMENTS_SANDBOX_ENABLED=false` stays in every hosted config; development stays on `dev-branch`. This milestone does not apply production migrations or activate live payments. Terminal/refunds/booking holds/earnings/payroll remain next slices.

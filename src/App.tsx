@@ -47,6 +47,7 @@ import { ReviewsPageV4 } from './components/ReviewsPageV4';
 
 const LocalPlatformPreview = import.meta.env.DEV ? lazy(() => import('./components/LocalPlatformPreview')) : null;
 const CustomerAccount = import.meta.env.PROD && import.meta.env.VITE_PUBLIC_LAUNCH !== 'false' ? null : lazy(() => import('./components/CustomerAccount').then(module => ({ default: module.CustomerAccount })));
+const LiveAccounts = lazy(() => import('./components/LiveAccounts').then(module => ({ default: module.LiveAccounts })));
 const LiveCommerce = import.meta.env.PROD && import.meta.env.VITE_PUBLIC_LAUNCH !== 'false' ? null : lazy(() => import('./components/LiveCommerce').then(module => ({ default: module.LiveCommerce })));
 
 const ProductionBooking = import.meta.env.PROD && import.meta.env.VITE_PUBLIC_LAUNCH !== 'false' ? null : lazy(() => import('./components/ProductionAccess').then(module => ({ default: module.ProductionBooking })));
@@ -65,8 +66,8 @@ const subscribeToHydration = () => () => undefined;
 const getHydratedSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-function ClientPlatform({ children }: { children: ReactNode }) {
-  return useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot) ? <Suspense fallback={<p className="container" role="status">Opening your workspace…</p>}>{children}</Suspense> : null;
+function ClientPlatform({ children, placeholder = null }: { children: ReactNode; placeholder?: ReactNode }) {
+  return useSyncExternalStore(subscribeToHydration, getHydratedSnapshot, getServerSnapshot) ? <Suspense fallback={<p className="container" role="status">Opening your workspace…</p>}>{children}</Suspense> : placeholder;
 }
 
 function ClientRedirect({ to }: { to: string }) {
@@ -114,6 +115,7 @@ export function App({ url }: AppProps) {
         : route.path;
 
   return <SiteLayout currentPath={layoutPath}>{redirect ? <ClientRedirect to={redirect} />
+    : publicLaunch && (normalizedUrl === '/account' || normalizedUrl === '/dashboard') ? <ClientPlatform placeholder={<section className="section customer-account"><div className="container"><h1>Your Kut Shoppe account</h1><p role="status">Opening secure account access…</p><noscript>Enable JavaScript to sign in. You can still book through our booking page.</noscript></div></section>}><LiveAccounts /></ClientPlatform>
     : publicLaunch && operational ? <LaunchPlaceholder kind={normalizedUrl.startsWith('/book') ? 'booking' : normalizedUrl.startsWith('/shop') || normalizedUrl === '/cart' || normalizedUrl === '/checkout' ? 'shop' : 'account'} />
     : normalizedUrl === '/' ? <HomePage />
     : import.meta.env.DEV && localPlatformPreview && LocalPlatformPreview && operational ? <ClientPlatform><Suspense fallback={<p role="status">Opening local preview…</p>}><LocalPlatformPreview path={normalizedUrl} /></Suspense></ClientPlatform>

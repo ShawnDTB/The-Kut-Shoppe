@@ -25,7 +25,7 @@ function isCurrentRoute(currentPath: string, href: string) {
 }
 
 function accountLabel(account: HeaderAccount | null) {
-  if (!account) return publicLaunch ? 'Accounts soon' : 'Sign in';
+  if (!account) return 'Sign in';
   if (!localPlatformPreview || account.role === 'customer') return 'Dashboard';
   return `${account.role.charAt(0).toUpperCase()}${account.role.slice(1)} dashboard`;
 }
@@ -173,7 +173,6 @@ function Header({ currentPath }: { currentPath: string }) {
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
-    if (publicLaunch) return;
     if (import.meta.env.DEV && localPlatformPreview) {
       setAccount(getPlatformSessionAccount());
       setCartCount(readCart().reduce((total, item) => total + item.quantity, 0));
@@ -184,8 +183,8 @@ function Header({ currentPath }: { currentPath: string }) {
     const refresh = () => { const current = getCustomerSession(); setAccount(current ? { name: current.profile.name, role: current.role } : null); };
     const unsubscribe = subscribeToCustomerSession(refresh);
     const refreshCart = () => setCartCount(readLiveCart().reduce((sum, item) => sum + item.quantity, 0));
-    refreshCart();
-    const unsubscribeCart = subscribeLiveCart(refreshCart);
+    if (!publicLaunch) refreshCart();
+    const unsubscribeCart = publicLaunch ? () => undefined : subscribeLiveCart(refreshCart);
     void loadCustomerSession().catch(() => undefined);
     return () => { unsubscribe(); unsubscribeCart(); };
   }, []);
@@ -210,7 +209,7 @@ function Footer() {
       <div className="container footer-v6-primary">
         <section className="footer-v6-brand">
           <img src={originalAssets.logo} alt="The Kut Shoppe" width="88" height="88" loading="lazy" decoding="async" />
-          <div><p className="eyebrow">The Kut Shoppe</p><h2>A familiar chair on Main Street.</h2><p>Classic barbering, modern styling, and personal service in downtown Stroudsburg.</p><div className="footer-v6-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href="/account">{publicLaunch ? 'Accounts soon' : 'My account'}</a></div></div>
+          <div><p className="eyebrow">The Kut Shoppe</p><h2>A familiar chair on Main Street.</h2><p>Classic barbering, modern styling, and personal service in downtown Stroudsburg.</p><div className="footer-v6-actions"><a className="button" href="/book">Book now</a><a className="button button-secondary" href="/account">My account</a></div></div>
         </section>
         <section className="footer-v6-column"><h3>Visit</h3><strong>518 Main St.</strong><span>Stroudsburg, PA 18360</span><a href={business.phoneHref}>{business.phone}</a><a href="/visit">Directions and hours <Arrow /></a></section>
         <nav className="footer-v6-column" aria-label="Explore The Kut Shoppe"><h3>Explore</h3>{primaryNavigation.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav>

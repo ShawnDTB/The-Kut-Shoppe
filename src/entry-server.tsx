@@ -254,7 +254,10 @@ export function render(url: string) {
   const booking = path === '/book' || path.startsWith('/book/');
   const shopping = path === '/shop' || path.startsWith('/shop/') || ['/cart', '/checkout'].includes(path);
   const accounts = ['/account', '/dashboard', '/staff'].includes(path) || path.startsWith('/staff/') || path.startsWith('/admin/');
-  const route = publicLaunch && (booking || shopping || accounts) ? {
+  const route = publicLaunch && ['/account', '/dashboard'].includes(path) ? {
+    ...resolved, path, status: 'private', title: 'Your Account | The Kut Shoppe',
+    description: 'Create an account, sign in, and manage your profile and account security.',
+  } : publicLaunch && (booking || shopping || accounts) ? {
     ...resolved, path, status: 'placeholder',
     title: booking ? 'Book with Our Current Providers | The Kut Shoppe' : shopping ? 'Online Shop Coming Soon | The Kut Shoppe' : 'Accounts Coming Soon | The Kut Shoppe',
     description: booking ? 'Our new booking experience is under construction. Book barber services through Booksy or loc care with Crowned by Steph.' : shopping ? 'Our online shop is under construction. Call or visit The Kut Shoppe for product availability.' : 'Online accounts are coming soon. Book with our current providers or contact the shop for help.',

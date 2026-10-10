@@ -1,3 +1,7 @@
+# Account rollout update — October 9, 2026
+
+The user approved an account-only release on main. See [account public rollout](account-public-rollout.md) for the current scope, verified Resend sender, applied migration and rollback. Only accounts are enabled; booking/shop holding pages and all other operational gates remain closed. Older account-disabled statements below describe the initial holding-page launch.
+
 # Live domain status
 
 Both `www.thekutshoppe.com` and `thekutshoppe.com` are active Pages custom domains with validated certificates. Their CNAME records point to `the-kut-shoppe.pages.dev`; apex redirects to www. Existing MX, SPF, DMARC and other legacy DNS entries were preserved. The prior website A records were both `69.163.182.247`; a full dashboard transcription is saved with the handoff outputs. The registrar transfer can finish independently.
