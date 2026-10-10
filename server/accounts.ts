@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { brandedAccountEmail } from './email-branding';
 import type { CustomerAccount, CustomerOverview, CustomerProfile } from '../src/shared/customer';
 import { ApiError, type Env, type Statement } from './types';
 import { cookie, newCode, newToken, secretHash, SESSION_SECONDS, sessionToken, stringField, allowFields } from './security';
@@ -51,11 +52,11 @@ export function audit(env: Env, userId: string, action: string): Statement {
     VALUES (?, ?, ?, 'account', ?, ?)`)
     .bind(randomUUID(), userId, action, userId, new Date().toISOString());
 }
-export async function sendAccountEmail(env: Env, id: string, email: string, subject: string, text: string) {
+export async function sendAccountEmail(env: Env, id: string, email: string, subject: string, text: string, code?: string) {
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': id },
-      body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject, text }), signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({ from: env.MAIL_FROM, to: [email], subject, text, html: brandedAccountEmail(env.APP_ORIGIN, subject, text, code) }), signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) throw new Error('Email delivery failed');
   } catch { throw new ApiError(503, 'We could not send the email. Please try again shortly.'); }
@@ -70,7 +71,7 @@ export async function sendChallenge(env: Env, user: { id: string; email: string 
   if (inserted.meta.changes !== 1) throw new ApiError(409, 'Your account changed. Please start again.');
   try {
     await sendAccountEmail(env, id, user.email, purpose === 'verify_email' ? 'Verify your Kut Shoppe email' : 'Reset your Kut Shoppe password',
-      `Your Kut Shoppe code is ${code}. It expires in 10 minutes and can be used once. Enter it on ${env.APP_ORIGIN}/account. If you did not request this, you can ignore this email. Never share this code.`);
+      `Your Kut Shoppe code is ${code}. It expires in 10 minutes and can be used once. Enter it on ${env.APP_ORIGIN}/account. If you did not request this, you can ignore this email. Never share this code.`, code);
   } catch {
     await env.DB.prepare('DELETE FROM account_challenges WHERE id = ?').bind(id).run();
     throw new ApiError(503, 'We could not send the email. Please try again shortly.');

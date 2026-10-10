@@ -38,9 +38,9 @@ export async function startEmailChange(env: Env, account: CustomerAccount, sessi
   try {
     // No MFA exists yet: confirm access to BOTH inboxes, not just the destination.
     await sendAccountEmail(env, `${id}-current`, account.email, 'Confirm a Kut Shoppe email change',
-      `Your current-email confirmation code is ${currentCode}. Someone requested a sign-in email change to ${email}. Only enter this code if you made that request. It expires in 10 minutes. Enter both codes on ${env.APP_ORIGIN}/account?view=security using the same signed-in device. If this was not you, do not share the code; sign in and change your password.`);
+      `Your current-email confirmation code is ${currentCode}. Someone requested a sign-in email change to ${email}. Only enter this code if you made that request. It expires in 10 minutes. Enter both codes on ${env.APP_ORIGIN}/account?view=security using the same signed-in device. If this was not you, do not share the code; sign in and change your password.`, currentCode);
     await sendAccountEmail(env, `${id}-new`, email, 'Verify your new Kut Shoppe email',
-      `Your new-email confirmation code is ${newCodeValue}. It expires in 10 minutes. Enter it with the code sent to your current email on ${env.APP_ORIGIN}/account?view=security using the same signed-in device. If you did not request this, ignore this email. Never share this code.`);
+      `Your new-email confirmation code is ${newCodeValue}. It expires in 10 minutes. Enter it with the code sent to your current email on ${env.APP_ORIGIN}/account?view=security using the same signed-in device. If you did not request this, ignore this email. Never share this code.`, newCodeValue);
   } catch (error) {
     await env.DB.prepare('DELETE FROM account_email_changes WHERE id = ?').bind(id).run();
     throw error;

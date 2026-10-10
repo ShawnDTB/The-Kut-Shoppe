@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="The Kut Shoppe">
-  <rect width="64" height="64" rx="14" fill="#0b0b0b"/>
-  <circle cx="32" cy="32" r="24" fill="none" stroke="#f1f1f1" stroke-width="2"/>
-  <circle cx="32" cy="32" r="20" fill="none" stroke="#777" stroke-width="1"/>
-  <path d="M23 17v30M24 32l17-15M24 32l18 16" fill="none" stroke="#f4f4f4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M39 14v8M42 13v7M45 15v7M48 17v7" fill="none" stroke="#f4f4f4" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M32 2C42 2 42 12 50 14C54 15 62 20 62 32S54 49 50 50C42 52 42 62 32 62S22 52 14 50C10 49 2 44 2 32S10 15 14 14C22 12 22 2 32 2Z" fill="#111" stroke="#fffdf8" stroke-width="2"/>
+  <path d="M32 7C40 7 40 16 48 18C53 20 57 24 57 32S53 44 48 46C40 48 40 57 32 57S24 48 16 46C11 44 7 40 7 32S11 20 16 18C24 16 24 7 32 7Z" fill="none" stroke="#bdbbb5" stroke-width="1.5"/>
+  <!-- The logo's K: a comb spine and two scissor blades. -->
+  <path d="M25 15L22 49" stroke="#fffdf8" stroke-width="4"/>
+  <path d="M25 17h6m-6 4h6m-7 4h6m-6 4h6m-6 4h6m-7 4h6m-6 4h6m-6 4h6m-7 4h6" stroke="#fffdf8" stroke-width="1.5"/>
+  <path d="M29 32L44 17M29 32L43 47" fill="none" stroke="#fffdf8" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="43" cy="46" r="3" fill="#111" stroke="#fffdf8" stroke-width="2"/>
+  <circle cx="44" cy="18" r="2" fill="#111"/>
 </svg>
